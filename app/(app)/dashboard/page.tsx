@@ -99,14 +99,14 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent className="grid gap-2">
                         <Button variant="outline" className="justify-start h-auto py-4" asChild>
-                            <Link href="/inbox">
+                            <Link href="/admin-mode">
                                 <div className="flex items-start gap-4">
                                     <div className="p-2 bg-primary/10 rounded-md">
-                                        <Inbox className="size-5 text-primary" />
+                                        <Play className="size-5 text-primary" />
                                     </div>
                                     <div className="text-left">
-                                        <span className="font-semibold block">Capture Task</span>
-                                        <span className="text-xs text-muted-foreground">Quickly add to your inbox</span>
+                                        <span className="font-semibold block">Start Admin Session</span>
+                                        <span className="text-xs text-muted-foreground">Join others in focus</span>
                                     </div>
                                 </div>
                             </Link>

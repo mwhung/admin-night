@@ -16,20 +16,15 @@ import { Button } from '@/components/ui/button'
 
 const navItems = [
     {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard
-    },
-    {
-        title: 'Inbox',
-        href: '/inbox',
-        icon: Inbox
-    },
-    {
         title: 'Admin Night',
         href: '/admin-mode',
         icon: MoonIcon,
         highlight: true
+    },
+    {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: LayoutDashboard
     },
     {
         title: 'Settings',

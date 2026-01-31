@@ -12,11 +12,10 @@ import {
 
 export type TaskState =
     | 'UNCLARIFIED'
-    | 'CLARIFYING'
-    | 'READY'
+    | 'CLARIFIED'
     | 'IN_PROGRESS'
-    | 'DONE'
-    | 'BLOCKED'
+    | 'RESOLVED'
+    | 'RECURRING'
 
 interface TaskStateBadgeProps {
     state: TaskState
@@ -34,30 +33,25 @@ const stateConfig: Record<TaskState, {
         icon: Circle,
         className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
-    CLARIFYING: {
-        label: 'Clarifying',
+    CLARIFIED: {
+        label: 'Clarified',
         icon: Sparkles,
         className: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-    },
-    READY: {
-        label: 'Ready',
-        icon: CheckCircle2,
-        className: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
     },
     IN_PROGRESS: {
         label: 'In Progress',
         icon: Loader2,
         className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
     },
-    DONE: {
-        label: 'Done',
+    RESOLVED: {
+        label: 'Resolved',
         icon: CheckCircle2,
         className: 'bg-muted text-muted-foreground border-muted',
     },
-    BLOCKED: {
-        label: 'Blocked',
-        icon: AlertCircle,
-        className: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+    RECURRING: {
+        label: 'Recurring',
+        icon: Clock,
+        className: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
     },
 }
 
@@ -81,7 +75,7 @@ export function TaskStateBadge({
                 className={cn(
                     "size-3",
                     state === 'IN_PROGRESS' && "animate-spin",
-                    state === 'CLARIFYING' && "animate-pulse"
+                    state === 'CLARIFIED' && "animate-pulse"
                 )}
             />
             {showLabel && <span>{config.label}</span>}

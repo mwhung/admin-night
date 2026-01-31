@@ -14,18 +14,15 @@ import { ParticipantCount } from "@/components/session"
 import { PlaylistSelector, YouTubePlayer, MiniPlayer, PLAYLISTS, Playlist } from "@/components/session/youtube-player"
 import {
     Plus,
-    Users,
-    Volume2,
-    VolumeX,
-    Clock,
     CheckCircle2,
+    Clock,
     LogOut,
     Moon,
     Sparkles,
     Trash2,
     ArrowRight,
-    Wand2,
-    Music2
+    Music2,
+    Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -34,18 +31,26 @@ const DURATION_OPTIONS = [
     { value: 45, label: '45 min', description: 'Deep Work' },
 ]
 
-// Suggested tasks from Inbox (mock - will integrate with real data)
-const SUGGESTED_TASKS = [
-    { id: 'task-1', title: 'Review quarterly report', completed: false },
-    { id: 'task-2', title: 'Reply to important emails', completed: false },
-    { id: 'task-3', title: 'Update project documentation', completed: false },
+const QUICK_SUGGESTIONS = [
+    { id: 'common-1', title: '整理收件匣 (Email Inbox Zero)', completed: false },
+    { id: 'common-2', title: '繳納電子帳單 (Pay Bills)', completed: false },
+    { id: 'common-3', title: '整理記帳/發票 (Financial Admin)', completed: false },
+    { id: 'common-4', title: '更新個人行程表 (Update Calendar)', completed: false },
+    { id: 'common-5', title: '規劃下週計畫 (Weekly Planning)', completed: false },
 ]
+
+interface TaskFromApi {
+    id: string;
+    title: string;
+    state: string;
+}
 
 export default function AdminModePage() {
     const [step, setStep] = useState<'setup' | 'session'>('setup')
     const [selectedDuration, setSelectedDuration] = useState(25)
-    const [ambientSound, setAmbientSound] = useState(false)
     const [liveCount, setLiveCount] = useState(() => Math.floor(Math.random() * 5) + 1)
+    const [historyTasks, setHistoryTasks] = useState<TaskItem[]>([])
+    const [loadingHistory, setLoadingHistory] = useState(false)
 
     // Playlist state
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(PLAYLISTS[0])
@@ -54,6 +59,31 @@ export default function AdminModePage() {
     // Task management
     const [selectedTasks, setSelectedTasks] = useState<TaskItem[]>([])
     const [newTaskInput, setNewTaskInput] = useState('')
+
+    // Fetch history tasks
+    useEffect(() => {
+        const fetchHistory = async () => {
+            setLoadingHistory(true)
+            try {
+                const res = await fetch('/api/tasks?limit=5')
+                if (res.ok) {
+                    const data = await res.json()
+                    // Transform prisma task to TaskItem
+                    const tasks: TaskItem[] = data.map((t: TaskFromApi) => ({
+                        id: t.id,
+                        title: t.title,
+                        completed: false
+                    }))
+                    setHistoryTasks(tasks)
+                }
+            } catch (err) {
+                console.error('Failed to fetch task history', err)
+            } finally {
+                setLoadingHistory(false)
+            }
+        }
+        if (step === 'setup') fetchHistory()
+    }, [step])
 
     // Simulate live participant count
     useEffect(() => {
@@ -77,9 +107,9 @@ export default function AdminModePage() {
         setNewTaskInput('')
     }
 
-    const handleAddSuggestedTask = (task: typeof SUGGESTED_TASKS[0]) => {
+    const handleAddSuggestedTask = (task: TaskItem) => {
         if (selectedTasks.find(t => t.id === task.id)) return
-        setSelectedTasks(prev => [...prev, { ...task }])
+        setSelectedTasks(prev => [...prev, { ...task, id: `copy-${task.id}-${Date.now()}` }])
     }
 
     const handleRemoveTask = (taskId: string) => {
@@ -94,7 +124,6 @@ export default function AdminModePage() {
 
     const handleStartSession = () => {
         if (selectedTasks.length === 0) {
-            // Add a default task if none selected
             setSelectedTasks([{ id: 'default', title: 'Focus on admin tasks', completed: false }])
         }
         setStep('session')
@@ -296,14 +325,14 @@ export default function AdminModePage() {
                             2. What will you work on?
                         </CardTitle>
                         <CardDescription>
-                            Select from your inbox or add custom tasks
+                            Enter a task or choose from suggestions
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
                         {/* Add Custom Task */}
                         <div className="flex gap-2">
                             <Input
-                                placeholder="Add a task..."
+                                placeholder="Enter a new task..."
                                 value={newTaskInput}
                                 onChange={(e) => setNewTaskInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
@@ -319,22 +348,16 @@ export default function AdminModePage() {
                             </Button>
                         </div>
 
-                        {/* AI Suggestion Hint */}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                            <Wand2 className="h-3.5 w-3.5" />
-                            <span>AI can help break down complex tasks</span>
-                        </div>
-
-                        {/* Selected Tasks */}
+                        {/* Selected Tasks - Moved up for visibility */}
                         {selectedTasks.length > 0 && (
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium">Selected ({selectedTasks.length})</p>
+                            <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Selected for this session</p>
                                 {selectedTasks.map((task) => (
                                     <div
                                         key={task.id}
-                                        className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10"
+                                        className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 shadow-sm"
                                     >
-                                        <span className="text-sm">{task.title}</span>
+                                        <span className="text-sm font-medium">{task.title}</span>
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -348,19 +371,48 @@ export default function AdminModePage() {
                             </div>
                         )}
 
-                        {/* Suggested Tasks (from Inbox) */}
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium text-muted-foreground">From your inbox</p>
-                            {SUGGESTED_TASKS.filter(t => !selectedTasks.find(s => s.id === t.id)).map((task) => (
-                                <button
-                                    key={task.id}
-                                    onClick={() => handleAddSuggestedTask(task)}
-                                    className="w-full flex items-center justify-between p-3 rounded-lg border border-dashed hover:border-primary/50 hover:bg-muted/50 transition-colors text-left"
-                                >
-                                    <span className="text-sm text-muted-foreground">{task.title}</span>
-                                    <Plus className="h-4 w-4 text-muted-foreground" />
-                                </button>
-                            ))}
+                        {/* Suggestions Grid */}
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Quick Suggestions</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {QUICK_SUGGESTIONS.filter(t => !selectedTasks.find(s => s.title === t.title)).map((task) => (
+                                        <button
+                                            key={task.id}
+                                            onClick={() => handleAddSuggestedTask(task)}
+                                            className="flex items-center justify-between p-3 rounded-xl border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+                                        >
+                                            <span className="text-sm text-foreground/80 group-hover:text-foreground">{task.title}</span>
+                                            <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Recent History */}
+                            {historyTasks.length > 0 && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent Activity</p>
+                                        {loadingHistory && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {historyTasks
+                                            .filter(t => !selectedTasks.find(s => s.title === t.title))
+                                            .slice(0, 3)
+                                            .map((task) => (
+                                                <button
+                                                    key={task.id}
+                                                    onClick={() => handleAddSuggestedTask(task)}
+                                                    className="flex items-center justify-between p-3 rounded-xl border border-dashed bg-muted/30 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+                                                >
+                                                    <span className="text-sm text-muted-foreground group-hover:text-foreground">{task.title}</span>
+                                                    <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                </button>
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
