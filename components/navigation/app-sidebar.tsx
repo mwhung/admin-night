@@ -22,9 +22,9 @@ const navItems = [
         highlight: true
     },
     {
-        title: 'Dashboard',
+        title: 'Insights & History',
         href: '/dashboard',
-        icon: LayoutDashboard
+        icon: LayoutDashboard // Keep icon for now or change to BarChart
     },
     {
         title: 'Settings',

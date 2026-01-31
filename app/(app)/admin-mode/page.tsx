@@ -46,7 +46,7 @@ interface TaskFromApi {
 }
 
 export default function AdminModePage() {
-    const [step, setStep] = useState<'setup' | 'session'>('setup')
+    const [step, setStep] = useState<'setup' | 'session' | 'finished'>('setup')
     const [selectedDuration, setSelectedDuration] = useState(25)
     const [liveCount, setLiveCount] = useState(() => Math.floor(Math.random() * 5) + 1)
     const [historyTasks, setHistoryTasks] = useState<TaskItem[]>([])
@@ -146,8 +146,13 @@ export default function AdminModePage() {
     }
 
     const handleEndSession = () => {
-        setStep('setup')
+        setStep('finished')
         setLiveCount(prev => Math.max(1, prev - 1))
+    }
+
+    const handleBackToSetup = () => {
+        setStep('setup')
+        setSelectedTasks([])
     }
 
     const completedCount = selectedTasks.filter(t => t.completed).length
@@ -262,6 +267,68 @@ export default function AdminModePage() {
                         </Button>
                     </div>
                 </div>
+            </div>
+        )
+    }
+
+    // ==================== FINISHED VIEW ====================
+    if (step === 'finished') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-green-50/10 dark:to-green-950/5 p-4">
+                <Card className="w-full max-w-md shadow-2xl border-green-500/20 bg-card/50 backdrop-blur-xl animate-in zoom-in-95 duration-500">
+                    <CardHeader className="text-center pb-2">
+                        <div className="flex justify-center mb-4">
+                            <div className="bg-green-500/20 p-4 rounded-full">
+                                <Sparkles className="h-8 w-8 text-green-600 animate-pulse" />
+                            </div>
+                        </div>
+                        <CardTitle className="text-2xl font-bold text-green-700 dark:text-green-400">
+                            任務完成了
+                        </CardTitle>
+                        <CardDescription className="text-base mt-2">
+                            你已經把這些負擔放下了，現在可以安心休息了。
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pt-4">
+                        <div className="space-y-3">
+                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">在這個時段中，你處理了：</p>
+                            <div className="space-y-2">
+                                {selectedTasks.map((task) => (
+                                    <div
+                                        key={task.id}
+                                        className={cn(
+                                            "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                                            task.completed
+                                                ? "bg-green-500/5 border-green-200/50 text-green-700 dark:text-green-300"
+                                                : "bg-muted/30 border-muted text-muted-foreground"
+                                        )}
+                                    >
+                                        {task.completed ? (
+                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                                        ) : (
+                                            <Clock className="h-4 w-4 shrink-0" />
+                                        )}
+                                        <span className="text-sm font-medium">{task.title}</span>
+                                        {task.completed && <span className="text-xs ml-auto font-bold opacity-70">DONE</span>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="text-center space-y-4 pt-4 border-t border-border/50">
+                            <p className="text-xs text-muted-foreground italic">
+                                &ldquo;專注是一種對時間的敬意，你做得很好。&rdquo;
+                            </p>
+                            <Button
+                                className="w-full h-12 gap-2 text-lg shadow-lg"
+                                onClick={handleBackToSetup}
+                            >
+                                回到大廳
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         )
     }
