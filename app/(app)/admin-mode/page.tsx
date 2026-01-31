@@ -122,12 +122,27 @@ export default function AdminModePage() {
         )
     }
 
-    const handleStartSession = () => {
-        if (selectedTasks.length === 0) {
-            setSelectedTasks([{ id: 'default', title: 'Focus on admin tasks', completed: false }])
-        }
+    const handleStartSession = async () => {
+        const tasksToSync = selectedTasks.length > 0
+            ? selectedTasks
+            : [{ id: 'default', title: 'Focus on admin tasks', completed: false }]
+
+        // Optimistically set step
         setStep('session')
         setLiveCount(prev => prev + 1)
+
+        // Persistence: Sync tasks to DB so they appear in history later
+        try {
+            await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tasks: tasksToSync.map(t => ({ title: t.title }))
+                })
+            })
+        } catch (err) {
+            console.error('Failed to sync tasks to database', err)
+        }
     }
 
     const handleEndSession = () => {
