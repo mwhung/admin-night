@@ -1,0 +1,45 @@
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/admin_night_test
+      AUTH_SECRET: supersecret
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: example-key
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint
+        run: npm run lint
+      
+      - name: Type check
+        run: npx tsc --noEmit
+      
+      - name: Run Unit Tests
+        run: npm run test
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        
+      - name: Run E2E Tests
+        run: npm run test:e2e
