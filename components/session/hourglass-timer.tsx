@@ -52,28 +52,28 @@ export function HourglassTimer({
                 {/* Top Glass */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-20 overflow-hidden">
                     <div
-                        className="absolute inset-0 bg-gradient-to-b from-amber-200/80 to-amber-300/60 rounded-t-full"
+                        className="absolute inset-0 bg-primary/5 rounded-t-full"
                         style={{
                             clipPath: 'polygon(10% 0%, 90% 0%, 60% 100%, 40% 100%)',
                         }}
                     >
                         {/* Sand in top */}
                         <div
-                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-400 to-amber-300 transition-all duration-1000 ease-linear"
+                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary/40 to-primary/20 transition-all duration-1000 ease-linear"
                             style={{
                                 height: `${100 - progress}%`,
-                                opacity: 0.9,
+                                opacity: 0.8,
                             }}
                         />
                     </div>
                 </div>
 
                 {/* Middle Neck */}
-                <div className="absolute top-[76px] left-1/2 -translate-x-1/2 w-3 h-6 bg-amber-100/50 rounded-sm">
+                <div className="absolute top-[76px] left-1/2 -translate-x-1/2 w-3 h-6 bg-primary/5 rounded-sm">
                     {/* Falling sand particles */}
                     {!isComplete && (
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-full overflow-hidden">
-                            <div className="w-1 h-2 bg-amber-400 rounded-full animate-fall" />
+                            <div className="w-1 h-2 bg-primary/40 rounded-full animate-fall" />
                         </div>
                     )}
                 </div>
@@ -81,17 +81,17 @@ export function HourglassTimer({
                 {/* Bottom Glass */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-20 overflow-hidden">
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-amber-200/80 to-amber-100/40 rounded-b-full"
+                        className="absolute inset-0 bg-primary/5 rounded-b-full"
                         style={{
                             clipPath: 'polygon(40% 0%, 60% 0%, 90% 100%, 10% 100%)',
                         }}
                     >
                         {/* Sand in bottom */}
                         <div
-                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-500 to-amber-400 transition-all duration-1000 ease-linear rounded-b-full"
+                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary/60 to-primary/40 transition-all duration-1000 ease-linear rounded-b-full"
                             style={{
                                 height: `${progress}%`,
-                                opacity: 0.9,
+                                opacity: 0.8,
                             }}
                         />
                     </div>

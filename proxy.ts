@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server'
 const protectedRoutes = ['/dashboard', '/inbox', '/session', '/settings']
 const authRoutes = ['/login', '/register']
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // Check if the route is protected

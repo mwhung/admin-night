@@ -32,11 +32,11 @@ const DURATION_OPTIONS = [
 ]
 
 const QUICK_SUGGESTIONS = [
-    { id: 'common-1', title: '整理收件匣 (Email Inbox Zero)', completed: false },
-    { id: 'common-2', title: '繳納電子帳單 (Pay Bills)', completed: false },
-    { id: 'common-3', title: '整理記帳/發票 (Financial Admin)', completed: false },
-    { id: 'common-4', title: '更新個人行程表 (Update Calendar)', completed: false },
-    { id: 'common-5', title: '規劃下週計畫 (Weekly Planning)', completed: false },
+    { id: 'common-1', title: 'Inbox Zero (Clear Emails)', completed: false },
+    { id: 'common-2', title: 'Pay Bills & Invoices', completed: false },
+    { id: 'common-3', title: 'Financial Admin & Receipts', completed: false },
+    { id: 'common-4', title: 'Update Personal Calendar', completed: false },
+    { id: 'common-5', title: 'Weekly Planning & Strategy', completed: false },
 ]
 
 interface TaskFromApi {
@@ -163,48 +163,18 @@ export default function AdminModePage() {
             <div className="min-h-screen relative overflow-hidden">
                 {/* Therapeutic Background - Reserved space for future visual elements */}
                 <div className="fixed inset-0 -z-10">
-                    {/* Gradient background */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-amber-50/30 via-background to-blue-50/20 dark:from-amber-950/20 dark:via-background dark:to-blue-950/10" />
+                    {/* Monochromatic background */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-background via-background-warm to-background" />
 
                     {/* Floating decorative elements placeholder */}
-                    <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-amber-200/10 blur-3xl animate-float" />
-                    <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-blue-200/10 blur-2xl animate-float-delayed" />
-                    <div className="absolute bottom-32 left-1/4 w-40 h-40 rounded-full bg-green-200/10 blur-3xl animate-float" />
-                    <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full bg-purple-200/10 blur-2xl animate-float-delayed" />
-                </div>
-
-                {/* Minimal header */}
-                <div className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between bg-background/60 backdrop-blur-md border-b border-border/50">
-                    <ParticipantCount
-                        count={liveCount}
-                        isConnected={true}
-                        size="md"
-                    />
-
-                    <Badge
-                        variant="outline"
-                        className="bg-green-500/10 text-green-600 border-green-500/20"
-                    >
-                        <span className="h-2 w-2 bg-green-500 rounded-full mr-2 animate-pulse" />
-                        Admin Night
-                    </Badge>
-
-                    <div className="relative flex items-center gap-2">
-                        {selectedPlaylist && selectedPlaylist.id !== 'silence' && (
-                            <span className="text-sm text-muted-foreground hidden sm:block">
-                                {selectedPlaylist.emoji} {selectedPlaylist.name}
-                            </span>
-                        )}
-                        <MiniPlayer
-                            playlist={selectedPlaylist}
-                            isPlaying={isPlaying}
-                            onPlayingChange={setIsPlaying}
-                        />
-                    </div>
+                    <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-primary/5 blur-3xl animate-float" />
+                    <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-secondary/20 blur-2xl animate-float-delayed" />
+                    <div className="absolute bottom-32 left-1/4 w-40 h-40 rounded-full bg-primary/5 blur-3xl animate-float" />
+                    <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full bg-muted/30 blur-2xl animate-float-delayed" />
                 </div>
 
                 {/* Main Content */}
-                <div className="pt-24 pb-8 px-4 min-h-screen flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+                <div className="pt-8 pb-8 px-4 min-h-screen flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
                     {/* Left: Hourglass Timer */}
                     <div className="flex flex-col items-center">
                         <HourglassTimer
@@ -214,14 +184,14 @@ export default function AdminModePage() {
 
                         {/* Prominent participant count */}
                         <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
-                                <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                                <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                                    {liveCount} {liveCount === 1 ? '人' : '人'}也在 Admin Time
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10">
+                                <span className="h-2 w-2 bg-primary/40 rounded-full animate-pulse" />
+                                <span className="text-sm font-medium text-foreground/80">
+                                    {liveCount} {liveCount === 1 ? 'person' : 'people'} also in Admin Time
                                 </span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2">
-                                一起專注，一起完成 ✨
+                                Focus together, finish together ✨
                             </p>
                         </div>
                     </div>
@@ -240,8 +210,8 @@ export default function AdminModePage() {
 
                         <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-xl">
                             <CardHeader className="pb-3">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                <CardTitle className="text-base font-medium flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-primary/60" />
                                     Today&apos;s Tasks
                                 </CardTitle>
                                 <CardDescription>
@@ -274,24 +244,24 @@ export default function AdminModePage() {
     // ==================== FINISHED VIEW ====================
     if (step === 'finished') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-green-50/10 dark:to-green-950/5 p-4">
-                <Card className="w-full max-w-md shadow-2xl border-green-500/20 bg-card/50 backdrop-blur-xl animate-in zoom-in-95 duration-500">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary/20 p-4">
+                <Card className="w-full max-w-md shadow-2xl border-primary/10 bg-card/50 backdrop-blur-xl animate-in zoom-in-95 duration-500">
                     <CardHeader className="text-center pb-2">
                         <div className="flex justify-center mb-4">
-                            <div className="bg-green-500/20 p-4 rounded-full">
-                                <Sparkles className="h-8 w-8 text-green-600 animate-pulse" />
+                            <div className="bg-primary/10 p-4 rounded-full">
+                                <Sparkles className="h-8 w-8 text-primary animate-pulse" />
                             </div>
                         </div>
-                        <CardTitle className="text-2xl font-bold text-green-700 dark:text-green-400">
-                            任務完成了
+                        <CardTitle className="text-3xl font-extralight text-primary">
+                            Session Complete
                         </CardTitle>
                         <CardDescription className="text-base mt-2">
-                            你已經把這些負擔放下了，現在可以安心休息了。
+                            You&apos;ve put those burdens down. Now you can rest in peace.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-4">
                         <div className="space-y-3">
-                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">在這個時段中，你處理了：</p>
+                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">In this session, you handled:</p>
                             <div className="space-y-2">
                                 {selectedTasks.map((task) => (
                                     <div
@@ -299,12 +269,12 @@ export default function AdminModePage() {
                                         className={cn(
                                             "flex items-center gap-3 p-3 rounded-lg border transition-colors",
                                             task.completed
-                                                ? "bg-green-500/5 border-green-200/50 text-green-700 dark:text-green-300"
+                                                ? "bg-primary/5 border-primary/20 text-primary"
                                                 : "bg-muted/30 border-muted text-muted-foreground"
                                         )}
                                     >
                                         {task.completed ? (
-                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                                         ) : (
                                             <Clock className="h-4 w-4 shrink-0" />
                                         )}
@@ -317,13 +287,13 @@ export default function AdminModePage() {
 
                         <div className="text-center space-y-4 pt-4 border-t border-border/50">
                             <p className="text-xs text-muted-foreground italic">
-                                &ldquo;專注是一種對時間的敬意，你做得很好。&rdquo;
+                                &ldquo;Focus is a sign of respect for time. You did great.&rdquo;
                             </p>
                             <Button
                                 className="w-full h-12 gap-2 text-lg shadow-lg"
                                 onClick={handleBackToSetup}
                             >
-                                回到大廳
+                                Back to Lounge
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
                         </div>
@@ -335,19 +305,19 @@ export default function AdminModePage() {
 
     // ==================== SETUP VIEW ====================
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-amber-50/10 dark:to-amber-950/5">
+        <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
             <div className="container mx-auto max-w-2xl py-12 px-4">
                 {/* Header */}
                 <div className="text-center mb-10">
                     <div className="mb-6 inline-flex">
                         <div className="relative">
-                            <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-5 rounded-3xl shadow-lg shadow-amber-500/20">
-                                <Moon className="h-10 w-10 text-white" />
+                            <div className="bg-primary p-5 rounded-3xl shadow-lg shadow-primary/10">
+                                <Moon className="h-10 w-10 text-primary-foreground" />
                             </div>
-                            <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-yellow-500" />
+                            <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-primary/40" />
                         </div>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2">
+                    <h1 className="text-3xl font-extralight tracking-tight mb-2">
                         Admin Night
                     </h1>
                     <p className="text-muted-foreground max-w-md mx-auto">
@@ -356,10 +326,10 @@ export default function AdminModePage() {
                 </div>
 
                 {/* Live Count */}
-                <Card className="mb-6 bg-green-500/5 border-green-500/20">
+                <Card className="mb-6 bg-primary/5 border-primary/10">
                     <CardContent className="py-3">
                         <div className="flex items-center justify-center gap-2">
-                            <span className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse" />
+                            <span className="h-2.5 w-2.5 bg-primary/40 rounded-full animate-pulse" />
                             <span className="font-medium">
                                 {liveCount} {liveCount === 1 ? 'person is' : 'people are'} focusing now
                             </span>

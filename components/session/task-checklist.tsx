@@ -46,7 +46,7 @@ export function TaskChecklist({
                 </p>
                 <div className="flex items-center gap-1">
                     {completedCount === tasks.length && tasks.length > 0 && (
-                        <Sparkles className="h-4 w-4 text-yellow-500 animate-pulse" />
+                        <Sparkles className="h-4 w-4 text-primary/40 animate-pulse" />
                     )}
                     <span className="text-sm font-medium">{Math.round(progress)}%</span>
                 </div>
@@ -55,7 +55,7 @@ export function TaskChecklist({
             {/* Progress Bar */}
             <div className="h-1.5 bg-muted rounded-full mb-4 overflow-hidden">
                 <div
-                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -69,7 +69,7 @@ export function TaskChecklist({
                         className={cn(
                             'group w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300',
                             'hover:bg-muted/50',
-                            task.completed && 'bg-green-500/5',
+                            task.completed && 'bg-primary/5',
                             celebratingId === task.id && 'animate-celebrate'
                         )}
                     >
@@ -79,7 +79,7 @@ export function TaskChecklist({
                                 'relative flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-300',
                                 'flex items-center justify-center',
                                 task.completed
-                                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 border-transparent scale-110'
+                                    ? 'bg-primary border-transparent scale-110'
                                     : 'border-muted-foreground/30 group-hover:border-primary/50'
                             )}
                         >
@@ -90,10 +90,10 @@ export function TaskChecklist({
                             {/* Celebration particles */}
                             {celebratingId === task.id && (
                                 <>
-                                    <span className="absolute -top-1 -left-1 w-2 h-2 bg-yellow-400 rounded-full animate-particle-1" />
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-particle-2" />
-                                    <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-400 rounded-full animate-particle-3" />
-                                    <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-pink-400 rounded-full animate-particle-4" />
+                                    <span className="absolute -top-1 -left-1 w-2 h-2 bg-primary/40 rounded-full animate-particle-1" />
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary/30 rounded-full animate-particle-2" />
+                                    <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-primary/20 rounded-full animate-particle-3" />
+                                    <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-primary/10 rounded-full animate-particle-4" />
                                 </>
                             )}
                         </div>
@@ -112,7 +112,7 @@ export function TaskChecklist({
 
                         {/* Completed indicator */}
                         {task.completed && (
-                            <Sparkles className="h-4 w-4 text-yellow-500/50" />
+                            <Sparkles className="h-4 w-4 text-primary/30" />
                         )}
                     </button>
                 ))}
@@ -121,7 +121,7 @@ export function TaskChecklist({
             {/* All Done Message */}
             {completedCount === tasks.length && tasks.length > 0 && (
                 <div className="mt-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <p className="text-lg font-medium text-green-600">🎉 All tasks complete!</p>
+                    <p className="text-lg font-medium text-primary">🎉 All tasks complete!</p>
                     <p className="text-sm text-muted-foreground">Amazing work!</p>
                 </div>
             )}

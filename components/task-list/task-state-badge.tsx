@@ -31,27 +31,27 @@ const stateConfig: Record<TaskState, {
     UNCLARIFIED: {
         label: 'Unclarified',
         icon: Circle,
-        className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+        className: 'bg-muted/50 text-muted-foreground border-muted/50',
     },
     CLARIFIED: {
         label: 'Clarified',
         icon: Sparkles,
-        className: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+        className: 'bg-primary/5 text-primary border-primary/10',
     },
     IN_PROGRESS: {
         label: 'In Progress',
         icon: Loader2,
-        className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+        className: 'bg-primary/10 text-primary border-primary/20',
     },
     RESOLVED: {
         label: 'Resolved',
         icon: CheckCircle2,
-        className: 'bg-muted text-muted-foreground border-muted',
+        className: 'bg-secondary text-secondary-foreground border-border',
     },
     RECURRING: {
         label: 'Recurring',
         icon: Clock,
-        className: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+        className: 'bg-muted/30 text-muted-foreground border-muted/30',
     },
 }
 

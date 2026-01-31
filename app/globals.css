@@ -5,14 +5,14 @@
 
 /* ============================================
    🌿 Admin Night - 2026 Therapeutic UI System
-   極簡・溫暖・療癒
+   Minimalist ・ Warm ・ Healing
    ============================================ */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-therapeutic);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plus-jakarta), sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -43,7 +43,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* 2026 療癒圓角系統 - 更柔和 */
+  /* 2026 Healing Radius System - Softer */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -54,113 +54,112 @@
 }
 
 /* ============================================
-   🌅 Light Mode - 溫暖日光
-   Cloud Dancer inspired (Pantone 2026)
+   🌅 Light Mode - Arctic Mist & Digital Serenity
+   2026 Therapeutic Experience (Blue Tones)
    ============================================ */
 :root {
-  /* 字體系統 */
-  --font-therapeutic: 'Plus Jakarta Sans', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+  /* Font System */
+  --font-therapeutic: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
 
-  /* 基礎圓角 */
+  /* Border Radius */
   --radius: 1rem;
 
-  /* 背景色 - 柔和奶油白 */
-  --background: oklch(0.985 0.008 85);
-  --background-warm: oklch(0.975 0.012 80);
+  /* Background - Arctic Mist (Soft Healing Blue) */
+  --background: oklch(0.97 0.01 230);
+  --background-warm: oklch(0.95 0.015 225);
 
-  /* 前景色 - 溫暖深棕 */
-  --foreground: oklch(0.28 0.025 55);
+  /* Foreground - Ebony Stone (Maintain your favorite primary) */
+  --foreground: oklch(0.25 0.01 70);
 
-  /* 卡片 - 帶微暖漸層 */
-  --card: oklch(0.995 0.005 80);
-  --card-foreground: oklch(0.28 0.025 55);
+  /* Card - Icy Glass */
+  --card: oklch(0.99 0.005 230);
+  --card-foreground: oklch(0.25 0.01 70);
 
-  /* 彈出層 */
-  --popover: oklch(0.998 0.003 80);
-  --popover-foreground: oklch(0.28 0.025 55);
+  /* Popover */
+  --popover: oklch(0.99 0.005 230);
+  --popover-foreground: oklch(0.25 0.01 70);
 
-  /* 主色 - 療癒鼠尾草綠 */
-  --primary: oklch(0.58 0.12 155);
-  --primary-foreground: oklch(0.99 0.01 155);
+  /* Primary - Deep Charcoal Stone (Main Action) */
+  --primary: oklch(0.35 0.015 70);
+  --primary-foreground: oklch(0.98 0.005 230);
 
-  /* 次要色 - 溫暖沙色 */
-  --secondary: oklch(0.94 0.025 75);
-  --secondary-foreground: oklch(0.35 0.03 55);
+  /* Secondary - Sea Salt Blue */
+  --secondary: oklch(0.93 0.012 230);
+  --secondary-foreground: oklch(0.35 0.015 70);
 
-  /* 靜音色 - 柔和灰棕 */
-  --muted: oklch(0.96 0.015 70);
-  --muted-foreground: oklch(0.50 0.02 55);
+  /* Muted - Soft Fog */
+  --muted: oklch(0.94 0.01 230);
+  --muted-foreground: oklch(0.50 0.015 230);
 
-  /* 強調色 - 暖杏色 */
-  --accent: oklch(0.92 0.045 55);
-  --accent-foreground: oklch(0.35 0.03 55);
+  /* Accent - Dew Blue */
+  --accent: oklch(0.91 0.018 230);
+  --accent-foreground: oklch(0.30 0.015 70);
 
-  /* 邊框 - 極淡暖色 */
-  --border: oklch(0.92 0.015 70);
-  --input: oklch(0.94 0.012 75);
-  --ring: oklch(0.58 0.12 155);
+  /* Borders - Soft Frost */
+  --border: oklch(0.90 0.01 230);
+  --input: oklch(0.90 0.01 230);
+  --ring: oklch(0.35 0.015 70);
 
-  /* 側邊欄 - 微暖 */
-  --sidebar: oklch(0.98 0.010 80);
-  --sidebar-foreground: oklch(0.30 0.025 55);
-  --sidebar-primary: oklch(0.58 0.12 155);
-  --sidebar-primary-foreground: oklch(0.99 0.01 155);
-  --sidebar-accent: oklch(0.94 0.03 70);
-  --sidebar-accent-foreground: oklch(0.35 0.03 55);
-  --sidebar-border: oklch(0.93 0.015 75);
-  --sidebar-ring: oklch(0.58 0.12 155);
+  /* Sidebar - Clean Water */
+  --sidebar: oklch(0.98 0.005 230);
+  --sidebar-foreground: oklch(0.30 0.01 70);
+  --sidebar-primary: oklch(0.35 0.015 70);
+  --sidebar-primary-foreground: oklch(0.98 0.005 230);
+  --sidebar-accent: oklch(0.94 0.015 230);
+  --sidebar-accent-foreground: oklch(0.30 0.01 70);
+  --sidebar-border: oklch(0.93 0.01 230);
+  --sidebar-ring: oklch(0.35 0.015 70);
 }
 
 /* ============================================
-   🌙 Dark Mode - 溫暖夜色
-   Warm Night inspired
+   🌙 Dark Mode - Deep Midnight Arctic
    ============================================ */
 .dark {
-  /* 背景色 - 溫暖深棕黑 (不是純黑) */
-  --background: oklch(0.14 0.015 55);
-  --background-warm: oklch(0.16 0.018 50);
+  /* Background - Deep Midnight Blue-Stone */
+  --background: oklch(0.12 0.015 240);
+  --background-warm: oklch(0.15 0.018 235);
 
-  /* 前景色 - 柔和象牙白 */
-  --foreground: oklch(0.94 0.012 80);
+  /* Foreground - Soft Pearl Blue */
+  --foreground: oklch(0.92 0.01 230);
 
-  /* 卡片 - 溫暖深色 */
-  --card: oklch(0.18 0.018 55);
-  --card-foreground: oklch(0.94 0.012 80);
+  /* Card */
+  --card: oklch(0.18 0.018 240);
+  --card-foreground: oklch(0.92 0.01 230);
 
-  /* 彈出層 */
-  --popover: oklch(0.20 0.020 55);
-  --popover-foreground: oklch(0.94 0.012 80);
+  /* Popover */
+  --popover: oklch(0.20 0.02 240);
+  --popover-foreground: oklch(0.92 0.01 230);
 
-  /* 主色 - 療癒綠 (夜間稍亮) */
-  --primary: oklch(0.72 0.12 155);
-  --primary-foreground: oklch(0.15 0.02 155);
+  /* Primary - Lighter Stone (Contrast) */
+  --primary: oklch(0.85 0.01 230);
+  --primary-foreground: oklch(0.12 0.015 240);
 
-  /* 次要色 */
-  --secondary: oklch(0.24 0.020 55);
-  --secondary-foreground: oklch(0.92 0.012 80);
+  /* Secondary */
+  --secondary: oklch(0.22 0.02 240);
+  --secondary-foreground: oklch(0.90 0.01 230);
 
-  /* 靜音色 */
-  --muted: oklch(0.22 0.015 55);
-  --muted-foreground: oklch(0.65 0.015 70);
+  /* Muted */
+  --muted: oklch(0.18 0.015 240);
+  --muted-foreground: oklch(0.60 0.01 230);
 
-  /* 強調色 - 暖杏 (夜間) */
-  --accent: oklch(0.28 0.025 55);
-  --accent-foreground: oklch(0.92 0.012 80);
+  /* Accent */
+  --accent: oklch(0.24 0.025 240);
+  --accent-foreground: oklch(0.90 0.01 230);
 
-  /* 邊框 */
-  --border: oklch(0.28 0.015 55);
-  --input: oklch(0.25 0.018 55);
-  --ring: oklch(0.72 0.12 155);
+  /* Borders */
+  --border: oklch(0.24 0.02 240);
+  --input: oklch(0.24 0.02 240);
+  --ring: oklch(0.85 0.01 230);
 
-  /* 側邊欄 */
-  --sidebar: oklch(0.16 0.015 55);
-  --sidebar-foreground: oklch(0.92 0.012 80);
-  --sidebar-primary: oklch(0.72 0.12 155);
-  --sidebar-primary-foreground: oklch(0.15 0.02 155);
-  --sidebar-accent: oklch(0.24 0.020 55);
-  --sidebar-accent-foreground: oklch(0.92 0.012 80);
-  --sidebar-border: oklch(0.25 0.015 55);
-  --sidebar-ring: oklch(0.72 0.12 155);
+  /* Sidebar */
+  --sidebar: oklch(0.15 0.015 240);
+  --sidebar-foreground: oklch(0.90 0.01 230);
+  --sidebar-primary: oklch(0.85 0.01 230);
+  --sidebar-primary-foreground: oklch(0.12 0.015 240);
+  --sidebar-accent: oklch(0.22 0.02 240);
+  --sidebar-accent-foreground: oklch(0.90 0.01 230);
+  --sidebar-border: oklch(0.22 0.02 240);
+  --sidebar-ring: oklch(0.85 0.01 230);
 }
 
 @layer base {
@@ -176,10 +175,10 @@
 }
 
 /* ============================================
-   ✨ Therapeutic Animations - 療癒動畫
+   ✨ Therapeutic Animations
    ============================================ */
 
-/* 呼吸動畫 - 核心療癒效果 */
+/* Breathe Animation - Core Healing Effect */
 @keyframes breathe {
 
   0%,
@@ -202,7 +201,7 @@
   animation: breathe 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* 溫暖浮動 */
+/* Warm Float */
 @keyframes float {
 
   0%,
@@ -344,14 +343,14 @@
 }
 
 /* ============================================
-   🧘 Therapeutic Utilities - 療癒工具類
+   🧘 Therapeutic Utilities
    ============================================ */
 
-/* 療癒陰影 */
+/* Therapeutic Shadows */
 .shadow-therapeutic {
   box-shadow:
-    0 4px 20px oklch(0.35 0.02 60 / 0.06),
-    0 1px 4px oklch(0.35 0.02 60 / 0.03);
+    0 4px 20px oklch(0.35 0.02 230 / 0.06),
+    0 1px 4px oklch(0.35 0.02 230 / 0.03);
 }
 
 .dark .shadow-therapeutic {
@@ -360,20 +359,20 @@
     0 1px 4px oklch(0 0 0 / 0.15);
 }
 
-/* 玻璃擬態 - 療癒版 */
+/* Glassmorphism - Therapeutic version */
 .glass-therapeutic {
-  background: oklch(0.99 0.005 80 / 0.75);
+  background: oklch(0.99 0.005 230 / 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid oklch(0.92 0.015 75 / 0.5);
+  border: 1px solid oklch(0.92 0.015 230 / 0.5);
 }
 
 .dark .glass-therapeutic {
-  background: oklch(0.18 0.015 55 / 0.75);
-  border: 1px solid oklch(0.30 0.015 55 / 0.3);
+  background: oklch(0.18 0.015 240 / 0.75);
+  border: 1px solid oklch(0.30 0.015 240 / 0.3);
 }
 
-/* 療癒 Hover 狀態 */
+/* Therapeutic Hover States */
 .hover-lift {
   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);

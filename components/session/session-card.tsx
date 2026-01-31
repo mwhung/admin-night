@@ -57,8 +57,8 @@ export function SessionCard({
     }
 
     const statusStyles = {
-        SCHEDULED: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-        ACTIVE: 'bg-green-500/10 text-green-500 border-green-500/20 animate-pulse',
+        SCHEDULED: 'bg-secondary/40 text-primary/60 border-border',
+        ACTIVE: 'bg-primary/10 text-primary border-primary/20 animate-pulse',
         COMPLETED: 'bg-muted text-muted-foreground border-muted',
     }
 
@@ -82,8 +82,8 @@ export function SessionCard({
             <div
                 className={cn(
                     'absolute top-0 left-0 right-0 h-1',
-                    status === 'SCHEDULED' && 'bg-blue-500',
-                    status === 'ACTIVE' && 'bg-green-500',
+                    status === 'SCHEDULED' && 'bg-secondary',
+                    status === 'ACTIVE' && 'bg-primary',
                     status === 'COMPLETED' && 'bg-muted'
                 )}
             />

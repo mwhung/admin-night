@@ -64,7 +64,7 @@ export default function InsightsPage() {
         <div className="container mx-auto p-6 space-y-8 max-w-6xl animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text">
+                    <h1 className="text-3xl font-extralight tracking-tight">
                         Insights & History
                     </h1>
                     <p className="text-muted-foreground mt-1">Reflecting on your progress and the community&apos;s energy.</p>
@@ -79,25 +79,25 @@ export default function InsightsPage() {
 
             {/* Top Metrics: Personal + Fun Global */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-primary/5 border-primary/10 transition-all hover:bg-primary/10">
+                <Card className="bg-primary/5 border-primary/10 hover:bg-primary/10 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Personal Focus
                         </CardTitle>
-                        <Zap className="h-4 w-4 text-amber-500" />
+                        <Zap className="h-4 w-4 text-primary/60" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{tasks.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Tasks captured in total</p>
+                        <p className="text-xs text-muted-foreground mt-1">Tasks captured total</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-green-500/5 border-green-500/10 transition-all hover:bg-green-500/10">
+                <Card className="bg-secondary/40 border-border/50 hover:bg-secondary/60 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Global Impact
                         </CardTitle>
-                        <Globe className="h-4 w-4 text-green-500" />
+                        <Globe className="h-4 w-4 text-primary/40" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats?.community.totalTasksCompleted.toLocaleString() || '---'}</div>
@@ -105,12 +105,12 @@ export default function InsightsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="bg-purple-500/5 border-purple-500/10 transition-all hover:bg-purple-500/10">
+                <Card className="bg-primary/5 border-primary/10 hover:bg-primary/10 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Collective Flow
                         </CardTitle>
-                        <Clock className="h-4 w-4 text-purple-500" />
+                        <Clock className="h-4 w-4 text-primary/40" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalFocusTime}</div>
@@ -118,16 +118,16 @@ export default function InsightsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="bg-blue-500/5 border-blue-500/10 transition-all hover:bg-blue-500/10">
+                <Card className="bg-secondary/40 border-border/50 hover:bg-secondary/60 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Peak Energy
                         </CardTitle>
-                        <TrendingUp className="h-4 w-4 text-blue-500" />
+                        <TrendingUp className="h-4 w-4 text-primary/40" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats?.community.peakFocusHour || '---'}</div>
-                        <p className="text-xs text-muted-foreground mt-1">When the community is most active</p>
+                        <p className="text-xs text-muted-foreground mt-1">When the community is active</p>
                     </CardContent>
                 </Card>
             </div>
@@ -162,7 +162,7 @@ export default function InsightsPage() {
                                 >
                                     <div className={cn(
                                         "size-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
-                                        task.state === 'RESOLVED' ? "bg-green-500/10 text-green-600" : "bg-primary/10 text-primary"
+                                        task.state === 'RESOLVED' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                                     )}>
                                         {task.state === 'RESOLVED' ? <CheckCircle2 className="size-5" /> : <Clock className="size-5" />}
                                     </div>
@@ -175,7 +175,7 @@ export default function InsightsPage() {
                                     <div className="text-right">
                                         <span className={cn(
                                             "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter",
-                                            task.state === 'RESOLVED' ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
+                                            task.state === 'RESOLVED' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                                         )}>
                                             {task.state === 'RESOLVED' ? 'Success' : 'Archived'}
                                         </span>
@@ -198,8 +198,8 @@ export default function InsightsPage() {
                             <div className="p-4 rounded-2xl bg-background/50 border border-white/20 backdrop-blur-sm space-y-1">
                                 <p className="text-xs text-muted-foreground font-medium uppercase">Active Right Now</p>
                                 <div className="flex items-center gap-2">
-                                    <div className="size-2 bg-green-500 rounded-full animate-pulse" />
-                                    <span className="text-2xl font-bold">{stats?.community.activePeopleRightNow || '--'} 人</span>
+                                    <div className="size-2 bg-primary/60 rounded-full animate-pulse" />
+                                    <span className="text-2xl font-bold">{stats?.community.activePeopleRightNow || '--'} People</span>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground">Focusing along with you</p>
                             </div>
@@ -216,10 +216,10 @@ export default function InsightsPage() {
 
                     <Card className="bg-muted/30 border-dashed">
                         <CardContent className="py-6 text-center space-y-2">
-                            <p className="text-sm font-medium">想要更多有趣的統計？</p>
-                            <p className="text-xs text-muted-foreground">隨着大家完成更多任務，我們會解鎖更多社群洞察。</p>
+                            <p className="text-sm font-medium">Want more interesting stats?</p>
+                            <p className="text-xs text-muted-foreground">As everyone completes more tasks, we&apos;ll unlock more community insights.</p>
                             <Button variant="link" size="sm" className="text-primary" asChild>
-                                <Link href="/admin-mode">繼續專注 ↗</Link>
+                                <Link href="/admin-mode">Keep Focusing ↗</Link>
                             </Button>
                         </CardContent>
                     </Card>

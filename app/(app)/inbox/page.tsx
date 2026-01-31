@@ -75,7 +75,7 @@ export default function InboxPage() {
         <div className="container mx-auto max-w-4xl py-8 px-4 h-full flex flex-col">
             <header className="mb-8 flex items-end justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2">Inbox</h1>
+                    <h1 className="text-3xl font-light tracking-tight mb-2">Inbox</h1>
                     <p className="text-muted-foreground">Capture everything. Process later.</p>
                 </div>
                 <Badge variant="outline" className="px-3 py-1">
