@@ -1,5 +1,5 @@
-import { AppSidebar } from "@/components/navigation/app-sidebar"
 import { SiteHeader } from "@/components/navigation/site-header"
+import { FloatingNav } from "@/components/navigation/floating-nav"
 
 export default function AppLayout({
     children,
@@ -7,16 +7,12 @@ export default function AppLayout({
     children: React.ReactNode
 }) {
     return (
-        <div className="flex flex-col h-screen w-full bg-background overflow-hidden font-sans">
+        <div className="flex flex-col min-h-screen w-full bg-background font-sans">
             <SiteHeader />
-            <div className="flex-1 flex overflow-hidden relative">
-                <aside className="hidden md:block h-full flex-shrink-0 z-40">
-                    <AppSidebar />
-                </aside>
-                <main className="flex-1 overflow-y-auto h-full w-full">
-                    {children}
-                </main>
-            </div>
+            <main className="flex-1 w-full pb-24">
+                {children}
+            </main>
+            <FloatingNav />
         </div>
     )
 }

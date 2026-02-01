@@ -54,6 +54,8 @@ export async function POST(req: Request) {
         const json = await req.json()
 
         // Handle single or bulk creation
+        const userId = session.user.id
+
         if (json.tasks && Array.isArray(json.tasks)) {
             const body = BulkCreateSchema.parse(json)
             const tasks = await Promise.all(
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
                     prisma.task.create({
                         data: {
                             title: t.title,
-                            userId: session.user.id!,
+                            userId: userId,
                             state: "UNCLARIFIED",
                         }
                     })
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
             const task = await prisma.task.create({
                 data: {
                     title: body.title,
-                    userId: session.user.id!,
+                    userId: userId,
                     state: "UNCLARIFIED",
                 },
             })

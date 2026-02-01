@@ -1,13 +1,13 @@
 # Admin Night - Project Status
 
-> Last Updated: 2026-01-31
+> Last Updated: 2026-02-01
 
 ## 📊 Overall Progress
 
 | Agent | Progress | Status |
 |-------|----------|--------|
-| Backend API | 50% | 🟡 In Progress |
-| Frontend UI | 15% | 🟠 Starting |
+| Backend API | 55% | 🟡 In Progress |
+| Frontend UI | 25% | 🟡 In Progress |
 | AI Integration | 70% | 🟢 Active |
 | Session Realtime | 90% | 🟢 Active |
 | DevOps Testing | 60% | 🟢 Active |
@@ -21,10 +21,11 @@
 - [x] Database connection (`lib/db.ts`)
 - [x] NextAuth basic configuration (`auth.ts`)
 - [x] Tasks API GET/POST (`app/api/tasks/route.ts`)
-
-### 🔄 In Progress
 - [x] Tasks API - PUT/DELETE for single task
 - [x] User registration endpoint
+- [x] Google OAuth provider integration
+
+### 🔄 In Progress
 
 ### 📋 Backlog
 - [ ] Sessions API CRUD
@@ -38,9 +39,10 @@
 ### ✅ Completed
 - [x] Base UI components (Button, Card, Input, Form, Badge, Label, Separator)
 - [x] Inbox page basic structure
-- [x] Login page structure
+- [x] Login page structure (2026 Therapeutic UI)
+- [x] Register page (2026 Therapeutic UI + Google OAuth)
 - [x] TailwindCSS v4 configuration
-- [x] Globals CSS
+- [x] Globals CSS with therapeutic design system
 - [x] Dashboard page layout
 - [x] Enhanced Inbox with better UX
 - [x] Application Navigation (Sidebar)
@@ -50,10 +52,9 @@
 - [x] Edge-compatible Middleware
 
 ### 🔄 In Progress
-- [ ] Admin Mode UI
+- [ ] Admin Mode UI refinements
 
 ### 📋 Backlog
-- [ ] Register page
 - [ ] Ambient sound toggle
 - [ ] Completion feedback animation
 - [ ] Session browser page
