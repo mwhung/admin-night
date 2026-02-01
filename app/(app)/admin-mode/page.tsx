@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { HourglassTimer } from "@/components/session/hourglass-timer"
 import { TaskChecklist, TaskItem } from "@/components/session/task-checklist"
 import { ParticipantCount } from "@/components/session"
-import { PlaylistSelector, YouTubePlayer, MiniPlayer, PLAYLISTS, Playlist } from "@/components/session/youtube-player"
+import { PLAYLISTS } from "@/components/session/youtube-player"
 import {
     Plus,
     CheckCircle2,
@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils"
 const DURATION_OPTIONS = [
     { value: 25, label: '25 min', description: 'Pomodoro Sprint' },
     { value: 45, label: '45 min', description: 'Deep Work' },
+    { value: 'custom', label: 'Custom', description: 'Set your own' },
 ]
 
 const QUICK_SUGGESTIONS = [
@@ -47,15 +48,14 @@ interface TaskFromApi {
 
 export default function AdminModePage() {
     const [step, setStep] = useState<'setup' | 'session' | 'finished'>('setup')
-    const [selectedDuration, setSelectedDuration] = useState(25)
+    const [selectedDuration, setSelectedDuration] = useState<number | 'custom'>(25)
+    const [customDuration, setCustomDuration] = useState(30)
     const [liveCount, setLiveCount] = useState(() => Math.floor(Math.random() * 5) + 1)
     const [historyTasks, setHistoryTasks] = useState<TaskItem[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
 
-    // Playlist state
-    const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(PLAYLISTS[0])
-    const [isPlaying, setIsPlaying] = useState(true)
-
+    // Get the actual duration value to use
+    const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
     // Task management
     const [selectedTasks, setSelectedTasks] = useState<TaskItem[]>([])
     const [newTaskInput, setNewTaskInput] = useState('')
@@ -178,14 +178,14 @@ export default function AdminModePage() {
                     {/* Left: Hourglass Timer */}
                     <div className="flex flex-col items-center">
                         <HourglassTimer
-                            durationMinutes={selectedDuration}
+                            durationMinutes={actualDuration}
                             onComplete={handleEndSession}
                         />
 
                         {/* Prominent participant count */}
                         <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10">
-                                <span className="h-2 w-2 bg-primary/40 rounded-full animate-pulse" />
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20">
+                                <span className="h-2 w-2 bg-success rounded-full animate-pulse" />
                                 <span className="text-sm font-medium text-foreground/80">
                                     {liveCount} {liveCount === 1 ? 'person' : 'people'} also in Admin Time
                                 </span>
@@ -196,17 +196,8 @@ export default function AdminModePage() {
                         </div>
                     </div>
 
-                    {/* Right: Task List & Player */}
+                    {/* Right: Task List */}
                     <div className="w-full max-w-sm space-y-4">
-                        {/* YouTube Player (if playlist selected) */}
-                        {selectedPlaylist && selectedPlaylist.id !== 'silence' && (
-                            <YouTubePlayer
-                                playlist={selectedPlaylist}
-                                isPlaying={isPlaying}
-                                onPlayingChange={setIsPlaying}
-                                className="shadow-xl"
-                            />
-                        )}
 
                         <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-xl">
                             <CardHeader className="pb-3">
@@ -269,12 +260,12 @@ export default function AdminModePage() {
                                         className={cn(
                                             "flex items-center gap-3 p-3 rounded-lg border transition-colors",
                                             task.completed
-                                                ? "bg-primary/5 border-primary/20 text-primary"
+                                                ? "bg-success/10 border-success/20 text-success"
                                                 : "bg-muted/30 border-muted text-muted-foreground"
                                         )}
                                     >
                                         {task.completed ? (
-                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                                         ) : (
                                             <Clock className="h-4 w-4 shrink-0" />
                                         )}
@@ -326,10 +317,10 @@ export default function AdminModePage() {
                 </div>
 
                 {/* Live Count */}
-                <Card className="mb-6 bg-primary/5 border-primary/10">
+                <Card className="mb-6 bg-success/5 border-success/10">
                     <CardContent className="py-3">
                         <div className="flex items-center justify-center gap-2">
-                            <span className="h-2.5 w-2.5 bg-primary/40 rounded-full animate-pulse" />
+                            <span className="h-2.5 w-2.5 bg-success rounded-full animate-pulse" />
                             <span className="font-medium">
                                 {liveCount} {liveCount === 1 ? 'person is' : 'people are'} focusing now
                             </span>
@@ -346,11 +337,11 @@ export default function AdminModePage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                             {DURATION_OPTIONS.map((option) => (
                                 <button
-                                    key={option.value}
-                                    onClick={() => setSelectedDuration(option.value)}
+                                    key={String(option.value)}
+                                    onClick={() => setSelectedDuration(option.value as number | 'custom')}
                                     className={cn(
                                         "relative p-4 rounded-xl border-2 transition-all text-left",
                                         selectedDuration === option.value
@@ -366,6 +357,24 @@ export default function AdminModePage() {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Custom Duration Input */}
+                        {selectedDuration === 'custom' && (
+                            <div className="mt-4 flex items-center gap-3">
+                                <Clock className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        min={5}
+                                        max={180}
+                                        value={customDuration}
+                                        onChange={(e) => setCustomDuration(Math.max(5, Math.min(180, parseInt(e.target.value) || 5)))}
+                                        className="w-20 text-center text-lg font-bold"
+                                    />
+                                    <span className="text-muted-foreground">minutes</span>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -469,41 +478,51 @@ export default function AdminModePage() {
                     </CardContent>
                 </Card>
 
-                {/* Step 3: Playlist Selection */}
-                <Card className="mb-6">
+                {/* Step 3: Playlist Selection - Coming Soon */}
+                <Card className="mb-6 opacity-60">
                     <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Music2 className="h-5 w-5" />
-                            3. Choose Focus Music
-                        </CardTitle>
-                        <CardDescription>
-                            Pick a playlist or focus in silence
-                        </CardDescription>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Music2 className="h-5 w-5" />
+                                    3. Choose Focus Music
+                                </CardTitle>
+                                <CardDescription>
+                                    Pick a playlist or focus in silence
+                                </CardDescription>
+                            </div>
+                            <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <PlaylistSelector
-                            selectedPlaylist={selectedPlaylist}
-                            onSelect={setSelectedPlaylist}
-                        />
+                        <div className="grid grid-cols-3 gap-3">
+                            {PLAYLISTS.map((playlist) => (
+                                <button
+                                    key={playlist.id}
+                                    disabled
+                                    className={cn(
+                                        "p-3 rounded-xl border-2 transition-all text-center cursor-not-allowed",
+                                        "border-transparent bg-muted/30"
+                                    )}
+                                >
+                                    <span className="text-2xl mb-1 block">{playlist.emoji}</span>
+                                    <span className="text-xs font-medium block text-muted-foreground truncate">{playlist.name}</span>
+                                </button>
+                            ))}
+                        </div>
                     </CardContent>
                 </Card>
 
                 {/* Start Button */}
                 <Button
                     size="lg"
-                    className="w-full h-14 text-lg gap-2 shadow-lg shadow-primary/20"
+                    className="w-full h-14 text-lg gap-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:bg-success hover:text-success-foreground hover:shadow-success/25"
                     onClick={handleStartSession}
                 >
                     Start Session
                     <ArrowRight className="h-5 w-5" />
                 </Button>
 
-                {/* Selected playlist hint */}
-                <p className="text-center text-xs text-muted-foreground mt-4">
-                    {selectedPlaylist && selectedPlaylist.id !== 'silence'
-                        ? `🎵 You'll be listening to ${selectedPlaylist.name}`
-                        : '🔇 You chose to focus in silence'}
-                </p>
             </div>
         </div>
     )

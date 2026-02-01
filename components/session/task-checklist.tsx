@@ -55,7 +55,7 @@ export function TaskChecklist({
             {/* Progress Bar */}
             <div className="h-1.5 bg-muted rounded-full mb-4 overflow-hidden">
                 <div
-                    className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-success rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -79,21 +79,21 @@ export function TaskChecklist({
                                 'relative flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-300',
                                 'flex items-center justify-center',
                                 task.completed
-                                    ? 'bg-primary border-transparent scale-110'
-                                    : 'border-muted-foreground/30 group-hover:border-primary/50'
+                                    ? 'bg-success border-transparent scale-110'
+                                    : 'border-muted-foreground/30 group-hover:border-success/50'
                             )}
                         >
                             {task.completed && (
-                                <Check className="h-4 w-4 text-white animate-checkmark" />
+                                <Check className="h-4 w-4 text-success-foreground animate-checkmark" />
                             )}
 
                             {/* Celebration particles */}
                             {celebratingId === task.id && (
                                 <>
-                                    <span className="absolute -top-1 -left-1 w-2 h-2 bg-primary/40 rounded-full animate-particle-1" />
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary/30 rounded-full animate-particle-2" />
-                                    <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-primary/20 rounded-full animate-particle-3" />
-                                    <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-primary/10 rounded-full animate-particle-4" />
+                                    <span className="absolute -top-1 -left-1 w-2 h-2 bg-success/60 rounded-full animate-particle-1" />
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-success/50 rounded-full animate-particle-2" />
+                                    <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-success/40 rounded-full animate-particle-3" />
+                                    <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-success/30 rounded-full animate-particle-4" />
                                 </>
                             )}
                         </div>
@@ -112,7 +112,7 @@ export function TaskChecklist({
 
                         {/* Completed indicator */}
                         {task.completed && (
-                            <Sparkles className="h-4 w-4 text-primary/30" />
+                            <Sparkles className="h-4 w-4 text-success/50" />
                         )}
                     </button>
                 ))}

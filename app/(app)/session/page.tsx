@@ -4,20 +4,26 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { SessionTimer } from "@/components/session-timer"
-import { Play, Users, Volume2, VolumeX, CheckCircle2 } from "lucide-react"
+import { PLAYLISTS } from "@/components/session/youtube-player"
+import { Play, Users, Volume2, VolumeX, CheckCircle2, Music, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const DURATION_OPTIONS = [
     { label: '25m', value: 25, description: 'Pomodoro' },
-    { label: '50m', value: 50, description: 'Deep Work' },
-    { label: '90m', value: 90, description: 'Flow State' },
+    { label: '45m', value: 45, description: 'Deep Work' },
+    { label: 'Custom', value: 'custom', description: 'Set your own' },
 ]
 
 export default function SessionPage() {
-    const [selectedDuration, setSelectedDuration] = useState(50)
+    const [selectedDuration, setSelectedDuration] = useState<number | 'custom'>(45)
+    const [customDuration, setCustomDuration] = useState(30)
     const [isSessionActive, setIsSessionActive] = useState(false)
     const [ambientSound, setAmbientSound] = useState(false)
+
+    // Get the actual duration value to use
+    const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
 
     const handleSessionComplete = () => {
         setIsSessionActive(false)
@@ -43,7 +49,7 @@ export default function SessionPage() {
                 </div>
 
                 <SessionTimer
-                    initialMinutes={selectedDuration}
+                    initialMinutes={actualDuration}
                     onComplete={handleSessionComplete}
                 />
 
@@ -87,8 +93,8 @@ export default function SessionPage() {
                     <div className="grid grid-cols-3 gap-3">
                         {DURATION_OPTIONS.map((option) => (
                             <button
-                                key={option.value}
-                                onClick={() => setSelectedDuration(option.value)}
+                                key={String(option.value)}
+                                onClick={() => setSelectedDuration(option.value as number | 'custom')}
                                 className={cn(
                                     "relative p-4 rounded-xl border-2 transition-all text-left",
                                     selectedDuration === option.value
@@ -104,6 +110,24 @@ export default function SessionPage() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Custom Duration Input */}
+                    {selectedDuration === 'custom' && (
+                        <div className="mt-4 flex items-center gap-3">
+                            <Clock className="size-5 text-muted-foreground" />
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    type="number"
+                                    min={5}
+                                    max={180}
+                                    value={customDuration}
+                                    onChange={(e) => setCustomDuration(Math.max(5, Math.min(180, parseInt(e.target.value) || 5)))}
+                                    className="w-20 text-center text-lg font-bold"
+                                />
+                                <span className="text-muted-foreground">minutes</span>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -131,13 +155,46 @@ export default function SessionPage() {
                 </CardContent>
             </Card>
 
+            {/* Playlist Selection - Coming Soon */}
+            <Card className="mb-8 opacity-60">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Music className="size-5" />
+                                Background Music
+                            </CardTitle>
+                            <CardDescription>Choose a playlist for your session</CardDescription>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-3 gap-3">
+                        {PLAYLISTS.map((playlist) => (
+                            <button
+                                key={playlist.id}
+                                disabled
+                                className={cn(
+                                    "p-3 rounded-xl border-2 transition-all text-center cursor-not-allowed",
+                                    "border-transparent bg-muted/30"
+                                )}
+                            >
+                                <span className="text-2xl mb-1 block">{playlist.emoji}</span>
+                                <span className="text-xs font-medium block text-muted-foreground truncate">{playlist.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+
             <Button
                 size="lg"
                 className="w-full text-lg h-14 gap-3"
                 onClick={() => setIsSessionActive(true)}
             >
                 <Play className="size-5" />
-                Start {selectedDuration} Minute Session
+                Start {actualDuration} Minute Session
             </Button>
 
             {/* Online users */}
