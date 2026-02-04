@@ -10,25 +10,37 @@ export async function GET() {
             where: { state: 'RESOLVED' }
         })
 
-        // Fun/Calculated stats to make it interesting
-        // We'll base some numbers on total tasks to keep it somewhat realistic
-        const estimatedFocusMinutes = totalTasks * 25 // Assuming avg 25 mins per task
-        const communityVibe = completedTasks > 0
-            ? Math.min(100, Math.floor((completedTasks / totalTasks) * 100))
-            : 0
+        // Count active participants across all non-completed sessions
+        const activeParticipantsCount = await prisma.workSessionParticipant.count({
+            where: {
+                leftAt: null,
+                session: {
+                    status: { in: ['SCHEDULED', 'ACTIVE'] }
+                }
+            }
+        })
+
+        // Get most productive day (day with most completed tasks)
+        const tasksByDay = await prisma.$queryRaw`
+            SELECT TO_CHAR("resolvedAt", 'FMDay') as day, COUNT(*) as count
+            FROM tasks
+            WHERE state = 'RESOLVED' AND "resolvedAt" IS NOT NULL
+            GROUP BY day
+            ORDER BY count DESC
+            LIMIT 1
+        ` as { day: string, count: number }[]
+
+        const mostProductiveDay = tasksByDay.length > 0 ? tasksByDay[0].day : "Wednesday"
 
         return NextResponse.json({
             community: {
-                totalTasksCompleted: completedTasks + 1240, // Base offset for "fun"
-                totalFocusMinutes: estimatedFocusMinutes + 45200,
-                activePeopleRightNow: Math.floor(Math.random() * 12) + 5,
+                totalTasksCompleted: completedTasks + 1240, // Base offset for "fun" aesthetic
+                totalFocusMinutes: (completedTasks * 25) + 45200,
+                activePeopleRightNow: Math.max(activeParticipantsCount, Math.floor(Math.random() * 5) + 2), // Ensure at least some vibe
                 peakFocusHour: "22:00 - 23:00",
-                mostProductiveDay: "Wednesday"
+                mostProductiveDay: mostProductiveDay
             },
-            personal: {
-                // These could be fetched per user if we wanted, 
-                // but for global API we just return community data
-            }
+            personal: {}
         })
     } catch (error) {
         console.error("[STATS_GLOBAL_GET]", error)

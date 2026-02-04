@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { openai, DEFAULT_MODEL, parseSteps } from '@/lib/ai/openai'
 import { CLARIFY_SYSTEM_PROMPT, formatClarifyUserMessage, CLARIFY_CONFIG } from '@/lib/prompts/clarify'
 
@@ -18,8 +19,8 @@ import { CLARIFY_SYSTEM_PROMPT, formatClarifyUserMessage, CLARIFY_CONFIG } from 
 export async function POST(req: NextRequest) {
     try {
         // Check authentication
-        const session = await auth()
-        if (!session?.user) {
+        const user = await getCurrentUser()
+        if (!user) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }

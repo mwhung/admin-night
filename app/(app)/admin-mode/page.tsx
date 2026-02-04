@@ -3,12 +3,12 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { HourglassTimer } from "@/components/session/hourglass-timer"
+import { HourglassTimer, HourglassTimerRef } from "@/components/session/hourglass-timer"
 import { TaskChecklist, TaskItem } from "@/components/session/task-checklist"
 import { ParticipantCount } from "@/components/session"
 import { PLAYLISTS } from "@/components/session/youtube-player"
@@ -22,9 +22,13 @@ import {
     Trash2,
     ArrowRight,
     Music2,
-    Loader2
+    Loader2,
+    Inbox as InboxIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from '@/lib/hooks/useAuth'
+import { useSessionPresence } from '@/lib/realtime'
+import { useJoinSession, useLeaveSession, useSessions, useCreateSession } from '@/lib/hooks/useSessions'
 
 const DURATION_OPTIONS = [
     { value: 25, label: '25 min', description: 'Pomodoro Sprint' },
@@ -44,15 +48,19 @@ interface TaskFromApi {
     id: string;
     title: string;
     state: string;
+    isFromLastSession?: boolean;
 }
 
 export default function AdminModePage() {
+    const timerRef = useRef<HourglassTimerRef>(null)
     const [step, setStep] = useState<'setup' | 'session' | 'finished'>('setup')
+    const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false)
     const [selectedDuration, setSelectedDuration] = useState<number | 'custom'>(25)
     const [customDuration, setCustomDuration] = useState(30)
     const [liveCount, setLiveCount] = useState(() => Math.floor(Math.random() * 5) + 1)
     const [historyTasks, setHistoryTasks] = useState<TaskItem[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
+    const [isSyncing, setIsSyncing] = useState(false)
 
     // Get the actual duration value to use
     const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
@@ -60,21 +68,62 @@ export default function AdminModePage() {
     const [selectedTasks, setSelectedTasks] = useState<TaskItem[]>([])
     const [newTaskInput, setNewTaskInput] = useState('')
 
-    // Fetch history tasks
+    // Auth and Presence
+    const { user } = useAuth()
+    const { data: sessionsData } = useSessions({ status: 'ACTIVE' })
+    const joinSessionMutation = useJoinSession()
+    const leaveSessionMutation = useLeaveSession()
+    const createSessionMutation = useCreateSession()
+
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+
+    const { participantCount: realLiveCount, isConnected } = useSessionPresence({
+        sessionId: activeSessionId || 'global',
+        userId: user?.id || 'anonymous',
+        userName: user?.user_metadata?.name || user?.email || 'Anonymous',
+        enabled: step === 'session'
+    })
+
+    // Use actual count when in session, otherwise use simulated or global
+    const displayCount = step === 'session' ? realLiveCount : liveCount
+
+    // Fetch history and unfinished tasks
     useEffect(() => {
         const fetchHistory = async () => {
             setLoadingHistory(true)
             try {
-                const res = await fetch('/api/tasks?limit=5')
+                // Request info about the last session tasks
+                const res = await fetch('/api/tasks?limit=20&includeLastSession=true')
                 if (res.ok) {
                     const data = await res.json()
-                    // Transform prisma task to TaskItem
+
+                    // Transform and sort: Prioritize only tasks from the LAST session
                     const tasks: TaskItem[] = data.map((t: TaskFromApi) => ({
                         id: t.id,
                         title: t.title,
-                        completed: false
+                        completed: false,
+                        state: t.state,
+                        isFromLastSession: t.isFromLastSession
                     }))
-                    setHistoryTasks(tasks)
+
+                    // Sort: Last session's pending tasks FIRST
+                    const sortedTasks = [...tasks].sort((a, b) => {
+                        const aPendingLast = a.isFromLastSession && a.state !== 'RESOLVED'
+                        const bPendingLast = b.isFromLastSession && b.state !== 'RESOLVED'
+
+                        if (aPendingLast && !bPendingLast) return -1
+                        if (!aPendingLast && bPendingLast) return 1
+
+                        // Fallback to general pending (if any others were manually added in inbox)
+                        const aPending = a.state !== 'RESOLVED'
+                        const bPending = b.state !== 'RESOLVED'
+                        if (aPending && !bPending) return -1
+                        if (!aPending && bPending) return 1
+
+                        return 0
+                    })
+
+                    setHistoryTasks(sortedTasks)
                 }
             } catch (err) {
                 console.error('Failed to fetch task history', err)
@@ -116,10 +165,40 @@ export default function AdminModePage() {
         setSelectedTasks(prev => prev.filter(t => t.id !== taskId))
     }
 
-    const handleToggleTask = (taskId: string) => {
-        setSelectedTasks(prev =>
-            prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t)
-        )
+    const syncTasksWithBackend = async () => {
+        const newTasks = selectedTasks.filter(t => t.id.startsWith('custom-') || t.id.startsWith('copy-'))
+
+        if (newTasks.length > 0) {
+            setIsSyncing(true)
+            try {
+                const res = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tasks: newTasks.map(t => ({ title: t.title }))
+                    })
+                })
+
+                if (res.ok) {
+                    const createdTasksFromApi = await res.json()
+                    setSelectedTasks(prev => {
+                        const existingRealTasks = prev.filter(t => !t.id.startsWith('custom-') && !t.id.startsWith('copy-'))
+                        const syncedTasks = createdTasksFromApi.map((t: any) => ({
+                            id: t.id,
+                            title: t.title,
+                            completed: false
+                        }))
+                        return [...existingRealTasks, ...syncedTasks]
+                    })
+                    return true
+                }
+            } catch (err) {
+                console.error('Failed to sync tasks to database', err)
+            } finally {
+                setIsSyncing(false)
+            }
+        }
+        return false
     }
 
     const handleStartSession = async () => {
@@ -127,27 +206,83 @@ export default function AdminModePage() {
             ? selectedTasks
             : [{ id: 'default', title: 'Focus on admin tasks', completed: false }]
 
-        // Optimistically set step
-        setStep('session')
-        setLiveCount(prev => prev + 1)
+        await syncTasksWithBackend()
 
-        // Persistence: Sync tasks to DB so they appear in history later
+        // Session Management
         try {
-            await fetch('/api/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tasks: tasksToSync.map(t => ({ title: t.title }))
+            let sessionId = sessionsData?.sessions[0]?.id
+
+            if (!sessionId) {
+                // Create a new session if none is active
+                const newSession = await createSessionMutation.mutateAsync({
+                    scheduledStart: new Date(),
+                    durationMinutes: actualDuration as number
                 })
-            })
+                sessionId = newSession.session.id
+            }
+
+            if (sessionId) {
+                setActiveSessionId(sessionId)
+                await joinSessionMutation.mutateAsync(sessionId)
+            }
         } catch (err) {
-            console.error('Failed to sync tasks to database', err)
+            console.error('Failed to handle session join', err)
+        }
+
+        setStep('session')
+    }
+
+    const handleToggleTask = async (taskId: string) => {
+        const task = selectedTasks.find(t => t.id === taskId)
+        if (!task) return
+
+        const newCompleted = !task.completed
+
+        // Optimistic update
+        setSelectedTasks(prev =>
+            prev.map(t => t.id === taskId ? { ...t, completed: newCompleted } : t)
+        )
+
+        // API update if it's a real DB task (all tasks in session should be now)
+        if (!taskId.startsWith('custom-') && !taskId.startsWith('copy-')) {
+            try {
+                await fetch(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        state: newCompleted ? 'RESOLVED' : 'IN_PROGRESS'
+                    })
+                })
+            } catch (err) {
+                console.error('Failed to update task status', err)
+            }
         }
     }
 
-    const handleEndSession = () => {
+
+    const handleEndSession = async () => {
         setStep('finished')
-        setLiveCount(prev => Math.max(1, prev - 1))
+
+        if (activeSessionId) {
+            try {
+                await leaveSessionMutation.mutateAsync({
+                    sessionId: activeSessionId,
+                    tasksWorkedOn: selectedTasks.map(t => t.id)
+                })
+            } catch (err) {
+                console.error('Failed to leave session', err)
+            }
+        }
+    }
+
+
+    const handleAdjustTasks = () => {
+        setIsTaskDrawerOpen(true)
+    }
+
+    const handleSaveTaskChanges = async () => {
+        await syncTasksWithBackend()
+        setIsTaskDrawerOpen(false)
     }
 
     const handleBackToSetup = () => {
@@ -161,33 +296,126 @@ export default function AdminModePage() {
     if (step === 'session') {
         return (
             <div className="min-h-screen relative overflow-hidden">
-                {/* Therapeutic Background - Reserved space for future visual elements */}
-                <div className="fixed inset-0 -z-10">
-                    {/* Monochromatic background */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-background via-background-warm to-background" />
+                {/* Therapeutic Background */}
+                <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background via-background-warm to-background" />
 
-                    {/* Floating decorative elements placeholder */}
-                    <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-primary/5 blur-3xl animate-float" />
-                    <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-secondary/20 blur-2xl animate-float-delayed" />
-                    <div className="absolute bottom-32 left-1/4 w-40 h-40 rounded-full bg-primary/5 blur-3xl animate-float" />
-                    <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full bg-muted/30 blur-2xl animate-float-delayed" />
+                {/* Task Modification Drawer */}
+                <div
+                    className={cn(
+                        "fixed inset-y-0 left-0 w-full max-w-sm bg-card/95 backdrop-blur-xl border-r border-primary/10 shadow-2xl z-50 transition-all duration-500 ease-in-out transform flex flex-col",
+                        isTaskDrawerOpen ? "translate-x-0" : "-translate-x-full"
+                    )}
+                >
+                    <div className="p-6 flex-1 overflow-y-auto space-y-6">
+                        <div>
+                            <h2 className="text-xl font-light mb-1">Modify Your Session</h2>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest">Adjust tasks while timer continues</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Add a missing task..."
+                                    value={newTaskInput}
+                                    onChange={(e) => setNewTaskInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                                    className="flex-1"
+                                />
+                                <Button size="icon" variant="outline" onClick={handleAddTask}>
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            {selectedTasks.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold text-primary uppercase">Current Tasks</p>
+                                    {selectedTasks.map((task) => (
+                                        <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
+                                            <span className="text-sm">{task.title}</span>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveTask(task.id)}>
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Quick Add</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {QUICK_SUGGESTIONS.filter(t => !selectedTasks.find(s => s.title === t.title)).slice(0, 3).map((task) => (
+                                        <button
+                                            key={task.id}
+                                            onClick={() => handleAddSuggestedTask(task)}
+                                            className="flex items-center justify-between p-2 rounded-lg border border-dashed hover:bg-primary/5 text-left transition-colors"
+                                        >
+                                            <span className="text-xs">{task.title}</span>
+                                            <Plus className="h-3 w-3 text-muted-foreground" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 border-t border-primary/10 bg-muted/20">
+                        <Button className="w-full h-12 shadow-lg group" onClick={handleSaveTaskChanges} disabled={isSyncing}>
+                            {isSyncing ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                                <CheckCircle2 className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+                            )}
+                            Save Changes & Resume
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Overlay */}
+                {isTaskDrawerOpen && (
+                    <div
+                        className="fixed inset-0 bg-background/40 backdrop-blur-sm z-40 animate-in fade-in duration-300"
+                        onClick={() => setIsTaskDrawerOpen(false)}
+                    />
+                )}
 
                 {/* Main Content */}
                 <div className="pt-8 pb-8 px-4 min-h-screen flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+                    {/* ... (Existing Hourglass and Participant Count) ... */}
                     {/* Left: Hourglass Timer */}
                     <div className="flex flex-col items-center">
                         <HourglassTimer
+                            ref={timerRef}
                             durationMinutes={actualDuration}
                             onComplete={handleEndSession}
+                            paused={isTaskDrawerOpen}
                         />
+
+                        {/* Add Time Buttons */}
+                        <div className="flex gap-2 mt-6 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-full text-[10px] h-8 px-4 flex items-center gap-1 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                                onClick={() => timerRef.current?.addTime(5)}
+                            >
+                                <Plus className="h-3 w-3" /> 5m
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-full text-[10px] h-8 px-4 flex items-center gap-1 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                                onClick={() => timerRef.current?.addTime(10)}
+                            >
+                                <Plus className="h-3 w-3" /> 10m
+                            </Button>
+                        </div>
 
                         {/* Prominent participant count */}
                         <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20">
                                 <span className="h-2 w-2 bg-success rounded-full animate-pulse" />
                                 <span className="text-sm font-medium text-foreground/80">
-                                    {liveCount} {liveCount === 1 ? 'person' : 'people'} also in Admin Time
+                                    {displayCount} {displayCount === 1 ? 'person' : 'people'} also in Admin Time
                                 </span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2">
@@ -217,15 +445,26 @@ export default function AdminModePage() {
                             </CardContent>
                         </Card>
 
-                        {/* Exit Button */}
-                        <Button
-                            variant="ghost"
-                            className="w-full text-muted-foreground hover:text-destructive"
-                            onClick={handleEndSession}
-                        >
-                            <LogOut className="h-4 w-4 mr-2" />
-                            Exit Session Early
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                variant="outline"
+                                className="w-full bg-background/50 hover:bg-background/80 border-border/40"
+                                onClick={handleAdjustTasks}
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Modify Tasks
+                            </Button>
+
+                            {/* Exit Button */}
+                            <Button
+                                variant="ghost"
+                                className="w-full text-muted-foreground hover:text-destructive"
+                                onClick={handleEndSession}
+                            >
+                                <LogOut className="h-4 w-4 mr-2" />
+                                Exit Session Early
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -234,54 +473,90 @@ export default function AdminModePage() {
 
     // ==================== FINISHED VIEW ====================
     if (step === 'finished') {
+        const completedTasks = selectedTasks.filter(t => t.completed)
+        const pendingTasks = selectedTasks.filter(t => !t.completed)
+
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary/20 p-4">
-                <Card className="w-full max-w-md shadow-2xl border-primary/10 bg-card/50 backdrop-blur-xl animate-in zoom-in-95 duration-500">
+            <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+                {/* Therapeutic Background */}
+                <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background via-background-warm to-secondary/10" />
+
+                {/* Ritual Glow Effect */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] animate-pulse" />
+
+                <Card className="w-full max-w-lg shadow-2xl border-primary/5 bg-card/60 backdrop-blur-2xl animate-in zoom-in-95 duration-1000">
                     <CardHeader className="text-center pb-2">
-                        <div className="flex justify-center mb-4">
-                            <div className="bg-primary/10 p-4 rounded-full">
-                                <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+                        <div className="flex justify-center mb-6">
+                            <div className="relative">
+                                <div className="bg-primary/5 p-6 rounded-full">
+                                    <Moon className="h-10 w-10 text-primary/60" />
+                                </div>
+                                <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-primary/40 animate-pulse" />
                             </div>
                         </div>
-                        <CardTitle className="text-3xl font-extralight text-primary">
-                            Session Complete
+                        <CardTitle className="text-3xl font-light tracking-tight text-foreground/90">
+                            Brain Space Released
                         </CardTitle>
-                        <CardDescription className="text-base mt-2">
-                            You&apos;ve put those burdens down. Now you can rest in peace.
+                        <CardDescription className="text-base mt-3 font-light leading-relaxed">
+                            You&apos;ve let go of what you were tightly holding onto.<br />
+                            This time of focus is a gift to yourself.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6 pt-4">
-                        <div className="space-y-3">
-                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">In this session, you handled:</p>
-                            <div className="space-y-2">
-                                {selectedTasks.map((task) => (
-                                    <div
-                                        key={task.id}
-                                        className={cn(
-                                            "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                                            task.completed
-                                                ? "bg-success/10 border-success/20 text-success"
-                                                : "bg-muted/30 border-muted text-muted-foreground"
-                                        )}
-                                    >
-                                        {task.completed ? (
-                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
-                                        ) : (
-                                            <Clock className="h-4 w-4 shrink-0" />
-                                        )}
-                                        <span className="text-sm font-medium">{task.title}</span>
-                                        {task.completed && <span className="text-xs ml-auto font-bold opacity-70">DONE</span>}
-                                    </div>
-                                ))}
+
+                    <CardContent className="space-y-8 pt-6">
+                        {/* Status Summary */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-primary/5 rounded-2xl p-4 text-center border border-primary/10">
+                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Items Unloaded</p>
+                                <p className="text-2xl font-light text-primary">{completedTasks.length}</p>
+                            </div>
+                            <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/50">
+                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Time Spent</p>
+                                <p className="text-2xl font-light text-foreground/70">{actualDuration}m</p>
                             </div>
                         </div>
 
-                        <div className="text-center space-y-4 pt-4 border-t border-border/50">
-                            <p className="text-xs text-muted-foreground italic">
-                                &ldquo;Focus is a sign of respect for time. You did great.&rdquo;
+                        {/* Task List - Categorized by Relief */}
+                        <div className="space-y-4">
+                            {completedTasks.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">Released & Resolved:</p>
+                                    {completedTasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className="flex items-center gap-3 p-3 rounded-xl bg-success/5 border border-success/10 text-success/80"
+                                        >
+                                            <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                            <span className="text-sm font-light">{task.title}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {pendingTasks.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Stored in Task Drawer:</p>
+                                    <p className="text-[10px] text-muted-foreground/60 italic -mt-1 mb-2">They are safe here. Put them out of your mind and rest now.</p>
+                                    {pendingTasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className="flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-dashed border-border text-muted-foreground/70"
+                                        >
+                                            <Clock className="h-4 w-4 shrink-0" />
+                                            <span className="text-sm font-light">{task.title}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Closure Quote & Action */}
+                        <div className="text-center space-y-6 pt-6 border-t border-primary/5">
+                            <p className="text-sm text-muted-foreground/80 font-light italic leading-relaxed">
+                                &ldquo;You don&apos;t need to do everything — you just need to stop carrying it.&rdquo;
                             </p>
                             <Button
-                                className="w-full h-12 gap-2 text-lg shadow-lg"
+                                className="w-full h-14 gap-2 text-md font-light rounded-2xl shadow-xl shadow-primary/10 transition-all hover:shadow-primary/20"
                                 onClick={handleBackToSetup}
                             >
                                 Back to Lounge
@@ -322,7 +597,7 @@ export default function AdminModePage() {
                         <div className="flex items-center justify-center gap-2">
                             <span className="h-2.5 w-2.5 bg-success rounded-full animate-pulse" />
                             <span className="font-medium">
-                                {liveCount} {liveCount === 1 ? 'person is' : 'people are'} focusing now
+                                {displayCount} {displayCount === 1 ? 'person is' : 'people are'} focusing now
                             </span>
                         </div>
                     </CardContent>
@@ -450,24 +725,42 @@ export default function AdminModePage() {
                                 </div>
                             </div>
 
-                            {/* Recent History */}
+                            {/* Recent History / Task Drawer */}
                             {historyTasks.length > 0 && (
-                                <div>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent Activity</p>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between mb-3 border-t border-border/30 pt-4">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                            <InboxIcon className="h-3 w-3" />
+                                            From Your Task Drawer
+                                        </p>
                                         {loadingHistory && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                                     </div>
                                     <div className="grid grid-cols-1 gap-2">
                                         {historyTasks
                                             .filter(t => !selectedTasks.find(s => s.title === t.title))
-                                            .slice(0, 3)
-                                            .map((task) => (
+                                            .slice(0, 5) // Show top 5 prioritized items
+                                            .map((task: any) => (
                                                 <button
                                                     key={task.id}
                                                     onClick={() => handleAddSuggestedTask(task)}
-                                                    className="flex items-center justify-between p-3 rounded-xl border border-dashed bg-muted/30 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+                                                    className={cn(
+                                                        "flex items-center justify-between p-3 rounded-xl border transition-all text-left group",
+                                                        (task.isFromLastSession && task.state !== 'RESOLVED')
+                                                            ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                                                            : "bg-muted/30 border-dashed hover:border-primary/50"
+                                                    )}
                                                 >
-                                                    <span className="text-sm text-muted-foreground group-hover:text-foreground">{task.title}</span>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className={cn(
+                                                            "text-sm",
+                                                            (task.isFromLastSession && task.state !== 'RESOLVED') ? "text-foreground font-medium" : "text-muted-foreground"
+                                                        )}>
+                                                            {task.title}
+                                                        </span>
+                                                        {task.isFromLastSession && task.state !== 'RESOLVED' && (
+                                                            <span className="text-[9px] uppercase tracking-tighter text-primary/60 font-bold">From your last session</span>
+                                                        )}
+                                                    </div>
                                                     <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                                 </button>
                                             ))}

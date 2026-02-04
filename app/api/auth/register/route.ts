@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/db"
+
+import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import bcrypt from "bcryptjs"
 
 // Validation schema for registration
 const RegisterSchema = z.object({
@@ -15,49 +15,40 @@ const RegisterSchema = z.object({
 
 /**
  * POST /api/auth/register
- * Register a new user with email and password
+ * Register a new user with email and password using Supabase Auth
  */
 export async function POST(req: Request) {
   try {
     const json = await req.json()
     const body = RegisterSchema.parse(json)
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email: body.email.toLowerCase(),
+    const supabase = await createClient()
+
+    // Sign up with Supabase
+    const { data, error } = await supabase.auth.signUp({
+      email: body.email.toLowerCase(),
+      password: body.password,
+      options: {
+        data: {
+          name: body.name || null,
+        },
       },
     })
 
-    if (existingUser) {
+    if (error) {
       return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 409 }
+        { error: error.message },
+        { status: 400 }
       )
     }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(body.password, 10)
-
-    // Create the user
-    const user = await prisma.user.create({
-      data: {
-        email: body.email.toLowerCase(),
-        password: hashedPassword,
-        name: body.name || null,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
-      },
-    })
 
     return NextResponse.json(
       {
         message: "User registered successfully",
-        user,
+        user: {
+          id: data.user?.id,
+          email: data.user?.email,
+        },
       },
       { status: 201 }
     )

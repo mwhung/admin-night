@@ -1,4 +1,5 @@
-import { auth } from "@/auth"
+
+import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
@@ -19,9 +20,9 @@ type RouteParams = {
  * Get a single task by ID
  */
 export async function GET(req: Request, { params }: RouteParams) {
-    const session = await auth()
+    const user = await getCurrentUser()
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -31,7 +32,7 @@ export async function GET(req: Request, { params }: RouteParams) {
         const task = await prisma.task.findUnique({
             where: {
                 id,
-                userId: session.user.id, // Ensure user owns this task
+                userId: user.id, // Ensure user owns this task
             },
         })
 
@@ -51,9 +52,9 @@ export async function GET(req: Request, { params }: RouteParams) {
  * Update a task
  */
 export async function PUT(req: Request, { params }: RouteParams) {
-    const session = await auth()
+    const user = await getCurrentUser()
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -66,7 +67,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
         const existingTask = await prisma.task.findUnique({
             where: {
                 id,
-                userId: session.user.id,
+                userId: user.id,
             },
         })
 
@@ -127,9 +128,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
  * Delete a task
  */
 export async function DELETE(req: Request, { params }: RouteParams) {
-    const session = await auth()
+    const user = await getCurrentUser()
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -140,7 +141,7 @@ export async function DELETE(req: Request, { params }: RouteParams) {
         const existingTask = await prisma.task.findUnique({
             where: {
                 id,
-                userId: session.user.id,
+                userId: user.id,
             },
         })
 

@@ -12,10 +12,12 @@ import {
     Globe,
     History,
     TrendingUp,
-    Zap
+    Zap,
+    ArrowRight
 } from 'lucide-react'
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
 interface GlobalStats {
     community: {
@@ -43,7 +45,7 @@ export default function InsightsPage() {
         const fetchData = async () => {
             try {
                 const [tasksRes, statsRes] = await Promise.all([
-                    fetch('/api/tasks?limit=10'),
+                    fetch('/api/tasks?limit=50'),
                     fetch('/api/stats/global')
                 ])
                 if (tasksRes.ok) setTasks(await tasksRes.json())
@@ -57,7 +59,8 @@ export default function InsightsPage() {
         fetchData()
     }, [])
 
-    const completedTasks = tasks.filter(t => t.state === 'RESOLVED').length
+    const resolvedTasks = tasks.filter(t => t.state === 'RESOLVED')
+    const pendingTasks = tasks.filter(t => t.state !== 'RESOLVED')
     const totalFocusTime = (stats?.community.totalFocusMinutes || 0).toLocaleString()
 
     return (
@@ -67,7 +70,7 @@ export default function InsightsPage() {
                     <h1 className="text-3xl font-extralight tracking-tight">
                         Insights & History
                     </h1>
-                    <p className="text-muted-foreground mt-1">Reflecting on your progress and the community&apos;s energy.</p>
+                    <p className="text-muted-foreground mt-1">Reflecting on your progress and the community&aps;s energy.</p>
                 </div>
                 <Button asChild className="gap-2 shadow-lg shadow-primary/20 bg-primary hover:scale-105 transition-transform">
                     <Link href="/admin-mode">
@@ -133,52 +136,46 @@ export default function InsightsPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-                {/* Usage History */}
-                <Card className="lg:col-span-2 shadow-xl border-border/40">
-                    <CardHeader className="flex flex-row items-center justify-between">
+                {/* Main Content: Victories */}
+                <Card className="lg:col-span-2 shadow-xl border-border/40 overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between bg-primary/[0.02] border-b border-border/40 pb-4">
                         <div>
                             <CardTitle className="flex items-center gap-2">
-                                <History className="size-5 text-primary" />
-                                Your Task History
+                                <CheckCircle2 className="size-5 text-primary" />
+                                Your Recent Victories
                             </CardTitle>
-                            <CardDescription>Recent items you&apos;ve worked on.</CardDescription>
+                            <CardDescription>Items you&apos;ve successfully released.</CardDescription>
                         </div>
                         {loading && <Zap className="size-4 animate-pulse text-primary" />}
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-1">
-                            {tasks.length === 0 && !loading && (
-                                <div className="py-12 text-center space-y-3">
+                    <CardContent className="p-0">
+                        <div className="divide-y divide-border/40">
+                            {resolvedTasks.length === 0 && !loading && (
+                                <div className="py-20 text-center space-y-3">
                                     <div className="bg-muted w-12 h-12 rounded-full flex items-center justify-center mx-auto opacity-50">
-                                        <ListTodo className="size-6" />
+                                        <CheckCircle2 className="size-6 text-muted-foreground" />
                                     </div>
-                                    <p className="text-muted-foreground text-sm">No tasks yet. Start your first session!</p>
+                                    <p className="text-muted-foreground text-sm">No victories yet. Your journey begins here.</p>
                                 </div>
                             )}
-                            {tasks.map((task) => (
+                            {resolvedTasks.map((task) => (
                                 <div
                                     key={task.id}
-                                    className="group flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
+                                    className="group flex items-center gap-4 p-4 hover:bg-primary/[0.01] transition-colors"
                                 >
-                                    <div className={cn(
-                                        "size-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
-                                        task.state === 'RESOLVED' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                                    )}>
-                                        {task.state === 'RESOLVED' ? <CheckCircle2 className="size-5" /> : <Clock className="size-5" />}
+                                    <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                        <CheckCircle2 className="size-5" />
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-sm">{task.title}</p>
-                                        <p className="text-muted-foreground text-xs">
-                                            {new Date(task.createdAt).toLocaleDateString()} at {new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate">{task.title}</p>
+                                        <p className="text-muted-foreground text-[10px] uppercase tracking-wider">
+                                            Released on {new Date(task.createdAt).toLocaleDateString()}
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <span className={cn(
-                                            "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter",
-                                            task.state === 'RESOLVED' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                                        )}>
-                                            {task.state === 'RESOLVED' ? 'Success' : 'Archived'}
-                                        </span>
+                                        <Badge variant="outline" className="text-[10px] font-bold border-primary/20 text-primary bg-primary/5">
+                                            Success
+                                        </Badge>
                                     </div>
                                 </div>
                             ))}
@@ -186,8 +183,48 @@ export default function InsightsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Fun Stats & Community Vibe */}
+                {/* Sidebar: Task Drawer & Community */}
                 <div className="space-y-6">
+                    {/* Task Drawer Section */}
+                    <Card className="shadow-lg border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden border-dashed">
+                        <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-widest text-muted-foreground">
+                                <ListTodo className="size-4 text-primary/60" />
+                                Task Drawer
+                            </CardTitle>
+                            <CardDescription className="text-[10px]">Safely stored for your next session.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="max-h-[350px] overflow-y-auto divide-y divide-border/30">
+                                {pendingTasks.length === 0 && !loading && (
+                                    <div className="py-8 text-center px-4">
+                                        <p className="text-xs text-muted-foreground italic">&ldquo;The drawer is empty. Your mind is clear.&rdquo;</p>
+                                    </div>
+                                )}
+                                {pendingTasks.map((task) => (
+                                    <div
+                                        key={task.id}
+                                        className="p-3 flex items-center gap-3 hover:bg-muted/30 transition-colors"
+                                    >
+                                        <Clock className="size-3.5 text-muted-foreground/50 shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs text-foreground/80 truncate leading-tight">{task.title}</p>
+                                            <p className="text-[9px] text-muted-foreground/60 italic">Waiting in storage</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="p-3 bg-muted/10 border-t border-border/40">
+                                <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold uppercase tracking-widest h-8 text-primary/70" asChild>
+                                    <Link href="/admin-mode">
+                                        Focus on these <ArrowRight className="size-3 ml-1" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Community Energy */}
                     <Card className="shadow-lg border-primary/10 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden relative">
                         <Sparkles className="absolute -top-4 -right-4 size-24 text-primary/5 rotate-12" />
                         <CardHeader>

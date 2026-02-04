@@ -65,11 +65,11 @@ export function SessionTimer({
             {/* Timer Display */}
             <div
                 className={cn(
-                    'font-mono font-bold tabular-nums transition-colors duration-300',
+                    'font-mono font-bold tabular-nums transition-colors duration-1000',
                     sizeClasses[size],
-                    isComplete && 'text-green-500',
-                    isUrgent && !isComplete && 'text-red-500 animate-pulse',
-                    isWarning && !isComplete && 'text-yellow-500'
+                    isComplete && 'text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.3)]',
+                    isUrgent && !isComplete && 'text-primary/80',
+                    isWarning && !isComplete && 'text-primary/60'
                 )}
                 role="timer"
                 aria-live="polite"
@@ -79,14 +79,13 @@ export function SessionTimer({
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full max-w-xs h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="w-full max-w-xs h-1.5 bg-secondary/30 rounded-full overflow-hidden">
                 <div
                     className={cn(
                         'h-full transition-all duration-1000 ease-linear rounded-full',
-                        isComplete && 'bg-green-500',
-                        isUrgent && !isComplete && 'bg-red-500',
-                        isWarning && !isComplete && 'bg-yellow-500',
-                        !isUrgent && !isWarning && !isComplete && 'bg-primary'
+                        isComplete && 'bg-primary',
+                        (isUrgent || isWarning) && !isComplete && 'bg-primary/60',
+                        !isUrgent && !isWarning && !isComplete && 'bg-primary/40'
                     )}
                     style={{ width: `${progress}%` }}
                 />
@@ -94,13 +93,13 @@ export function SessionTimer({
 
             {/* Status Text */}
             {isComplete && (
-                <p className="text-sm text-green-500 font-medium animate-bounce">
-                    🎉 Session Complete!
+                <p className="text-sm text-primary font-light tracking-widest animate-pulse">
+                    儀式結束，辛苦了。
                 </p>
             )}
             {isUrgent && !isComplete && (
-                <p className="text-sm text-red-500 font-medium">
-                    ⏰ Final minute!
+                <p className="text-sm text-primary/60 font-light">
+                    即將進入收尾時刻...
                 </p>
             )}
         </div>

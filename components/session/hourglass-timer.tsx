@@ -3,43 +3,64 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { cn } from '@/lib/utils'
+
+export interface HourglassTimerRef {
+    addTime: (minutes: number) => void
+}
 
 interface HourglassTimerProps {
     durationMinutes: number
     onComplete?: () => void
+    paused?: boolean
     className?: string
 }
 
-export function HourglassTimer({
+export const HourglassTimer = forwardRef<HourglassTimerRef, HourglassTimerProps>(({
     durationMinutes,
     onComplete,
+    paused = false,
     className,
-}: HourglassTimerProps) {
-    const totalSeconds = durationMinutes * 60
-    const [remaining, setRemaining] = useState(totalSeconds)
+}, ref) => {
+    const [totalSeconds, setTotalSeconds] = useState(durationMinutes * 60)
+    const [remaining, setRemaining] = useState(durationMinutes * 60)
     const [isComplete, setIsComplete] = useState(false)
 
-    useEffect(() => {
-        if (remaining <= 0) {
-            // Already complete, no need to set state again or clear interval
-            return
+    // Expose addTime method via ref
+    useImperativeHandle(ref, () => ({
+        addTime: (minutes: number) => {
+            const extraSeconds = minutes * 60
+            setRemaining(prev => prev + extraSeconds)
+            setTotalSeconds(prev => prev + extraSeconds)
+            setIsComplete(false)
         }
+    }))
+
+    // Handle initial duration and external resets
+    useEffect(() => {
+        const newTotal = durationMinutes * 60
+        setTotalSeconds(newTotal)
+        setRemaining(newTotal)
+        setIsComplete(false)
+    }, [durationMinutes])
+
+    useEffect(() => {
+        if (remaining <= 0 || paused) return
 
         const interval = setInterval(() => {
             setRemaining((prev) => {
-                const next = prev <= 1 ? 0 : prev - 1
-                if (next === 0) {
+                if (prev <= 1) {
                     setIsComplete(true)
                     onComplete?.()
+                    return 0
                 }
-                return next
+                return prev - 1
             })
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [onComplete])
+    }, [onComplete, remaining > 0, paused]) // Watch paused state
 
     const progress = ((totalSeconds - remaining) / totalSeconds) * 100
     const minutes = Math.floor(remaining / 60)
@@ -71,7 +92,7 @@ export function HourglassTimer({
                 {/* Middle Neck */}
                 <div className="absolute top-[76px] left-1/2 -translate-x-1/2 w-3 h-6 bg-primary/5 rounded-sm">
                     {/* Falling sand particles */}
-                    {!isComplete && (
+                    {!isComplete && !paused && (
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-full overflow-hidden">
                             <div className="w-1 h-2 bg-primary/40 rounded-full animate-fall" />
                         </div>
@@ -107,14 +128,22 @@ export function HourglassTimer({
             </div>
 
             {/* Time Display (Subtle) */}
-            <div className="text-center">
-                <p className="text-2xl font-light tabular-nums text-muted-foreground">
-                    {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            <div className="text-center group">
+                <p className={cn(
+                    "text-2xl font-light tabular-nums transition-all duration-1000",
+                    isComplete ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]" : "text-muted-foreground"
+                )}>
+                    {isComplete ? "00:00" : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}
                 </p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
-                    {isComplete ? 'Complete!' : 'remaining'}
+                <p className={cn(
+                    "text-xs mt-1 transition-all duration-1000 uppercase tracking-widest",
+                    isComplete ? "text-primary font-medium animate-pulse" : "text-muted-foreground/60"
+                )}>
+                    {isComplete ? 'Ritual Complete' : 'Focusing'}
                 </p>
             </div>
         </div>
     )
-}
+})
+
+HourglassTimer.displayName = 'HourglassTimer'

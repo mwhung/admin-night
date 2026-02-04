@@ -1,9 +1,10 @@
+
 // Sessions API - List and Create Sessions
 // GET  /api/sessions - List upcoming/active sessions
 // POST /api/sessions - Create new session (admin only in future)
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 
@@ -16,8 +17,8 @@ const createSessionSchema = z.object({
 // GET /api/sessions - List sessions
 export async function GET(request: NextRequest) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
             status: s.status,
             participantCount: s._count.participants,
             isParticipating: s.participants.some(
-                (p) => p.userId === session.user!.id && !p.leftAt
+                (p) => p.userId === user.id && !p.leftAt
             ),
         }))
 
@@ -79,8 +80,8 @@ export async function GET(request: NextRequest) {
 // POST /api/sessions - Create a new session
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

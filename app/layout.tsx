@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   description: "A therapeutic space for your personal admin tasks. Focus together, finish together.",
 };
 
+import { Providers } from "@/components/providers";
+import { SiteHeader } from "@/components/navigation/site-header"
+import { FloatingNav } from "@/components/navigation/floating-nav"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,7 +26,15 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.variable} antialiased`}
       >
-        {children}
+        <Providers>
+          <div className="flex flex-col min-h-screen w-full bg-background font-sans">
+            <SiteHeader />
+            <main className="flex-1 w-full pb-24">
+              {children}
+            </main>
+            <FloatingNav />
+          </div>
+        </Providers>
       </body>
     </html>
   );

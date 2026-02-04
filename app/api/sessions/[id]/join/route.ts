@@ -2,7 +2,7 @@
 // POST /api/sessions/[id]/join - Join a work session
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
 
 interface RouteParams {
@@ -11,13 +11,13 @@ interface RouteParams {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const { id: sessionId } = await params
-        const userId = session.user.id
+        const userId = user.id
 
         // Get the work session
         const workSession = await prisma.workSession.findUnique({

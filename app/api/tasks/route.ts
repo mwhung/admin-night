@@ -1,5 +1,5 @@
 
-import { auth } from "@/auth"
+import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
@@ -16,19 +16,21 @@ const BulkCreateSchema = z.object({
 })
 
 export async function GET(req: Request) {
-    const session = await auth()
+    const user = await getCurrentUser()
     const { searchParams } = new URL(req.url)
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
     const state = searchParams.get('state') as TaskState | undefined
+    const includeLastSession = searchParams.get('includeLastSession') === 'true'
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
     try {
+        // 1. Fetch typical tasks
         const tasks = await prisma.task.findMany({
             where: {
-                userId: session.user.id,
+                userId: user.id,
                 ...(state && { state })
             },
             orderBy: {
@@ -37,16 +39,41 @@ export async function GET(req: Request) {
             ...(limit && { take: limit })
         })
 
-        return NextResponse.json(tasks)
+        // 2. Identify tasks from the last session if requested
+        let lastSessionTaskIds: string[] = []
+        if (includeLastSession) {
+            const lastParticipation = await prisma.workSessionParticipant.findFirst({
+                where: {
+                    userId: user.id,
+                    leftAt: { not: null }
+                },
+                orderBy: {
+                    joinedAt: 'desc'
+                }
+            })
+
+            if (lastParticipation?.tasksWorkedOn) {
+                lastSessionTaskIds = lastParticipation.tasksWorkedOn as string[]
+            }
+        }
+
+        // 3. Map with metadata
+        const tasksWithMetadata = tasks.map(task => ({
+            ...task,
+            isFromLastSession: lastSessionTaskIds.includes(task.id)
+        }))
+
+        return NextResponse.json(tasksWithMetadata)
     } catch (error) {
+        console.error("[TASKS_GET]", error)
         return new NextResponse("Internal Error", { status: 500 })
     }
 }
 
 export async function POST(req: Request) {
-    const session = await auth()
+    const user = await getCurrentUser()
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -54,7 +81,7 @@ export async function POST(req: Request) {
         const json = await req.json()
 
         // Handle single or bulk creation
-        const userId = session.user.id
+        const userId = user.id
 
         if (json.tasks && Array.isArray(json.tasks)) {
             const body = BulkCreateSchema.parse(json)

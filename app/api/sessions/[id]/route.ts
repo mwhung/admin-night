@@ -1,10 +1,11 @@
+
 // Single Session API
 // GET    /api/sessions/[id] - Get session details
 // PATCH  /api/sessions/[id] - Update session status
 // DELETE /api/sessions/[id] - Delete session
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 
@@ -21,8 +22,8 @@ interface RouteParams {
 // GET /api/sessions/[id]
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                     joinedAt: p.joinedAt.toISOString(),
                 })),
                 isParticipating: activeParticipants.some(
-                    (p) => p.userId === session.user!.id
+                    (p) => p.userId === user.id
                 ),
             },
         })
@@ -85,8 +86,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PATCH /api/sessions/[id]
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -157,8 +158,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/sessions/[id]
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

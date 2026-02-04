@@ -6,6 +6,26 @@
 >
 > Product Goal: Help users start and complete life admin tasks through shared time, light social presence, and AI‑assisted task clarification.
 
+## Operation Modes
+
+1. **Guest Mode (Anonymous)**
+   - No registration/login required.
+   - Access to active sessions.
+   - No task recommendations or personal history.
+   - Records are not persisted across devices or sessions.
+
+2. **Registered Mode (User)**
+   - Full features enabled.
+   - Personalized task recommendations and task drawer.
+   - Comprehensive history and insights.
+   - Data persists across all devices.
+
+## Account & Authentication UI (2026 Trends)
+
+- **Banner/Header**: Top-right corner provides "Sign In", "Sign Out", and "Register" options.
+- **Settings Integration**: Dedicated "Account" section for managing profile, security, and data transparency.
+- **Design Philosophy**: 2026 Therapeutic UI - minimalist, adaptive, and privacy-focused.
+
 ---
 
 ## 1. Product Overview
@@ -92,19 +112,16 @@ Users often:
 
 ## 6. Functional Requirements (MVP)
 
-### 6.1 Admin Inbox
+### 6.1 Admin Inbox (Deferred to Post‑MVP)
 
 **Description**  
 A low‑friction inbox to capture admin‑type tasks without clarification.
 
-**Requirements**
-- Add task via short text input
-- No mandatory fields
-- Tasks default to “Unclarified” state
-
-**Out of Scope (MVP)**
-- Tags
-- Priorities
+**Status: Descope for MVP (Confirmed)**
+- Functionality absorbed by **6.3 Admin Mode UI** during the "Setup" phase.
+- Users capture tasks directly when starting a session.
+- Captured tasks will be stored in a "Task Drawer" (conceptual) to be automatically surfaced in the next session.
+- Outside of active sessions, there is currently no separate entry point for task capture in MVP.
 
 ---
 
@@ -138,19 +155,14 @@ A distraction‑reduced interface activated during sessions.
 
 ---
 
-### 6.4 AI Task Clarification
+### 6.4 AI Task Clarification (Future Phase)
 
 **Description**  
 AI suggests a small set of concrete first steps for vague tasks.
 
-**Requirements**
-- Generate 3–5 suggested sub‑steps
-- Editable by user
-- User can skip AI entirely
-
-**Constraints**
-- AI output must be concise
-- No long explanations
+**Status: Deferred**
+- Will be implemented in the next major update.
+- Focus for MVP is on the core ritual and basic task management.
 
 ---
 
@@ -183,6 +195,28 @@ Example copy:
 
 ---
 
+### 6.7 User Preferences & Settings
+
+**Description**  
+Provide users with granular control over their therapeutic environment and data.
+
+**Requirements**
+- **Ritual & Session**:
+    - Default Session Duration (25/45/60 min)
+    - Ritual Reminders toggle
+- **Therapeutic Environment**:
+    - Focus Aesthetic (Light/Dark/Adaptive)
+    - Ambient Soundscapes toggle
+    - Completion Cues (auditory feedback) toggle
+- **Privacy & Presence**:
+    - Presence Visibility (Public/Anonymous/Private)
+    - History Insight Level (Basic/Detailed/Deep)
+- **Data Sovereignty**:
+    - Export Footprint: Download all personal data (tasks, preferences) in JSON format.
+    - Purge All History: Irreversibly delete all task history and session participation data.
+
+---
+
 ## 7. Non‑Functional Requirements
 
 ### 7.1 Performance
@@ -207,6 +241,7 @@ Example copy:
 - Deep third‑party integrations (Gmail, Slack)
 - Gamification (points, streaks, leaderboards)
 - Public or private chat
+- Ritual Reminders (Web/Mobile notifications)
 
 ---
 
@@ -237,9 +272,22 @@ Example copy:
 
 ## 11. Future Considerations (Post‑MVP)
 
-- iOS app for ritual reminders
-- Admin history & mental load insights
-- Light integrations (email forwarding, browser extension)
+### 11.1 Light Gamification (Relief-focused)
+- **Progress Particles**: Soft “light points” visual feedback upon step completion.
+- **Clear 3**: Minimum win condition (completing 3 steps in a session) to reduce pressure and provide a sense of "enough for today."
+- **Community Progress Pool**: Aggregate display of total steps/points completed by all users in the session (no personal data revealed).
+- **Weekly Insight Cards**: Personal and community summary cards showing ritual consistency and progress.
+
+### 11.2 Atmosphere & Tone
+- **Time-box Themes**: Switchable timer skins (e.g., Tea Timer, Hourglass) that adjust visuals, microcopy, and ambient soundscapes.
+- **Deadpan Admin Humor**: Occasional (10-20% frequency) factual, dry footnotes in history views that acknowledge the mundane nature of admin tasks (e.g., "Filed.", "Civilization continues.").
+
+### 11.3 Extended Features
+- iOS app for ritual reminders.
+- Admin history & mental load insights.
+- **Task Drawer:** Automatically carry over unfinished tasks from the previous session to the next "Setup" screen.
+- **AI Clarification:** Integrated agent to help break down overwhelming tasks during the setup phase.
+- Light integrations (email forwarding, browser extension).
 
 ---
 
