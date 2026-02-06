@@ -23,16 +23,36 @@ import {
     ArrowRight,
     Music2,
     Loader2,
-    Inbox as InboxIcon
+    Inbox as InboxIcon,
+    GripVertical
 } from "lucide-react"
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { cn } from "@/lib/utils"
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useSessionPresence } from '@/lib/realtime'
 import { useJoinSession, useLeaveSession, useSessions, useCreateSession } from '@/lib/hooks/useSessions'
 
 const DURATION_OPTIONS = [
-    { value: 25, label: '25 min', description: 'Pomodoro Sprint' },
-    { value: 45, label: '45 min', description: 'Deep Work' },
+    { value: 25, label: '25 min', description: 'Quick Session' },
+    { value: 45, label: '45 min', description: 'Extended Session' },
     { value: 'custom', label: 'Custom', description: 'Set your own' },
 ]
 
@@ -51,6 +71,60 @@ interface TaskFromApi {
     isFromLastSession?: boolean;
 }
 
+interface SortableTaskItemProps {
+    task: TaskItem;
+    onRemove: (id: string) => void;
+    isSessionTheme?: boolean;
+}
+
+function SortableTaskItem({ task, onRemove, isSessionTheme = false }: SortableTaskItemProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: task.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 0,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "flex items-center justify-between p-3 rounded-lg shadow-sm transition-all",
+                isSessionTheme ? "bg-primary/5 border border-primary/10" : "bg-primary/10 border border-primary/20",
+                isDragging ? "opacity-50 scale-102 shadow-lg border-primary/40 bg-primary/20 ring-1 ring-primary/20" : "opacity-100"
+            )}
+        >
+            <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-primary/10 rounded transition-colors text-muted-foreground/40 hover:text-primary/60"
+                >
+                    <GripVertical className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium truncate">{task.title}</span>
+            </div>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                onClick={() => onRemove(task.id)}
+            >
+                <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+        </div>
+    );
+}
+
 export default function AdminModePage() {
     const timerRef = useRef<HourglassTimerRef>(null)
     const [step, setStep] = useState<'setup' | 'session' | 'finished'>('setup')
@@ -61,6 +135,7 @@ export default function AdminModePage() {
     const [historyTasks, setHistoryTasks] = useState<TaskItem[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
+    const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
     // Get the actual duration value to use
     const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
@@ -83,6 +158,35 @@ export default function AdminModePage() {
         userName: user?.user_metadata?.name || user?.email || 'Anonymous',
         enabled: step === 'session'
     })
+
+    // Drag and Drop Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            setSelectedTasks((items) => {
+                const oldIndex = items.findIndex((t) => t.id === active.id);
+                const newIndex = items.findIndex((t) => t.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    };
 
     // Use actual count when in session, otherwise use simulated or global
     const displayCount = step === 'session' ? realLiveCount : liveCount
@@ -261,6 +365,8 @@ export default function AdminModePage() {
 
 
     const handleEndSession = async () => {
+        const seconds = timerRef.current?.getElapsedTime() || 0
+        setElapsedSeconds(seconds)
         setStep('finished')
 
         if (activeSessionId) {
@@ -308,8 +414,8 @@ export default function AdminModePage() {
                 >
                     <div className="p-6 flex-1 overflow-y-auto space-y-6">
                         <div>
-                            <h2 className="text-xl font-light mb-1">Modify Your Session</h2>
-                            <p className="text-xs text-muted-foreground uppercase tracking-widest">Adjust tasks while timer continues</p>
+                            <h2 className="text-xl font-light mb-1">Adjust Your Session</h2>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest">Add or remove items while the timer continues</p>
                         </div>
 
                         <div className="space-y-4">
@@ -329,14 +435,28 @@ export default function AdminModePage() {
                             {selectedTasks.length > 0 && (
                                 <div className="space-y-2">
                                     <p className="text-[10px] font-bold text-primary uppercase">Current Tasks</p>
-                                    {selectedTasks.map((task) => (
-                                        <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
-                                            <span className="text-sm">{task.title}</span>
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveTask(task.id)}>
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={handleDragEnd}
+                                        modifiers={[restrictToVerticalAxis]}
+                                    >
+                                        <div className="space-y-2">
+                                            <SortableContext
+                                                items={selectedTasks.map(t => t.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                {selectedTasks.map((task) => (
+                                                    <SortableTaskItem
+                                                        key={task.id}
+                                                        task={task}
+                                                        onRemove={handleRemoveTask}
+                                                        isSessionTheme={true}
+                                                    />
+                                                ))}
+                                            </SortableContext>
                                         </div>
-                                    ))}
+                                    </DndContext>
                                 </div>
                             )}
 
@@ -415,7 +535,7 @@ export default function AdminModePage() {
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20">
                                 <span className="h-2 w-2 bg-success rounded-full animate-pulse" />
                                 <span className="text-sm font-medium text-foreground/80">
-                                    {displayCount} {displayCount === 1 ? 'person' : 'people'} also in Admin Time
+                                    {displayCount} {displayCount === 1 ? 'person is' : 'people are'} releasing burdens
                                 </span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2">
@@ -495,11 +615,11 @@ export default function AdminModePage() {
                             </div>
                         </div>
                         <CardTitle className="text-3xl font-light tracking-tight text-foreground/90">
-                            Brain Space Released
+                            Released
                         </CardTitle>
-                        <CardDescription className="text-base mt-3 font-light leading-relaxed">
-                            You&apos;ve let go of what you were tightly holding onto.<br />
-                            This time of focus is a gift to yourself.
+                        <CardDescription className="text-base mt-4 font-light leading-relaxed">
+                            You&apos;ve let go of what you were tightly holding onto. <br />
+                            By closing these open loops, you&apos;ve given yourself the gift of a clearer mind.
                         </CardDescription>
                     </CardHeader>
 
@@ -507,12 +627,16 @@ export default function AdminModePage() {
                         {/* Status Summary */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-primary/5 rounded-2xl p-4 text-center border border-primary/10">
-                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Items Unloaded</p>
+                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Released</p>
                                 <p className="text-2xl font-light text-primary">{completedTasks.length}</p>
                             </div>
                             <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/50">
                                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Time Spent</p>
-                                <p className="text-2xl font-light text-foreground/70">{actualDuration}m</p>
+                                <p className="text-2xl font-light text-foreground/70">
+                                    {elapsedSeconds < 60
+                                        ? `${elapsedSeconds}s`
+                                        : `${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60 > 0 ? `${elapsedSeconds % 60}s` : ''}`.trim()}
+                                </p>
                             </div>
                         </div>
 
@@ -520,7 +644,7 @@ export default function AdminModePage() {
                         <div className="space-y-4">
                             {completedTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">Released & Resolved:</p>
+                                    <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">Released Items:</p>
                                     {completedTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -535,8 +659,8 @@ export default function AdminModePage() {
 
                             {pendingTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Stored in Task Drawer:</p>
-                                    <p className="text-[10px] text-muted-foreground/60 italic -mt-1 mb-2">They are safe here. Put them out of your mind and rest now.</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Still Holding:</p>
+                                    <p className="text-[10px] text-muted-foreground/60 italic -mt-1 mb-2">They are safely stored Open Loops. Focus on your rest for now.</p>
                                     {pendingTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -587,7 +711,7 @@ export default function AdminModePage() {
                         Admin Night
                     </h1>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                        Focus together in productive silence
+                        Releasing burdens and closing open loops together
                     </p>
                 </div>
 
@@ -608,7 +732,7 @@ export default function AdminModePage() {
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-base">
                             <Clock className="h-5 w-5" />
-                            1. Choose Focus Time
+                            1. Select Session Length
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -658,10 +782,10 @@ export default function AdminModePage() {
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-base">
                             <CheckCircle2 className="h-5 w-5" />
-                            2. What will you work on?
+                            2. Declutter Your Mind
                         </CardTitle>
                         <CardDescription>
-                            Enter a task or choose from suggestions
+                            Choose items to focus on during this session (Open Loops).
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -686,24 +810,30 @@ export default function AdminModePage() {
 
                         {/* Selected Tasks - Moved up for visibility */}
                         {selectedTasks.length > 0 && (
-                            <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <div className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
                                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Selected for this session</p>
-                                {selectedTasks.map((task) => (
-                                    <div
-                                        key={task.id}
-                                        className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 shadow-sm"
-                                    >
-                                        <span className="text-sm font-medium">{task.title}</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                            onClick={() => handleRemoveTask(task.id)}
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                    modifiers={[restrictToVerticalAxis]}
+                                >
+                                    <div className="space-y-2">
+                                        <SortableContext
+                                            items={selectedTasks.map(t => t.id)}
+                                            strategy={verticalListSortingStrategy}
                                         >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </Button>
+                                            {selectedTasks.map((task) => (
+                                                <SortableTaskItem
+                                                    key={task.id}
+                                                    task={task}
+                                                    onRemove={handleRemoveTask}
+                                                />
+                                            ))}
+                                        </SortableContext>
                                     </div>
-                                ))}
+                                </DndContext>
+                                <p className="text-[10px] text-muted-foreground italic text-center">Drag to reorder tasks</p>
                             </div>
                         )}
 

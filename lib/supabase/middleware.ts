@@ -7,9 +7,13 @@ export async function updateSession(request: NextRequest) {
         request,
     })
 
-    // E2E Testing Bypass
+    // E2E Testing Bypass: Strictly disabled in production for security
     let user = null
-    if (process.env.NEXT_PUBLIC_E2E_TESTING === 'true') {
+    if (
+        process.env.NEXT_PUBLIC_E2E_TESTING === 'true' &&
+        process.env.NODE_ENV !== 'production' &&
+        process.env.VERCEL_ENV !== 'production'
+    ) {
         const mockUserCookie = request.cookies.get('e2e-mock-user')?.value
         if (mockUserCookie) {
             try {

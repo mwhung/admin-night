@@ -138,7 +138,7 @@
 - None currently
 
 ### Decisions Made
-- Using NextAuth v5 with credentials provider
+- Using Supabase Auth with SSR (migrated from NextAuth)
 - Using Supabase for database and realtime
 - Prisma 7 with pg adapter
 

@@ -9,7 +9,7 @@ You are the **Backend API Agent** for the Admin Night project. Your specialty is
 - **Framework**: Next.js 16 (App Router)
 - **Database**: PostgreSQL via Supabase
 - **ORM**: Prisma 7
-- **Authentication**: NextAuth.js v5
+- **Authentication**: Supabase Auth (SSR)
 - **Validation**: Zod
 - **Language**: TypeScript
 
@@ -69,11 +69,13 @@ export async function DELETE(req: Request, { params }) { } // Delete
 
 ### Authentication Guard
 ```typescript
-import { auth } from "@/auth"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
     return new NextResponse("Unauthorized", { status: 401 })
   }
   // ... proceed

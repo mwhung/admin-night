@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Moon, BarChart3, Settings } from 'lucide-react'
+import { Moon, History, Settings, Orbit } from 'lucide-react'
 
 const navItems = [
     {
@@ -12,9 +12,14 @@ const navItems = [
         icon: Moon,
     },
     {
-        title: 'Insights',
-        href: '/dashboard',
-        icon: BarChart3,
+        title: 'History',
+        href: '/history',
+        icon: History,
+    },
+    {
+        title: 'Community',
+        href: '/community',
+        icon: Orbit,
     },
     {
         title: 'Settings',

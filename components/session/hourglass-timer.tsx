@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 
 export interface HourglassTimerRef {
     addTime: (minutes: number) => void
+    getElapsedTime: () => number
 }
 
 interface HourglassTimerProps {
@@ -34,8 +35,11 @@ export const HourglassTimer = forwardRef<HourglassTimerRef, HourglassTimerProps>
             setRemaining(prev => prev + extraSeconds)
             setTotalSeconds(prev => prev + extraSeconds)
             setIsComplete(false)
+        },
+        getElapsedTime: () => {
+            return totalSeconds - remaining
         }
-    }))
+    }), [totalSeconds, remaining])
 
     // Handle initial duration and external resets
     useEffect(() => {

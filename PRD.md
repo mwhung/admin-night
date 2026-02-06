@@ -207,10 +207,10 @@ Provide users with granular control over their therapeutic environment and data.
 - **Therapeutic Environment**:
     - Focus Aesthetic (Light/Dark/Adaptive)
     - Ambient Soundscapes toggle
-    - Completion Cues (auditory feedback) toggle
+    - Task Sounds (auditory feedback) toggle
 - **Privacy & Presence**:
     - Presence Visibility (Public/Anonymous/Private)
-    - History Insight Level (Basic/Detailed/Deep)
+    - History Data Detail (Basic/Detailed/Deep)
 - **Data Sovereignty**:
     - Export Footprint: Download all personal data (tasks, preferences) in JSON format.
     - Purge All History: Irreversibly delete all task history and session participation data.
@@ -280,7 +280,9 @@ Provide users with granular control over their therapeutic environment and data.
 
 ### 11.2 Atmosphere & Tone
 - **Time-box Themes**: Switchable timer skins (e.g., Tea Timer, Hourglass) that adjust visuals, microcopy, and ambient soundscapes.
-- **Deadpan Admin Humor**: Occasional (10-20% frequency) factual, dry footnotes in history views that acknowledge the mundane nature of admin tasks (e.g., "Filed.", "Civilization continues.").
+- **Visual-Writing Mode Linkage**: Link the visual theme to the microcopy's personality.
+    - **Light Mode (Healing Style)**: Accompanied by therapeutic, reassuring, and warm text.
+    - **Dark Mode (Dead Humor Style)**: Accompanied by deadpan, factual, and dryly humorous text (e.g., "Filed.", "Civilization continues.").
 
 ### 11.3 Extended Features
 - iOS app for ritual reminders.

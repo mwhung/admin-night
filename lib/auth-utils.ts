@@ -4,7 +4,12 @@ import { prisma } from '@/lib/db'
 
 export async function getCurrentUser() {
     // E2E Testing Bypass: Allows tests to simulate a logged-in user without real Supabase calls
-    if (process.env.NEXT_PUBLIC_E2E_TESTING === 'true') {
+    // CRITICAL: This is strictly disabled in production for security.
+    if (
+        process.env.NEXT_PUBLIC_E2E_TESTING === 'true' &&
+        process.env.NODE_ENV !== 'production' &&
+        process.env.VERCEL_ENV !== 'production'
+    ) {
         const { cookies } = await import('next/headers')
         const cookieStore = await cookies()
         const mockUserJson = cookieStore.get('e2e-mock-user')?.value

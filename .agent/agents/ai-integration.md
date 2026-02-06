@@ -88,11 +88,13 @@ Steps:
 ```typescript
 // app/api/ai/clarify/route.ts
 import { openai } from '@/lib/ai/openai'
-import { auth } from '@/auth'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session) return new Response('Unauthorized', { status: 401 })
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return new Response('Unauthorized', { status: 401 })
   
   const { taskTitle } = await req.json()
   

@@ -182,7 +182,7 @@ export default function SettingsPage() {
             {/* Header */}
             <div className="flex flex-col gap-2 mb-10">
                 <h2 className="text-4xl font-light tracking-tight text-foreground/90 font-serif">
-                    {user ? `Greetings, ${user.user_metadata?.name || 'Curator'}` : 'Sanctuary Settings'}
+                    {user ? `Greetings, ${user.user_metadata?.name || 'Friend'}` : 'App Preferences'}
                 </h2>
                 <p className="text-muted-foreground font-light tracking-wide text-lg">
                     Tailor your environment for quiet focus and relief.
@@ -322,7 +322,7 @@ export default function SettingsPage() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles className={cn("size-4", completionCues ? "text-primary" : "text-muted-foreground/60")} />
-                                                <span className={cn("text-sm font-medium", completionCues ? "text-foreground" : "text-muted-foreground/60")}>Completion Cues</span>
+                                                <span className={cn("text-sm font-medium", completionCues ? "text-foreground" : "text-muted-foreground/60")}>Task Sounds</span>
                                             </div>
                                             <button
                                                 disabled={savingSetting !== null}
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-0.5">
                                         <div className="flex items-center text-sm font-medium">
-                                            History Insight Level
+                                            History Data Detail
                                             <LoadingIndicator id="insight_level" />
                                         </div>
                                         <div className="text-xs text-muted-foreground">Depth of data preserved in your focus history.</div>
@@ -509,10 +509,9 @@ export default function SettingsPage() {
 
                 {/* Account / Identity Hub */}
                 <section>
-                    <Separator className="mb-10 opacity-50" />
                     <SectionHeader
                         icon={User}
-                        title="Identity Hub"
+                        title="Account"
                     />
                     {user ? (
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 overflow-hidden">
@@ -526,7 +525,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <CardTitle className="text-2xl font-light font-serif italic">{user.user_metadata?.name || 'Curator of Focus'}</CardTitle>
+                                        <CardTitle className="text-2xl font-light font-serif italic">{user.user_metadata?.name || 'Friend of Focus'}</CardTitle>
                                         <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold">Pro Member</div>
                                     </div>
                                     <CardDescription className="font-light opacity-60">{user.email}</CardDescription>

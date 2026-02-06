@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-    LayoutDashboard,
+    History,
     Inbox,
     Moon as MoonIcon,
     Settings,
     LogOut,
     Play,
-    Calendar
+    Orbit
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -21,9 +21,14 @@ const navItems = [
         icon: MoonIcon,
     },
     {
-        title: 'Insights',
-        href: '/dashboard',
-        icon: LayoutDashboard // Keep icon for now or change to BarChart
+        title: 'History',
+        href: '/history',
+        icon: History
+    },
+    {
+        title: 'Community',
+        href: '/community',
+        icon: Orbit
     },
     {
         title: 'Settings',

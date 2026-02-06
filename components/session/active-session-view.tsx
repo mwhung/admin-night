@@ -91,7 +91,7 @@ export function ActiveSessionView({
 
             {/* Task Counter */}
             <div className="flex flex-col items-center gap-4 mb-8">
-                <p className="text-sm text-muted-foreground">Tasks completed this session</p>
+                <p className="text-sm text-muted-foreground">Loops closed this session</p>
                 <div className="flex items-center gap-3">
                     <span className="text-4xl font-bold tabular-nums">{tasksCompleted}</span>
                     <Button
