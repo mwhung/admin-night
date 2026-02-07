@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Moon, Sparkles, LogIn, LogOut, UserPlus, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { ParticipantCount } from '@/components/session'
+import { ParticipantCount } from '@/components/features/session'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/useAuth'

@@ -15,12 +15,17 @@ import {
     Users,
     TrendingDown,
     Sparkles,
-    Wind
+    Wind,
+    Trophy,
+    Lock
 } from 'lucide-react'
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from "@/lib/utils"
+import { AchievementCard } from '@/components/features/achievements'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { GuestPlaceholder } from '@/components/features/auth/guest-placeholder'
 
 interface TaskRecord {
     id: string
@@ -50,32 +55,63 @@ interface HistoryData {
     allTasks: TaskRecord[]
 }
 
+interface UserAchievementRecord {
+    id: string
+    achievementId: string
+    unlockedAt: string
+    evidenceSnapshot: string
+    humorSnapshot: string
+}
+
 export default function HistoryPage() {
     const [data, setData] = useState<HistoryData | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [achievements, setAchievements] = useState<UserAchievementRecord[]>([])
+    const [initialLoading, setInitialLoading] = useState(true)
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await fetch('/api/user/history')
-                if (res.ok) {
-                    const historyData = await res.json()
+                const [historyRes, achievementsRes] = await Promise.all([
+                    fetch('/api/user/history'),
+                    fetch('/api/achievements')
+                ])
+
+                if (historyRes.ok) {
+                    const historyData = await historyRes.json()
                     setData(historyData)
                 }
+
+                if (achievementsRes.ok) {
+                    const achData = await achievementsRes.json()
+                    setAchievements(achData.achievements || [])
+                }
             } catch (err) {
-                console.error("Failed to fetch history data", err)
+                console.error("Failed to fetch data", err)
             } finally {
-                setLoading(false)
+                setInitialLoading(false)
             }
         }
         fetchData()
     }, [])
 
+
+    const { user, loading: authLoading } = useAuth()
+    const loading = initialLoading || authLoading
+
     if (loading) {
         return (
-            <div className="container mx-auto p-6 space-y-8 max-w-6xl flex items-center justify-center min-h-[60vh]">
+            <div className="container mx-auto p-6 space-y-8 max-w-4xl flex items-center justify-center min-h-[60vh]">
                 <Zap className="size-8 animate-pulse text-primary opacity-20" />
             </div>
+        )
+    }
+
+    if (!user) {
+        return (
+            <GuestPlaceholder
+                pageName="History"
+                description="History is available for registered members. Sign in to start tracing your footprints."
+            />
         )
     }
 
@@ -96,32 +132,32 @@ export default function HistoryPage() {
         return d
     })
 
-    const labelStyle = "text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60"
+    const labelStyle = "text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60"
 
     return (
-        <div className="container mx-auto p-4 md:p-8 space-y-12 max-w-7xl animate-in fade-in duration-1000">
+        <div className="container mx-auto p-8 space-y-16 max-w-4xl animate-in fade-in duration-1000">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-10">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="space-y-3"
+                    className="flex flex-col gap-2"
                 >
-                    <h1 className="text-4xl font-extralight tracking-tight text-foreground/90">
+                    <h1 className="text-4xl font-extralight tracking-tight text-foreground/90 font-sans">
                         Your History
                     </h1>
-                    <p className="text-muted-foreground text-lg font-light max-w-lg leading-relaxed">
+                    <p className="text-muted-foreground font-light tracking-wide text-lg">
                         Tracing the footprints of your released items and cleared burdens.
                     </p>
                 </motion.div>
                 <div className="flex gap-4">
-                    <Button variant="outline" asChild className="h-12 border-primary/10 hover:bg-primary/5 rounded-2xl px-8 transition-all hover:scale-105">
+                    <Button variant="outline" asChild className="h-14 border-primary/10 hover:bg-primary/5 rounded-full px-8 transition-all hover:scale-105 font-light">
                         <Link href="/community">
                             <Orbit className="size-4 mr-2" />
                             Community
                         </Link>
                     </Button>
-                    <Button asChild className="h-12 shadow-2xl shadow-primary/20 bg-primary hover:scale-105 transition-all rounded-2xl px-10">
+                    <Button asChild className="h-14 shadow-2xl shadow-primary/20 bg-primary hover:scale-105 transition-all rounded-full px-10 font-light">
                         <Link href="/admin-mode">
                             <Play className="size-4 mr-2 fill-current" />
                             Start Session
@@ -131,7 +167,7 @@ export default function HistoryPage() {
             </div>
 
             {/* Stats Overview - Emotional Relief */}
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-8 md:grid-cols-3">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     <Card className="bg-primary/5 border-primary/10 hover:bg-primary/10 transition-all shadow-sm overflow-hidden relative group aspect-square md:aspect-auto">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:rotate-12 transition-transform">
@@ -143,7 +179,7 @@ export default function HistoryPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <div className="text-5xl font-extralight tracking-tight">{stats.totalResolved}</div>
+                            <div className="text-4xl font-extralight tracking-tight">{stats.totalResolved}</div>
                             <p className="text-[11px] text-muted-foreground mt-6 leading-relaxed opacity-70">Closed loops no longer occupying your mind.</p>
                         </CardContent>
                     </Card>
@@ -160,7 +196,7 @@ export default function HistoryPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <div className="text-5xl font-extralight tracking-tight flex items-baseline gap-1">
+                            <div className="text-4xl font-extralight tracking-tight flex items-baseline gap-1">
                                 {Math.floor(stats.totalFocusMinutes / 60)}<span className="text-lg opacity-40">h</span> {stats.totalFocusMinutes % 60}<span className="text-lg opacity-40">m</span>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-6 leading-relaxed opacity-70">Total footprints in the ritual of maintenance.</p>
@@ -179,7 +215,7 @@ export default function HistoryPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <div className="text-5xl font-extralight tracking-tight">
+                            <div className="text-4xl font-extralight tracking-tight">
                                 {allTasks.length > 0
                                     ? Math.round((stats.totalResolved / allTasks.length) * 100)
                                     : 100}<span className="text-lg opacity-40">%</span>
@@ -190,9 +226,60 @@ export default function HistoryPage() {
                 </motion.div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-12 lg:grid-cols-4">
+            {/* Achievement Collection */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+            >
+                <Card className="shadow-lg border-amber-200/30 dark:border-amber-700/30 overflow-hidden bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-900/10 dark:to-orange-900/10">
+                    <CardHeader className="pb-4 border-b border-amber-200/30 dark:border-amber-700/30">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg">
+                                    <Trophy className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                    <CardTitle className={labelStyle}>Hidden Achievements</CardTitle>
+                                    <CardDescription className="text-xs mt-0.5">
+                                        {achievements.length} unlocked
+                                    </CardDescription>
+                                </div>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        {achievements.length === 0 ? (
+                            <div className="text-center py-8 space-y-3">
+                                <div className="flex justify-center gap-1">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={i} className="size-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
+                                    ))}
+                                </div>
+                                <p className="text-sm text-muted-foreground italic">
+                                    &quot;Hidden achievements reveal themselves when the time is right.&quot;
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {achievements.map((ach) => (
+                                    <AchievementCard
+                                        key={ach.id}
+                                        achievementId={ach.achievementId}
+                                        unlockedAt={ach.unlockedAt}
+                                        humorSnapshot={ach.humorSnapshot}
+                                        evidenceSnapshot={ach.evidenceSnapshot}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            <div className="grid gap-8 lg:grid-cols-3">
                 {/* Left Side: Session History & Calendar */}
-                <div className="md:col-span-8 lg:col-span-3 space-y-6">
+                <div className="lg:col-span-2 space-y-8">
                     {/* Ritual Calendar */}
                     <Card className="shadow-lg border-border/40 overflow-hidden">
                         <CardHeader className="bg-primary/[0.02] border-b border-border/40 pb-4">
@@ -233,9 +320,9 @@ export default function HistoryPage() {
 
                     {/* Session-based History */}
                     <div className="space-y-6">
-                        <div className="flex items-center gap-4 px-1">
-                            <p className={labelStyle}>Session Footprints</p>
-                            <div className="h-px bg-border/40 flex-1" />
+                        <div className="flex items-center gap-4 px-1 pb-2">
+                            <p className={cn(labelStyle, "text-primary/70")}>Session Footprints</p>
+                            <div className="h-[2px] bg-gradient-to-r from-primary/20 via-primary/5 to-transparent flex-1 rounded-full" />
                         </div>
 
                         <div className="space-y-4">
@@ -259,13 +346,13 @@ export default function HistoryPage() {
                                         <div className="flex items-stretch">
                                             {/* Date Sidebar */}
                                             <div className="w-24 bg-primary/[0.03] border-r border-border/40 flex flex-col items-center justify-center p-3 text-center">
-                                                <span className="text-[10px] font-bold uppercase tracking-tighter text-muted-foreground opacity-60">
+                                                <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground opacity-60">
                                                     {new Date(group.date).toLocaleDateString('en-US', { month: 'short' })}
                                                 </span>
-                                                <span className="text-2xl font-black tracking-tighter text-primary/80 leading-none my-1">
+                                                <span className="text-2xl font-light tracking-tight text-primary/80 leading-none my-1">
                                                     {new Date(group.date).getDate()}
                                                 </span>
-                                                <span className="text-[9px] font-medium text-muted-foreground opacity-60">
+                                                <span className="text-[9px] font-light text-muted-foreground opacity-60">
                                                     {new Date(group.date).getFullYear()}
                                                 </span>
                                             </div>
@@ -281,7 +368,7 @@ export default function HistoryPage() {
                                                             {group.participantCount || Math.floor(Math.random() * 5) + 1} OTHERS PRESENT
                                                         </div>
                                                     </div>
-                                                    <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground opacity-40">
+                                                    <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground opacity-40">
                                                         Session Record
                                                     </span>
                                                 </div>
@@ -320,7 +407,7 @@ export default function HistoryPage() {
                 </div>
 
                 {/* Right Side: Task Drawer (Still Holding) */}
-                <div className="md:col-span-4 lg:col-span-1 space-y-6">
+                <div className="space-y-8">
                     <Card className="shadow-lg border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden border-dashed">
                         <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
                             <CardTitle className={labelStyle}>

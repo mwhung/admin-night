@@ -8,12 +8,17 @@ import { Play, Pause, RotateCcw } from 'lucide-react'
 interface SessionTimerProps {
     initialMinutes?: number
     onComplete?: () => void
+    onPause?: () => void
+    onStart?: () => void
     className?: string
 }
+
 
 export function SessionTimer({
     initialMinutes = 25,
     onComplete,
+    onPause,
+    onStart,
     className
 }: SessionTimerProps) {
     const [totalSeconds, setTotalSeconds] = useState(initialMinutes * 60)
@@ -47,8 +52,17 @@ export function SessionTimer({
     }, [isRunning, totalSeconds, onComplete])
 
     const toggleTimer = useCallback(() => {
-        setIsRunning((prev) => !prev)
-    }, [])
+        setIsRunning((prev) => {
+            const newState = !prev
+            if (newState) {
+                onStart?.()
+            } else {
+                onPause?.()
+            }
+            return newState
+        })
+    }, [onPause, onStart])
+
 
     const resetTimer = useCallback(() => {
         setIsRunning(false)

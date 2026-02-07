@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "@/components/providers";
-import { SiteHeader } from "@/components/navigation/site-header"
-import { FloatingNav } from "@/components/navigation/floating-nav"
+import { SiteHeader } from "@/components/layout/navigation/site-header"
+import { FloatingNav } from "@/components/layout/navigation/floating-nav"
 
 export default function RootLayout({
   children,

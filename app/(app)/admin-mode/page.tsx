@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { HourglassTimer, HourglassTimerRef } from "@/components/session/hourglass-timer"
-import { TaskChecklist, TaskItem } from "@/components/session/task-checklist"
-import { ParticipantCount } from "@/components/session"
-import { PLAYLISTS } from "@/components/session/youtube-player"
+import { HourglassTimer, HourglassTimerRef } from "@/components/features/session/hourglass-timer"
+import { TaskChecklist, TaskItem } from "@/components/features/session/task-checklist"
+import { ParticipantCount } from "@/components/features/session"
+import { PLAYLISTS } from "@/components/features/session/youtube-player"
 import {
     Plus,
     CheckCircle2,
@@ -24,8 +24,12 @@ import {
     Music2,
     Loader2,
     Inbox as InboxIcon,
-    GripVertical
+    GripVertical,
+    Trophy
 } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
+import { IntentWall } from "@/components/features/session/intent-wall"
+import { ReactionOverlay } from "@/components/features/session/reaction-overlay"
 import {
     DndContext,
     closestCenter,
@@ -49,6 +53,8 @@ import { cn } from "@/lib/utils"
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useSessionPresence } from '@/lib/realtime'
 import { useJoinSession, useLeaveSession, useSessions, useCreateSession } from '@/lib/hooks/useSessions'
+import { useAchievementTracker } from '@/lib/hooks/use-achievement-tracker'
+import { AchievementToast, SessionSummary } from '@/components/features/achievements'
 
 const DURATION_OPTIONS = [
     { value: 25, label: '25 min', description: 'Quick Session' },
@@ -128,6 +134,7 @@ function SortableTaskItem({ task, onRemove, isSessionTheme = false }: SortableTa
 export default function AdminModePage() {
     const timerRef = useRef<HourglassTimerRef>(null)
     const [step, setStep] = useState<'setup' | 'session' | 'finished'>('setup')
+    const [showIntentWall, setShowIntentWall] = useState(true)
     const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false)
     const [selectedDuration, setSelectedDuration] = useState<number | 'custom'>(25)
     const [customDuration, setCustomDuration] = useState(30)
@@ -136,6 +143,9 @@ export default function AdminModePage() {
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
     const [elapsedSeconds, setElapsedSeconds] = useState(0)
+    const [sessionSummary, setSessionSummary] = useState<string | null>(null)
+    const [newAchievementsCount, setNewAchievementsCount] = useState(0)
+    const [loadingSummary, setLoadingSummary] = useState(false)
 
     // Get the actual duration value to use
     const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
@@ -158,6 +168,38 @@ export default function AdminModePage() {
         userName: user?.user_metadata?.name || user?.email || 'Anonymous',
         enabled: step === 'session'
     })
+
+    // Achievement Tracking
+    const {
+        sessionState,
+        pendingToast,
+        trackPause,
+        trackTaskComplete,
+        initSession,
+        dismissToast,
+        checkInSessionAchievements,
+    } = useAchievementTracker()
+
+    // Initialize session when entering session step
+    useEffect(() => {
+        if (step === 'session' && activeSessionId) {
+            initSession(activeSessionId)
+        }
+    }, [step, activeSessionId, initSession])
+
+    // Check achievements when tasks change
+    useEffect(() => {
+        if (step === 'session') {
+            checkInSessionAchievements()
+        }
+    }, [sessionState.tasksCompletedCount, checkInSessionAchievements, step])
+
+    // Track pauses (when drawer opens) for achievements
+    useEffect(() => {
+        if (step === 'session' && isTaskDrawerOpen) {
+            trackPause()
+        }
+    }, [isTaskDrawerOpen, step, trackPause])
 
     // Drag and Drop Sensors
     const sensors = useSensors(
@@ -334,6 +376,7 @@ export default function AdminModePage() {
         }
 
         setStep('session')
+        setShowIntentWall(false) // Hide wall when session starts
     }
 
     const handleToggleTask = async (taskId: string) => {
@@ -350,6 +393,11 @@ export default function AdminModePage() {
         // API update if it's a real DB task (all tasks in session should be now)
         if (!taskId.startsWith('custom-') && !taskId.startsWith('copy-')) {
             try {
+                // If checking as completed, track for achievements
+                if (newCompleted) {
+                    trackTaskComplete()
+                }
+
                 await fetch(`/api/tasks/${taskId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -368,16 +416,40 @@ export default function AdminModePage() {
         const seconds = timerRef.current?.getElapsedTime() || 0
         setElapsedSeconds(seconds)
         setStep('finished')
+        setLoadingSummary(true)
 
         if (activeSessionId) {
             try {
+                // Leave session first
                 await leaveSessionMutation.mutateAsync({
                     sessionId: activeSessionId,
                     tasksWorkedOn: selectedTasks.map(t => t.id)
                 })
+
+                // Call session complete API for achievements and summary
+                const completedCount = selectedTasks.filter(t => t.completed).length
+                const res = await fetch(`/api/sessions/${activeSessionId}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        durationMinutes: Math.floor(seconds / 60),
+                        tasksCompleted: completedCount,
+                        pauseCount: 0, // TODO: track actual pauses
+                    })
+                })
+
+                if (res.ok) {
+                    const data = await res.json()
+                    setSessionSummary(data.summary || null)
+                    setNewAchievementsCount(data.newAchievements?.length || 0)
+                }
             } catch (err) {
-                console.error('Failed to leave session', err)
+                console.error('Failed to complete session', err)
+            } finally {
+                setLoadingSummary(false)
             }
+        } else {
+            setLoadingSummary(false)
         }
     }
 
@@ -402,6 +474,40 @@ export default function AdminModePage() {
     if (step === 'session') {
         return (
             <div className="min-h-screen relative overflow-hidden">
+                {/* Intent Wall Overlay (Active before session starts fully, or during setup) */}
+                <AnimatePresence>
+                    {showIntentWall && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-4"
+                        >
+                            <div className="w-full max-w-4xl relative">
+                                <IntentWall onSelect={(cat) => console.log('Selected intent:', cat)} />
+                                <div className="text-center mt-12">
+                                    <Button
+                                        onClick={() => setShowIntentWall(false)}
+                                        size="lg"
+                                        className="h-14 px-8 rounded-full text-lg font-light shadow-xl shadow-primary/20 hover:scale-105 transition-transform"
+                                    >
+                                        I'm ready to start
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Reaction Overlay (Active during session) */}
+                {!showIntentWall && <ReactionOverlay />}
+
+                {/* Achievement Toast */}
+                <AchievementToast
+                    achievement={pendingToast}
+                    onDismiss={dismissToast}
+                />
+
                 {/* Therapeutic Background */}
                 <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background via-background-warm to-background" />
 
@@ -624,6 +730,13 @@ export default function AdminModePage() {
                     </CardHeader>
 
                     <CardContent className="space-y-8 pt-6">
+                        {/* Session Summary (LLM + Achievements) */}
+                        <SessionSummary
+                            llmSummary={sessionSummary || ''}
+                            newAchievementCount={newAchievementsCount}
+                            isLoading={loadingSummary}
+                        />
+
                         {/* Status Summary */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-primary/5 rounded-2xl p-4 text-center border border-primary/10">
@@ -727,62 +840,12 @@ export default function AdminModePage() {
                     </CardContent>
                 </Card>
 
-                {/* Step 1: Duration Selection */}
-                <Card className="mb-6">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Clock className="h-5 w-5" />
-                            1. Select Session Length
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-3 gap-3">
-                            {DURATION_OPTIONS.map((option) => (
-                                <button
-                                    key={String(option.value)}
-                                    onClick={() => setSelectedDuration(option.value as number | 'custom')}
-                                    className={cn(
-                                        "relative p-4 rounded-xl border-2 transition-all text-left",
-                                        selectedDuration === option.value
-                                            ? "border-primary bg-primary/5 shadow-md"
-                                            : "border-muted hover:border-muted-foreground/30"
-                                    )}
-                                >
-                                    {selectedDuration === option.value && (
-                                        <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />
-                                    )}
-                                    <span className="text-2xl font-bold block">{option.label}</span>
-                                    <span className="text-xs text-muted-foreground">{option.description}</span>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Custom Duration Input */}
-                        {selectedDuration === 'custom' && (
-                            <div className="mt-4 flex items-center gap-3">
-                                <Clock className="h-5 w-5 text-muted-foreground" />
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        type="number"
-                                        min={5}
-                                        max={180}
-                                        value={customDuration}
-                                        onChange={(e) => setCustomDuration(Math.max(5, Math.min(180, parseInt(e.target.value) || 5)))}
-                                        className="w-20 text-center text-lg font-bold"
-                                    />
-                                    <span className="text-muted-foreground">minutes</span>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Step 2: Task Selection */}
+                {/* Step 1: Task Selection */}
                 <Card className="mb-6">
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-base">
                             <CheckCircle2 className="h-5 w-5" />
-                            2. Declutter Your Mind
+                            1. Declutter Your Mind
                         </CardTitle>
                         <CardDescription>
                             Choose items to focus on during this session (Open Loops).
@@ -898,6 +961,56 @@ export default function AdminModePage() {
                                 </div>
                             )}
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Step 2: Duration Selection */}
+                <Card className="mb-6">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Clock className="h-5 w-5" />
+                            2. Select Session Length
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-3 gap-3">
+                            {DURATION_OPTIONS.map((option) => (
+                                <button
+                                    key={String(option.value)}
+                                    onClick={() => setSelectedDuration(option.value as number | 'custom')}
+                                    className={cn(
+                                        "relative p-4 rounded-xl border-2 transition-all text-left",
+                                        selectedDuration === option.value
+                                            ? "border-primary bg-primary/5 shadow-md"
+                                            : "border-muted hover:border-muted-foreground/30"
+                                    )}
+                                >
+                                    {selectedDuration === option.value && (
+                                        <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />
+                                    )}
+                                    <span className="text-2xl font-bold block">{option.label}</span>
+                                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Custom Duration Input */}
+                        {selectedDuration === 'custom' && (
+                            <div className="mt-4 flex items-center gap-3">
+                                <Clock className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        min={5}
+                                        max={180}
+                                        value={customDuration}
+                                        onChange={(e) => setCustomDuration(Math.max(5, Math.min(180, parseInt(e.target.value) || 5)))}
+                                        className="w-20 text-center text-lg font-bold"
+                                    />
+                                    <span className="text-muted-foreground">minutes</span>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

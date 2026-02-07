@@ -32,30 +32,31 @@ model User {
   password      String?
   accounts      Account[]
   sessions      Session[]
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  preferences   Json?    // ambient sound settings, etc.
-  
-  tasks                Task[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  preferences Json? // ambient sound settings, etc.
+
+  tasks                   Task[]
   workSessionParticipants WorkSessionParticipant[]
-  
+  achievements            UserAchievement[]
+
   @@map("users")
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -87,28 +88,28 @@ model Task {
   userId        String
   title         String
   state         TaskState @default(UNCLARIFIED)
-  aiSuggestions Json?     // array of suggested steps from AI
+  aiSuggestions Json? // array of suggested steps from AI
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   resolvedAt    DateTime?
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId])
   @@index([state])
   @@map("tasks")
 }
 
 model WorkSession {
-  id             String        @id @default(cuid())
-  scheduledStart DateTime
-  scheduledEnd   DateTime
+  id              String        @id @default(cuid())
+  scheduledStart  DateTime
+  scheduledEnd    DateTime
   durationMinutes Int
-  status         SessionStatus @default(SCHEDULED)
-  createdAt      DateTime      @default(now())
-  
+  status          SessionStatus @default(SCHEDULED)
+  createdAt       DateTime      @default(now())
+
   participants WorkSessionParticipant[]
-  
+
   @@index([scheduledStart])
   @@index([status])
   @@map("work_sessions")
@@ -120,13 +121,95 @@ model WorkSessionParticipant {
   userId        String
   joinedAt      DateTime  @default(now())
   leftAt        DateTime?
-  tasksWorkedOn Json?     // array of task IDs for metrics
-  
+  tasksWorkedOn Json? // array of task IDs for metrics
+
   session WorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  achievementSummary String? // LLM generated summary of achievements for this session
+
   @@unique([sessionId, userId])
   @@index([sessionId])
   @@index([userId])
   @@map("work_session_participants")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String // Matches ID in code definitions
+  unlockedAt    DateTime @default(now())
+  sessionId     String? // Optional link to the session where it was unlocked
+
+  unlockedSource String // "in_session" | "post_session"
+
+  evidenceSnapshot String // e.g. "No pauses for 60 mins"
+  humorSnapshot    String // The specific line selected from pool
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@map("user_achievements")
+}
+
+// --- Shadow Community Models ---
+
+model CommunityIntent {
+  id          String   @id @default(cuid())
+  category    String   // "reimbursement", "email", "bills", etc.
+  difficulty  String?  // "light", "medium", "heavy"
+  createdAt   DateTime @default(now())
+  
+  // No user relation to keep it truly anonymous/ephemeral
+  
+  @@index([createdAt])
+  @@map("community_intents")
+}
+
+model CommunityReaction {
+  id          String   @id @default(cuid())
+  type        String   // "clap", "fire", "leaf"
+  count       Int      @default(0)
+  windowType  String   // "daily", "session_aggregate"
+  windowStart DateTime // To aggregate by day/session
+  updatedAt   DateTime @updatedAt
+
+  @@unique([type, windowType, windowStart])
+  @@map("community_reactions")
+}
+
+model CommunityMilestone {
+  id              String   @id @default(cuid())
+  windowType      String   // "daily", "weekly", "monthly"
+  windowStart     DateTime // The start date of the window (e.g., 2026-02-07 00:00:00)
+  
+  totalSteps      Int      @default(0)
+  totalFirstSteps Int      @default(0)
+  activeUsers     Int      @default(0) // Approximate unique participants
+  
+  topCategories   Json?    // Stores e.g. ["reimbursement", "email"]
+  
+  updatedAt       DateTime @updatedAt
+
+  @@unique([windowType, windowStart])
+  @@map("community_milestones")
+}
+
+model CommunityUnlock {
+  id          String   @id @default(cuid())
+  type        String   // "background", "sound", "fact"
+  name        String
+  description String?
+  assetUrl    String?
+  
+  threshold   Int      // Steps needed to unlock
+  isUnlocked  Boolean  @default(false)
+  unlockedAt  DateTime?
+  
+  windowType  String   // "weekly", "monthly"
+  windowStart DateTime // Which week/month this unlock belongs to
+
+  @@index([windowType, windowStart])
+  @@map("community_unlocks")
 }

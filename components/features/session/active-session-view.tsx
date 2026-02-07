@@ -3,14 +3,16 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { SessionTimer } from '@/components/session-timer'
+import { SessionTimer } from '@/components/features/session/timer-logic'
 import { ParticipantCount } from './participant-count'
-import { useSessionPresence, Participant } from '@/lib/realtime'
+import { useSessionPresence } from '@/lib/realtime'
 import { LogOut, Volume2, VolumeX, CheckCircle2 } from 'lucide-react'
+import { useAchievementTracker } from '@/lib/hooks/use-achievement-tracker'
+import { AchievementToast } from '@/components/features/achievements'
 
 interface ActiveSessionViewProps {
     sessionId: string
@@ -19,8 +21,15 @@ interface ActiveSessionViewProps {
     durationMinutes: number
     startTime: Date
     onLeave: () => void
-    onComplete?: () => void
+    onComplete?: (stats: SessionStats) => void
     className?: string
+}
+
+export interface SessionStats {
+    actualDurationSeconds: number
+    totalPauseSeconds: number
+    pauseCount: number
+    tasksCompletedCount: number
 }
 
 export function ActiveSessionView({
@@ -34,7 +43,7 @@ export function ActiveSessionView({
     className,
 }: ActiveSessionViewProps) {
     const [isMuted, setIsMuted] = useState(true)
-    const [tasksCompleted, setTasksCompleted] = useState(0)
+    const [sessionStartTime] = useState(new Date())
 
     const { participants, participantCount, isConnected } = useSessionPresence({
         sessionId,
@@ -42,13 +51,45 @@ export function ActiveSessionView({
         userName,
     })
 
+    // Achievement tracking
+    const {
+        sessionState,
+        pendingToast,
+        trackPause,
+        trackTaskComplete,
+        initSession,
+        dismissToast,
+        checkInSessionAchievements,
+    } = useAchievementTracker()
+
+    // Initialize session tracking
+    useEffect(() => {
+        initSession(sessionId)
+    }, [sessionId, initSession])
+
+    // Check achievements when tasks are completed
+    useEffect(() => {
+        checkInSessionAchievements()
+    }, [sessionState.tasksCompletedCount, checkInSessionAchievements])
+
     const handleComplete = useCallback(() => {
-        onComplete?.()
-    }, [onComplete])
+        const stats: SessionStats = {
+            actualDurationSeconds: Math.floor((Date.now() - sessionStartTime.getTime()) / 1000),
+            totalPauseSeconds: 0, // TODO: track actual pause time
+            pauseCount: sessionState.pauseCount,
+            tasksCompletedCount: sessionState.tasksCompletedCount,
+        }
+        onComplete?.(stats)
+    }, [onComplete, sessionStartTime, sessionState])
+
+    const handlePause = useCallback(() => {
+        trackPause()
+    }, [trackPause])
 
     const incrementTasks = useCallback(() => {
-        setTasksCompleted((prev) => prev + 1)
-    }, [])
+        trackTaskComplete()
+    }, [trackTaskComplete])
+
 
     return (
         <div
@@ -85,6 +126,7 @@ export function ActiveSessionView({
                     <SessionTimer
                         initialMinutes={durationMinutes}
                         onComplete={handleComplete}
+                        onPause={handlePause}
                     />
                 </CardContent>
             </Card>
@@ -93,7 +135,7 @@ export function ActiveSessionView({
             <div className="flex flex-col items-center gap-4 mb-8">
                 <p className="text-sm text-muted-foreground">Loops closed this session</p>
                 <div className="flex items-center gap-3">
-                    <span className="text-4xl font-bold tabular-nums">{tasksCompleted}</span>
+                    <span className="text-4xl font-bold tabular-nums">{sessionState.tasksCompletedCount}</span>
                     <Button
                         variant="outline"
                         size="sm"
@@ -144,6 +186,12 @@ export function ActiveSessionView({
                     </div>
                 </div>
             )}
+
+            {/* Achievement Toast */}
+            <AchievementToast
+                achievement={pendingToast}
+                onDismiss={dismissToast}
+            />
         </div>
     )
 }

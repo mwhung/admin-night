@@ -27,6 +27,7 @@ import {
 import Link from "next/link"
 import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
+import { GuestPlaceholder } from "@/components/features/auth/guest-placeholder"
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth()
@@ -163,11 +164,20 @@ export default function SettingsPage() {
         )
     }
 
+    if (!user) {
+        return (
+            <GuestPlaceholder
+                pageName="Settings"
+                description="Settings is available for registered members. Sign in to start tracing your footprints."
+            />
+        )
+    }
+
     const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any, title: string, subtitle?: string }) => (
         <div className="flex flex-col gap-1 mb-6">
             <div className="flex items-center gap-2 text-primary/80">
                 <Icon className="size-5" />
-                <h3 className="text-xl font-medium tracking-tight font-serif italic">{title}</h3>
+                <h3 className="text-xl font-light tracking-tight">{title}</h3>
             </div>
             {subtitle && <p className="text-sm text-muted-foreground font-light">{subtitle}</p>}
         </div>
@@ -181,7 +191,7 @@ export default function SettingsPage() {
         <div className="container mx-auto p-8 max-w-4xl min-h-screen">
             {/* Header */}
             <div className="flex flex-col gap-2 mb-10">
-                <h2 className="text-4xl font-light tracking-tight text-foreground/90 font-serif">
+                <h2 className="text-3xl font-extralight tracking-tight text-foreground/90">
                     {user ? `Greetings, ${user.user_metadata?.name || 'Friend'}` : 'App Preferences'}
                 </h2>
                 <p className="text-muted-foreground font-light tracking-wide text-lg">
@@ -312,7 +322,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground font-light italic">Background textures to mask distraction.</p>
+                                        <p className="text-[10px] text-muted-foreground font-light italic uppercase tracking-widest">Background textures to mask distraction.</p>
                                     </div>
 
                                     <div className={cn(
@@ -343,7 +353,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground font-light italic">Auditory relief when steps are finished.</p>
+                                        <p className="text-[10px] text-muted-foreground font-light italic uppercase tracking-widest">Auditory relief when steps are finished.</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -485,7 +495,7 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <h4 className="text-xl font-light font-serif italic tracking-tight">Focus Intelligence</h4>
+                                    <h4 className="text-xl font-light tracking-tight">Focus Intelligence</h4>
                                     <p className="text-sm text-muted-foreground font-light tracking-wide max-w-sm">
                                         We are developing AI integrations to help you break down vague, overwhelming admin tasks into concrete first steps.
                                     </p>
@@ -513,7 +523,7 @@ export default function SettingsPage() {
                         icon={User}
                         title="Account"
                     />
-                    {user ? (
+                    {user && (
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 overflow-hidden">
                             <CardHeader className="flex flex-row items-center gap-6 p-8">
                                 <div className="size-20 rounded-full bg-background flex items-center justify-center border border-primary/20 shadow-inner overflow-hidden">
@@ -525,8 +535,8 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <CardTitle className="text-2xl font-light font-serif italic">{user.user_metadata?.name || 'Friend of Focus'}</CardTitle>
-                                        <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold">Pro Member</div>
+                                        <CardTitle className="text-2xl font-light">{user.user_metadata?.name || 'Friend of Focus'}</CardTitle>
+                                        <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Pro Member</div>
                                     </div>
                                     <CardDescription className="font-light opacity-60">{user.email}</CardDescription>
                                 </div>
@@ -534,31 +544,6 @@ export default function SettingsPage() {
                                     Manage Profile
                                 </Button>
                             </CardHeader>
-                        </Card>
-                    ) : (
-                        <Card className="border-none bg-gradient-to-br from-primary/[0.05] to-primary/[0.01] shadow-xl shadow-primary/5 overflow-hidden relative p-8">
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                                <div className="space-y-4 max-w-md">
-                                    <div className="flex items-center gap-2">
-                                        <Lock className="size-5 text-amber-600/60" />
-                                        <h4 className="text-xl font-light">Join the Therapeutic Network</h4>
-                                    </div>
-                                    <p className="text-muted-foreground font-light leading-relaxed">
-                                        Guest sessions are ephemeral. Create an account to preserve your victories, access deep insights, and synchronize your sanctuary across devices.
-                                    </p>
-                                    <div className="flex gap-4 pt-2">
-                                        <Button asChild className="rounded-full px-8 bg-primary shadow-lg shadow-primary/20">
-                                            <Link href="/register">Sign Up</Link>
-                                        </Button>
-                                        <Button variant="ghost" asChild className="rounded-full px-8">
-                                            <Link href="/login">Sign In</Link>
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="hidden md:block">
-                                    <Sparkles className="size-32 text-primary opacity-[0.05]" />
-                                </div>
-                            </div>
                         </Card>
                     )}
                 </section>

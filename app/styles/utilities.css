@@ -1,0 +1,39 @@
+/* ============================================
+   🧘 Therapeutic Utilities
+   ============================================ */
+
+/* Therapeutic Shadows */
+.shadow-therapeutic {
+    box-shadow:
+        0 4px 20px oklch(0.35 0.02 230 / 0.06),
+        0 1px 4px oklch(0.35 0.02 230 / 0.03);
+}
+
+.dark .shadow-therapeutic {
+    box-shadow:
+        0 4px 20px oklch(0 0 0 / 0.25),
+        0 1px 4px oklch(0 0 0 / 0.15);
+}
+
+/* Glassmorphism - Therapeutic version */
+.glass-therapeutic {
+    background: oklch(0.99 0.005 230 / 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid oklch(0.92 0.015 230 / 0.5);
+}
+
+.dark .glass-therapeutic {
+    background: oklch(0.18 0.015 240 / 0.75);
+    border: 1px solid oklch(0.30 0.015 240 / 0.3);
+}
+
+/* Therapeutic Hover States */
+.hover-lift {
+    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+}
