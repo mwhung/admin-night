@@ -30,7 +30,7 @@ export default function RootLayout({
         <Providers>
           <div className="flex flex-col min-h-screen w-full bg-background font-sans">
             <SiteHeader />
-            <main className="flex-1 min-h-0 w-full pb-24">
+            <main className="flex-1 min-h-0 w-full pb-[var(--layout-main-bottom-reserve)]">
               {children}
             </main>
             <SessionPauseBubble />

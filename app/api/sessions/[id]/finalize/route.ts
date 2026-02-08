@@ -46,6 +46,7 @@ export async function POST(
         }
 
         const stats = completeSessionSchema.parse(normalized)
+        const persistedDurationSeconds = Math.max(0, Math.floor(stats.actualDurationSeconds))
 
         const participant = await prisma.workSessionParticipant.findUnique({
             where: {
@@ -89,6 +90,7 @@ export async function POST(
                 },
                 data: {
                     leftAt: now,
+                    focusDurationSeconds: persistedDurationSeconds,
                     tasksWorkedOn: Array.isArray(stats.tasksWorkedOn) && stats.tasksWorkedOn.length > 0
                         ? stats.tasksWorkedOn
                         : undefined,
@@ -116,6 +118,16 @@ export async function POST(
                 remainingCount: activeCount,
                 alreadyLeft: leaveUpdate.count === 0,
             }
+        })
+
+        await prisma.workSessionParticipant.update({
+            where: { id: participant.id },
+            data: {
+                focusDurationSeconds: persistedDurationSeconds,
+                tasksWorkedOn: Array.isArray(stats.tasksWorkedOn) && stats.tasksWorkedOn.length > 0
+                    ? stats.tasksWorkedOn
+                    : undefined,
+            },
         })
 
         const participantAfterLeave = await prisma.workSessionParticipant.findUnique({

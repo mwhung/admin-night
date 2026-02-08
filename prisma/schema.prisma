@@ -124,6 +124,7 @@ model WorkSessionParticipant {
   userId        String
   joinedAt      DateTime  @default(now())
   leftAt        DateTime?
+  focusDurationSeconds Int?
   tasksWorkedOn Json? // array of task IDs for metrics
 
   session WorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)

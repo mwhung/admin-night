@@ -18,6 +18,10 @@
     min-height: 100%;
   }
 
+  html {
+    scroll-padding-top: var(--layout-scroll-padding-top);
+  }
+
   body {
     @apply text-foreground;
     font-family: var(--font-therapeutic);

@@ -7,6 +7,7 @@ const { getCurrentUserMock, prismaMock, generateSessionSummaryMock } = vi.hoiste
     prismaMock: {
         workSessionParticipant: {
             findUnique: vi.fn(),
+            update: vi.fn(),
             updateMany: vi.fn(),
         },
         workSession: {
@@ -66,6 +67,7 @@ describe('/api/sessions/[id]/finalize route', () => {
         getCurrentUserMock.mockReset()
         generateSessionSummaryMock.mockReset()
         prismaMock.workSessionParticipant.findUnique.mockReset()
+        prismaMock.workSessionParticipant.update.mockReset()
         prismaMock.workSessionParticipant.updateMany.mockReset()
         prismaMock.workSession.updateMany.mockReset()
         prismaMock.userAchievement.findMany.mockReset()
@@ -102,6 +104,7 @@ describe('/api/sessions/[id]/finalize route', () => {
         })
         prismaMock.userAchievement.findMany.mockResolvedValue([])
         prismaMock.userAchievement.create.mockResolvedValue({})
+        prismaMock.workSessionParticipant.update.mockResolvedValue({})
         prismaMock.workSessionParticipant.updateMany.mockResolvedValue({ count: 1 })
         generateSessionSummaryMock.mockResolvedValue('Finalized summary')
 

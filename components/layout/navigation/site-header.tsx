@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { Moon, LogOut, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ParticipantCount } from '@/components/features/session'
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { useSessionPresence } from '@/lib/realtime'
 
 export function SiteHeader() {
+    const headerRef = useRef<HTMLElement>(null)
     const { user, loading } = useAuth()
     const supabase = createClient()
     const shouldLoadSessionMetrics = !loading && Boolean(user)
@@ -39,8 +41,37 @@ export function SiteHeader() {
         window.location.href = '/'
     }
 
+    useEffect(() => {
+        const headerElement = headerRef.current
+        if (!headerElement) return
+
+        const rootStyle = document.documentElement.style
+        const updateHeaderHeightToken = () => {
+            const measuredHeight = Math.round(headerElement.getBoundingClientRect().height)
+            rootStyle.setProperty('--layout-header-height', `${measuredHeight}px`)
+        }
+
+        updateHeaderHeightToken()
+
+        let resizeObserver: ResizeObserver | null = null
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(updateHeaderHeightToken)
+            resizeObserver.observe(headerElement)
+        }
+
+        window.addEventListener('resize', updateHeaderHeightToken)
+
+        return () => {
+            resizeObserver?.disconnect()
+            window.removeEventListener('resize', updateHeaderHeightToken)
+        }
+    }, [])
+
     return (
-        <header className="sticky top-0 w-full z-50 p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-background/55 backdrop-blur-xl backdrop-saturate-150 border-b border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+        <header
+            ref={headerRef}
+            className="sticky top-0 w-full z-50 p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-background/55 backdrop-blur-xl backdrop-saturate-150 border-b border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+        >
             <div className="flex items-center gap-2 min-w-0">
                 <div className="bg-primary/10 p-1.5 rounded-lg">
                     <Moon className="h-4 w-4 text-primary" />

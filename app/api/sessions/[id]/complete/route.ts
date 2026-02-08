@@ -40,6 +40,10 @@ export async function POST(
         }
 
         const stats = completeSessionSchema.parse(normalized)
+        const persistedDurationSeconds = Math.max(0, Math.floor(stats.actualDurationSeconds))
+        const tasksWorkedOn = Array.isArray(stats.tasksWorkedOn) && stats.tasksWorkedOn.length > 0
+            ? stats.tasksWorkedOn
+            : undefined
 
         // 1. Fetch Session & Participant Record
         const participant = await prisma.workSessionParticipant.findUnique({
@@ -67,20 +71,16 @@ export async function POST(
             })
         }
 
-        // 2. Update Participant Stats (Mark as completed logically)
-        // In a real app, we might update `leftAt` here if not already set, 
-        // or we might trust the client's `actualDuration`.
-        // For now, we update the participant entry with the final stats if we had columns for them.
-        // Since we don't store granular stats in `WorkSessionParticipant` yet (schema limitation),
-        // we will just use them for achievement calculation.
-
-        // (Optional: Update leftAt if null)
-        if (!participant.leftAt) {
-            await prisma.workSessionParticipant.update({
-                where: { id: participant.id },
-                data: { leftAt: new Date() }
-            })
-        }
+        // 2. Persist completion metrics for consistent summary rendering.
+        const sessionEndedAt = participant.leftAt ?? new Date()
+        await prisma.workSessionParticipant.update({
+            where: { id: participant.id },
+            data: {
+                leftAt: participant.leftAt ?? sessionEndedAt,
+                focusDurationSeconds: persistedDurationSeconds,
+                tasksWorkedOn,
+            },
+        })
 
         // 3. Check Post-Session Achievements
         const newUnlockedAchievements = []
@@ -90,7 +90,7 @@ export async function POST(
             durationMinutes: stats.actualDurationSeconds / 60,
             pauseCount: stats.pauseCount,
             startTime: participant.joinedAt,
-            endTime: new Date(),
+            endTime: sessionEndedAt,
             tasksCompleted: stats.tasksCompletedCount
         }
 
@@ -166,7 +166,11 @@ export async function POST(
         // 5. Save Summary
         await prisma.workSessionParticipant.update({
             where: { id: participant.id },
-            data: { achievementSummary: llmSummary }
+            data: {
+                achievementSummary: llmSummary,
+                focusDurationSeconds: persistedDurationSeconds,
+                tasksWorkedOn,
+            },
         })
 
         return NextResponse.json({

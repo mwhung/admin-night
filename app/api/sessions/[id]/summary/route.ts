@@ -31,6 +31,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
                 sessionId: true,
                 joinedAt: true,
                 leftAt: true,
+                focusDurationSeconds: true,
                 tasksWorkedOn: true,
                 achievementSummary: true,
             },
@@ -72,11 +73,21 @@ export async function GET(_request: Request, { params }: RouteParams) {
             },
         })
 
-        const endAt = participant.leftAt ?? new Date()
-        const elapsedSeconds = Math.max(
-            0,
-            Math.floor((endAt.getTime() - participant.joinedAt.getTime()) / 1000),
+        const fallbackElapsedSeconds = (() => {
+            const endAt = participant.leftAt ?? new Date()
+            return Math.max(
+                0,
+                Math.floor((endAt.getTime() - participant.joinedAt.getTime()) / 1000),
+            )
+        })()
+
+        const elapsedSeconds = (
+            typeof participant.focusDurationSeconds === 'number'
+                && Number.isFinite(participant.focusDurationSeconds)
+                && participant.focusDurationSeconds >= 0
         )
+            ? Math.floor(participant.focusDurationSeconds)
+            : fallbackElapsedSeconds
 
         return NextResponse.json({
             summary: {

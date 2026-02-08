@@ -3,16 +3,12 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import {
     Orbit,
-    Footprints,
-    Play,
     Users,
     Sparkles,
     Wind
 } from 'lucide-react'
-import Link from "next/link"
 import { CollectiveExhale } from "@/components/features/community/collective-exhale"
 import { VictoryFeed } from "@/components/features/community/victory-feed"
 import { motion } from 'framer-motion'
@@ -224,29 +220,6 @@ export default function CommunityPage() {
                     <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
                         <DeadpanFacts fact={stats?.community.monthly.fact} />
                     </motion.div>
-
-                    <Card className={cn(cardLayout.dataSurface)}>
-                        <CardHeader className="pb-3 border-b border-border/60 bg-muted/25">
-                            <CardTitle className={labelStyle}>Next Step</CardTitle>
-                            <CardDescription className="type-caption mt-0.5">
-                                Continue your own focus flow.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-2">
-                            <Button asChild className="w-full h-11 rounded-full bg-primary text-primary-foreground">
-                                <Link href="/focus">
-                                    <Play className="size-4 mr-2 fill-current" />
-                                    Start Session
-                                </Link>
-                            </Button>
-                            <Button variant="outline" asChild className="w-full h-11 rounded-full border-primary/30 hover:bg-primary/10">
-                                <Link href="/history">
-                                    <Footprints className="size-4 mr-2" />
-                                    Your Journey
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
         </div>

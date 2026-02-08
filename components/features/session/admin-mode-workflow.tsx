@@ -48,21 +48,14 @@ import { useAchievementTracker } from '@/lib/hooks/use-achievement-tracker'
 import { AchievementToast, SessionSummary } from '@/components/features/achievements'
 import { SESSION_DURATION_MAX, SESSION_DURATION_MIN } from '@/lib/constants/session'
 import { useSessionRuntime } from '@/components/features/session'
+import { QUICK_TASK_SUGGESTION_SEEDS } from '@/lib/session/task-suggestion-seeds'
+import { buildSetupTaskSuggestionPools } from '@/lib/session/build-task-suggestions'
 
 const DURATION_OPTIONS = [
     { value: 25, label: '25 min', description: 'Quick Session' },
     { value: 45, label: '45 min', description: 'Extended Session' },
     { value: 'custom', label: 'Custom', description: 'Set your own' },
 ]
-
-const QUICK_SUGGESTIONS = [
-    { id: 'common-1', title: 'Inbox Zero (Clear Emails)', completed: false },
-    { id: 'common-2', title: 'Pay Bills & Invoices', completed: false },
-    { id: 'common-3', title: 'Financial Admin & Receipts', completed: false },
-    { id: 'common-4', title: 'Update Personal Calendar', completed: false },
-    { id: 'common-5', title: 'Weekly Planning & Strategy', completed: false },
-]
-const SETUP_SUGGESTION_LIMIT = 5
 
 const normalizeTaskTitle = (title: string): string => title.trim().toLowerCase()
 const isEphemeralTaskId = (taskId: string): boolean => (
@@ -106,6 +99,17 @@ interface SortableTaskItemProps {
     task: TaskItem;
     onRemove: (id: string) => void;
     isSessionTheme?: boolean;
+}
+
+interface SessionStageHeaderProps {
+    durationMinutes: number;
+    statusMessage: string | null;
+    statusIsError?: boolean;
+}
+
+interface SessionTimeAdjustControlsProps {
+    onAddFiveMinutes: () => void;
+    onAddTenMinutes: () => void;
 }
 
 function SortableTaskItem({ task, onRemove, isSessionTheme = false }: SortableTaskItemProps) {
@@ -158,6 +162,70 @@ function SortableTaskItem({ task, onRemove, isSessionTheme = false }: SortableTa
             </Button>
         </div>
     );
+}
+
+function SessionStageHeader({
+    durationMinutes,
+    statusMessage,
+    statusIsError = false,
+}: SessionStageHeaderProps) {
+    const hasStatusMessage = Boolean(statusMessage)
+
+    return (
+        <CardHeader className="space-y-2 pb-2 sm:pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <Clock className="h-4 w-4 text-primary/75" />
+                Focus Session
+            </CardTitle>
+            <CardDescription
+                role={hasStatusMessage ? "status" : undefined}
+                aria-live={hasStatusMessage ? "polite" : undefined}
+                className="flex min-h-5 items-center justify-between gap-3 text-sm text-muted-foreground"
+            >
+                <span
+                    className={cn(
+                        "truncate",
+                        hasStatusMessage
+                            ? statusIsError
+                                ? "text-destructive"
+                                : "text-muted-foreground"
+                            : "select-none text-transparent"
+                    )}
+                >
+                    {statusMessage ?? '\u00A0'}
+                </span>
+                <span className="font-semibold text-foreground/70">{durationMinutes} min</span>
+            </CardDescription>
+        </CardHeader>
+    )
+}
+
+function SessionTimeAdjustControls({
+    onAddFiveMinutes,
+    onAddTenMinutes,
+}: SessionTimeAdjustControlsProps) {
+    return (
+        <div className="mx-auto flex w-full max-w-[25.5rem] items-center justify-center gap-2">
+            <Button
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-full border-primary/30 px-4 text-xs font-semibold sm:h-10 sm:px-5"
+                onClick={onAddFiveMinutes}
+            >
+                <Plus className="h-3.5 w-3.5" />
+                Add 5m
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-full border-primary/30 px-4 text-xs font-semibold sm:h-10 sm:px-5"
+                onClick={onAddTenMinutes}
+            >
+                <Plus className="h-3.5 w-3.5" />
+                Add 10m
+            </Button>
+        </div>
+    )
 }
 
 const stepFromView = (view: AdminModeWorkflowView): Step => (
@@ -505,48 +573,19 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         [historyTasks]
     )
 
-    const setupDrawerTasks = useMemo(
-        () => {
-            const seenTitles = new Set<string>()
-
-            return historyTasks.filter((task) => {
-                const normalizedTitle = normalizeTaskTitle(task.title)
-                if (selectedTaskTitleSet.has(normalizedTitle)) return false
-                if (seenTitles.has(normalizedTitle)) return false
-                seenTitles.add(normalizedTitle)
-                return true
-            })
-        },
-        [historyTasks, selectedTaskTitleSet]
-    )
-
-    const setupDrawerTitleSet = useMemo(
-        () => new Set(setupDrawerTasks.map((task) => normalizeTaskTitle(task.title))),
-        [setupDrawerTasks]
-    )
-
-    const setupQuickSuggestions = useMemo(
-        () =>
-            QUICK_SUGGESTIONS.filter((task) => {
-                const normalizedTitle = normalizeTaskTitle(task.title)
-                return !selectedTaskTitleSet.has(normalizedTitle) && !setupDrawerTitleSet.has(normalizedTitle)
-            }),
-        [selectedTaskTitleSet, setupDrawerTitleSet]
+    const { drawerPool: setupDrawerPool, otherSuggestionPool: setupOtherSuggestionPool } = useMemo(
+        () => buildSetupTaskSuggestionPools({ historyTasks }),
+        [historyTasks]
     )
 
     const displayedDrawerTasks = useMemo(
-        () => setupDrawerTasks.slice(0, SETUP_SUGGESTION_LIMIT),
-        [setupDrawerTasks]
+        () => setupDrawerPool.filter((task) => !selectedTaskTitleSet.has(normalizeTaskTitle(task.title))),
+        [setupDrawerPool, selectedTaskTitleSet]
     )
 
-    const setupOtherSuggestionSlots = useMemo(
-        () => Math.max(0, SETUP_SUGGESTION_LIMIT - displayedDrawerTasks.length),
-        [displayedDrawerTasks.length]
-    )
-
-    const setupOtherSuggestions = useMemo(
-        () => setupQuickSuggestions.slice(0, setupOtherSuggestionSlots),
-        [setupQuickSuggestions, setupOtherSuggestionSlots]
+    const displayedOtherSuggestions = useMemo(
+        () => setupOtherSuggestionPool.filter((task) => !selectedTaskTitleSet.has(normalizeTaskTitle(task.title))),
+        [setupOtherSuggestionPool, selectedTaskTitleSet]
     )
 
     const handleAddSuggestedTask = (task: TaskItem) => {
@@ -830,6 +869,9 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const isTimerPaused = isTaskDrawerOpen || runtimeSession.pausedByNavigation
     const runtimeTimerTotal = runtimeSession.isActive ? runtimeSession.totalSeconds : actualDuration * 60
     const runtimeTimerRemaining = runtimeSession.isActive ? runtimeSession.remainingSeconds : actualDuration * 60
+    const sessionStageStatusMessage = hasPersistedSession
+        ? null
+        : (sessionStartError || 'Connecting this session to the shared room...')
     // ==================== SESSION VIEW ====================
     if (step === 'session') {
         return (
@@ -901,7 +943,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             <div>
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Quick Add</p>
                                 <div className="grid grid-cols-1 gap-2">
-                                    {QUICK_SUGGESTIONS.filter(t => !selectedTaskTitleSet.has(normalizeTaskTitle(t.title))).slice(0, 3).map((task) => (
+                                    {QUICK_TASK_SUGGESTION_SEEDS.filter(t => !selectedTaskTitleSet.has(normalizeTaskTitle(t.title))).slice(0, 3).map((task) => (
                                         <button
                                             key={task.id}
                                             onClick={() => handleAddSuggestedTask(task)}
@@ -937,76 +979,45 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                 )}
 
                 {/* Main Content */}
-                <div className="mx-auto h-[calc(100dvh-11.25rem)] w-full max-w-5xl overflow-hidden px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-5 md:px-6">
+                <div className="mx-auto h-[var(--layout-session-main-height)] w-full max-w-5xl overflow-hidden px-4 pb-[max(0.75rem,var(--layout-safe-bottom))] pt-[var(--layout-banner-content-gap)] sm:px-5 md:px-6">
                     <div className="grid h-full min-h-0 w-full grid-rows-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-3 lg:h-[min(66dvh,500px)] lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:grid-rows-1 lg:gap-4">
                         {/* Left: Timer Stage */}
-                        <Card className="h-full min-h-0 overflow-hidden border-border/80 bg-card/92 shadow-[0_16px_34px_rgba(31,42,55,0.14)]">
-                            <CardContent className="flex h-full min-h-0 flex-col px-4 py-3 sm:px-6 sm:py-4 lg:px-7 lg:py-5">
-                                <div className="flex w-full items-center justify-between">
-                                    <p className="type-section-label text-foreground/75">Focus Session</p>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                                        {actualDuration} min
-                                    </p>
-                                </div>
-                                {!hasPersistedSession && (
-                                    <p className={cn(
-                                        "mt-1 text-xs",
-                                        sessionStartError ? "text-destructive" : "text-muted-foreground"
-                                    )}>
-                                        {sessionStartError || 'Connecting this session to the shared room...'}
-                                    </p>
-                                )}
+                        <Card className="flex h-full min-h-0 flex-col overflow-hidden border-border/80 bg-card/92 shadow-[0_16px_34px_rgba(31,42,55,0.14)]">
+                            <SessionStageHeader
+                                durationMinutes={actualDuration}
+                                statusMessage={sessionStageStatusMessage}
+                                statusIsError={Boolean(sessionStartError)}
+                            />
 
-                                <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5 sm:gap-3">
-                                    <div className="relative h-[142px] w-full sm:h-[214px] lg:h-[236px]">
-                                        <div className="absolute left-1/2 top-0 -translate-x-1/2 origin-top scale-[0.56] sm:scale-[0.8] lg:scale-[0.9]">
-                                            <HourglassTimer
-                                                key={activeSessionId || runtimeSession.sessionId || String(actualDuration)}
-                                                ref={timerRef}
-                                                durationMinutes={actualDuration}
-                                                onComplete={handleEndSession}
-                                                onTick={({ totalSeconds, remainingSeconds }) => {
-                                                    if (step !== 'session') return
-                                                    const sessionIdToSync = resolvePreferredSessionId(activeSessionId, runtimeSession.sessionId, sessionId)
-                                                    if (!sessionIdToSync) return
-                                                    syncRuntimeSession({
-                                                        sessionId: sessionIdToSync,
-                                                        durationMinutes: actualDuration,
-                                                        totalSeconds,
-                                                        remainingSeconds,
-                                                        selectedTasks,
-                                                    })
-                                                }}
-                                                paused={isTimerPaused}
-                                                initialTotalSeconds={runtimeTimerTotal}
-                                                initialRemainingSeconds={runtimeTimerRemaining}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="flex flex-wrap items-center justify-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-8 rounded-full border-primary/30 px-3.5 text-[11px] font-semibold sm:h-9 sm:px-4 sm:text-xs"
-                                                onClick={() => timerRef.current?.addTime(5)}
-                                            >
-                                                <Plus className="h-3.5 w-3.5" />
-                                                Add 5m
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-8 rounded-full border-primary/30 px-3.5 text-[11px] font-semibold sm:h-9 sm:px-4 sm:text-xs"
-                                                onClick={() => timerRef.current?.addTime(10)}
-                                            >
-                                                <Plus className="h-3.5 w-3.5" />
-                                                Add 10m
-                                            </Button>
-                                        </div>
-                                    </div>
+                            <CardContent className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 pb-3 sm:gap-4 sm:pb-4">
+                                <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+                                    <HourglassTimer
+                                        key={activeSessionId || runtimeSession.sessionId || String(actualDuration)}
+                                        ref={timerRef}
+                                        durationMinutes={actualDuration}
+                                        onComplete={handleEndSession}
+                                        onTick={({ totalSeconds, remainingSeconds }) => {
+                                            if (step !== 'session') return
+                                            const sessionIdToSync = resolvePreferredSessionId(activeSessionId, runtimeSession.sessionId, sessionId)
+                                            if (!sessionIdToSync) return
+                                            syncRuntimeSession({
+                                                sessionId: sessionIdToSync,
+                                                durationMinutes: actualDuration,
+                                                totalSeconds,
+                                                remainingSeconds,
+                                                selectedTasks,
+                                            })
+                                        }}
+                                        paused={isTimerPaused}
+                                        initialTotalSeconds={runtimeTimerTotal}
+                                        initialRemainingSeconds={runtimeTimerRemaining}
+                                    />
                                 </div>
+
+                                <SessionTimeAdjustControls
+                                    onAddFiveMinutes={() => timerRef.current?.addTime(5)}
+                                    onAddTenMinutes={() => timerRef.current?.addTime(10)}
+                                />
                             </CardContent>
                         </Card>
 
@@ -1321,9 +1332,6 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                                     )}>
                                                         {task.title}
                                                     </span>
-                                                    {task.isFromLastSession && task.state !== 'RESOLVED' && (
-                                                        <span className="type-caption uppercase tracking-[0.06em] text-primary/70 font-semibold">From your last session</span>
-                                                    )}
                                                 </div>
                                                 <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                             </button>
@@ -1332,11 +1340,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                 </div>
                             )}
 
-                            {setupOtherSuggestionSlots > 0 && (
+                            {displayedOtherSuggestions.length > 0 && (
                                 <div>
-                                    <p className="type-section-label mb-3">{displayedDrawerTasks.length > 0 ? 'Other Suggestions' : 'Quick Suggestions'}</p>
+                                    <p className="type-section-label mb-3">{setupDrawerPool.length > 0 ? 'Other Suggestions' : 'Quick Suggestions'}</p>
                                     <div className="grid grid-cols-1 gap-2">
-                                        {setupOtherSuggestions.map((task) => (
+                                        {displayedOtherSuggestions.map((task) => (
                                             <button
                                                 key={task.id}
                                                 onClick={() => handleAddSuggestedTask(task)}

@@ -156,6 +156,11 @@ A distraction‑reduced interface activated during sessions.
 - Current task focus view
 - Optional ambient sound toggle
 
+**Layout System Standard (2026)**
+- Session layout spacing must use semantic layout tokens, not page-local magic numbers.
+- Sticky banner offset and safe-area handling must be resolved through runtime + derived tokens.
+- Reference implementation: `docs/design/layout-token-architecture.md`
+
 ---
 
 ### 6.4 AI Task Clarification (Future Phase)

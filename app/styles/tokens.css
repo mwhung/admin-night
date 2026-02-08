@@ -62,6 +62,18 @@
     --font-therapeutic: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
     --radius: 1.125rem;
 
+    /* Layout tokens */
+    --layout-safe-top: env(safe-area-inset-top, 0px);
+    --layout-safe-right: env(safe-area-inset-right, 0px);
+    --layout-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --layout-safe-left: env(safe-area-inset-left, 0px);
+    --layout-header-height: 4.5rem;
+    --layout-banner-content-gap: clamp(1rem, 1.6vw, 1.5rem);
+    --layout-floating-nav-height: 6rem;
+    --layout-main-bottom-reserve: calc(var(--layout-floating-nav-height) + var(--layout-safe-bottom));
+    --layout-session-main-height: calc(100svh - var(--layout-header-height) - var(--layout-main-bottom-reserve));
+    --layout-scroll-padding-top: calc(var(--layout-header-height) + var(--layout-banner-content-gap));
+
     --background: #e8e7e4;
     --background-warm: #e7e1d7;
     --foreground: #1f2a37;
