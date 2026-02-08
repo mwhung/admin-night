@@ -13,7 +13,7 @@ export default function LoginPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-md"
             >
-                <Card className="border-none bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] overflow-hidden relative p-8 md:p-10 rounded-[2rem]">
+                <Card className="border border-border/70 bg-card/88 backdrop-blur-md shadow-[0_28px_56px_-22px_rgba(44,61,86,0.22)] overflow-hidden relative p-8 md:p-10 rounded-[calc(var(--radius)+0.75rem)]">
                     <div className="relative z-10">
                         <AuthForm initialMode="login" />
                     </div>
@@ -27,7 +27,7 @@ export default function LoginPage() {
 
             {/* Bottom Ambient Text */}
             <div className="fixed bottom-6 left-0 right-0 text-center pointer-events-none">
-                <p className="text-xs text-[#3d362f]/30 font-light tracking-widest uppercase animate-breathe-slow">
+                <p className="type-caption text-primary/45 uppercase tracking-[0.1em] animate-breathe-slow">
                     ✨ Focus together, finish together
                 </p>
             </div>

@@ -5,7 +5,6 @@ import {
     Circle,
     Loader2,
     CheckCircle2,
-    AlertCircle,
     Clock,
     Sparkles
 } from 'lucide-react'

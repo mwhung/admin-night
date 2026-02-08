@@ -45,7 +45,7 @@ export function ParticipantCount({
             <span
                 className={cn(
                     'h-2 w-2 rounded-full',
-                    isConnected ? 'bg-success animate-pulse' : 'bg-muted-foreground'
+                    isConnected ? 'bg-success motion-safe:animate-pulse' : 'bg-muted-foreground'
                 )}
                 aria-label={isConnected ? 'Connected' : 'Disconnected'}
             />

@@ -3,25 +3,16 @@
 
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { createSessionChannel, RealtimeSessionPayload } from './supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
-export interface Participant {
-    userId: string
-    userName?: string
-    joinedAt: Date
-}
-
 interface UseSessionPresenceOptions {
     sessionId: string
-    userId: string
-    userName?: string
     enabled?: boolean
 }
 
 interface UseSessionPresenceReturn {
-    participants: Participant[]
     participantCount: number
     isConnected: boolean
     error: Error | null
@@ -29,16 +20,14 @@ interface UseSessionPresenceReturn {
 
 export function useSessionPresence({
     sessionId,
-    userId,
-    userName,
     enabled = true,
 }: UseSessionPresenceOptions): UseSessionPresenceReturn {
-    const [participants, setParticipants] = useState<Participant[]>([])
+    const [participantCount, setParticipantCount] = useState(0)
     const [isConnected, setIsConnected] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
     useEffect(() => {
-        if (!enabled || !sessionId || !userId) {
+        if (!enabled || !sessionId) {
             return
         }
 
@@ -51,19 +40,11 @@ export function useSessionPresence({
                 channel
                     .on('presence', { event: 'sync' }, () => {
                         const state = channel!.presenceState<RealtimeSessionPayload>()
-                        const allParticipants: Participant[] = []
-
-                        Object.values(state).forEach((presences) => {
-                            presences.forEach((presence) => {
-                                allParticipants.push({
-                                    userId: presence.user_id,
-                                    userName: presence.user_name,
-                                    joinedAt: new Date(presence.joined_at),
-                                })
-                            })
-                        })
-
-                        setParticipants(allParticipants)
+                        const total = Object.values(state).reduce(
+                            (sum, presences) => sum + presences.length,
+                            0
+                        )
+                        setParticipantCount(total)
                     })
                     .on('presence', { event: 'join' }, ({ newPresences }) => {
                         console.log('User joined session:', newPresences)
@@ -72,15 +53,13 @@ export function useSessionPresence({
                         console.log('User left session:', leftPresences)
                     })
 
-                const status = await channel.subscribe(async (status) => {
+                await channel.subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
                         setIsConnected(true)
                         setError(null)
 
                         // Track our presence
                         const payload: RealtimeSessionPayload = {
-                            user_id: userId,
-                            user_name: userName,
                             joined_at: new Date().toISOString(),
                         }
                         await channel!.track(payload)
@@ -102,11 +81,10 @@ export function useSessionPresence({
                 channel.unsubscribe()
             }
         }
-    }, [sessionId, userId, userName, enabled])
+    }, [sessionId, enabled])
 
     return {
-        participants,
-        participantCount: participants.length,
+        participantCount,
         isConnected,
         error,
     }

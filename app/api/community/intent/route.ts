@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 
 // GET: Retrieve active intents for the bubble cloud
 // Returns aggregated counts by category for the last 24 hours (or current session window)
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         // Define the window - for now, let's look at the last 24 hours to capture "Today's Swarm"
         const windowStart = new Date(Date.now() - 24 * 60 * 60 * 1000)

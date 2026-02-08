@@ -201,3 +201,26 @@
 .animate-particle-4 {
     animation: particle-4 0.6s ease-out 0.15s forwards;
 }
+
+/* Respect reduced-motion preference across therapeutic animations */
+@media (prefers-reduced-motion: reduce) {
+    .animate-breathe,
+    .animate-breathe-slow,
+    .animate-float,
+    .animate-float-delayed,
+    .animate-fall,
+    .animate-checkmark,
+    .animate-celebrate,
+    .animate-pulse,
+    .animate-pulse-slow,
+    .animate-bounce-slow,
+    .animate-particle-1,
+    .animate-particle-2,
+    .animate-particle-3,
+    .animate-particle-4,
+    .animate-in,
+    .animate-out {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+    }
+}

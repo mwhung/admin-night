@@ -63,7 +63,7 @@ async function main() {
         }
     })
 
-    const scheduledSession = await prisma.workSession.create({
+    await prisma.workSession.create({
         data: {
             scheduledStart: new Date(now.getTime() + 2 * 60 * 60 * 1000), // Starts in 2 hours
             scheduledEnd: new Date(now.getTime() + 2 * 60 * 60 * 1000 + 45 * 60 * 1000),
@@ -73,6 +73,50 @@ async function main() {
     })
 
     console.log('Sample work sessions created')
+
+    const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+
+    await prisma.communityReaction.upsert({
+        where: {
+            type_windowType_windowStart: {
+                type: 'clap',
+                windowType: 'daily',
+                windowStart: dayStart,
+            },
+        },
+        update: { count: 3 },
+        create: {
+            type: 'clap',
+            windowType: 'daily',
+            windowStart: dayStart,
+            count: 3,
+        },
+    })
+
+    await prisma.communitySessionReaction.upsert({
+        where: {
+            sessionId_type: {
+                sessionId: activeSession.id,
+                type: 'clap',
+            },
+        },
+        update: { count: 3 },
+        create: {
+            sessionId: activeSession.id,
+            type: 'clap',
+            count: 3,
+        },
+    })
+
+    await prisma.communityReactionEvent.createMany({
+        data: [
+            { type: 'clap', userId: user.id, sessionId: activeSession.id },
+            { type: 'clap', userId: user.id, sessionId: activeSession.id },
+            { type: 'clap', userId: user.id, sessionId: activeSession.id },
+        ],
+    })
+
+    console.log('Sample community reactions created')
 }
 
 main()

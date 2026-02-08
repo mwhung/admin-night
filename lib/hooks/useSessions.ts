@@ -29,14 +29,38 @@ interface SessionResponse {
     session: Session
 }
 
+export interface StartSessionTaskInput {
+    id: string
+    title: string
+    completed: boolean
+}
+
+export interface StartSessionTaskMapping {
+    clientId: string
+    taskId: string
+    title: string
+    state: string
+}
+
+export interface StartSessionResponse {
+    session: Session
+    taskMappings: StartSessionTaskMapping[]
+}
+
+interface UseSessionsOptions {
+    upcoming?: boolean
+    status?: string
+    enabled?: boolean
+}
+
 // Fetch upcoming sessions
-export function useSessions(options?: { upcoming?: boolean; status?: string }) {
+export function useSessions(options?: UseSessionsOptions) {
     const params = new URLSearchParams()
     if (options?.upcoming) params.set('upcoming', 'true')
     if (options?.status) params.set('status', options.status)
 
     return useQuery<SessionsResponse>({
-        queryKey: ['sessions', options],
+        queryKey: ['sessions', options?.upcoming ?? false, options?.status ?? null],
         queryFn: async () => {
             const url = `/api/sessions${params.toString() ? `?${params.toString()}` : ''}`
             const res = await fetch(url)
@@ -45,6 +69,7 @@ export function useSessions(options?: { upcoming?: boolean; status?: string }) {
             }
             return res.json()
         },
+        enabled: options?.enabled ?? true,
         refetchInterval: 30000, // Refetch every 30 seconds
     })
 }
@@ -166,6 +191,36 @@ export function useUpdateSession() {
         onSuccess: (_, { sessionId }) => {
             queryClient.invalidateQueries({ queryKey: ['sessions'] })
             queryClient.invalidateQueries({ queryKey: ['session', sessionId] })
+        },
+    })
+}
+
+// Start session mutation (join/create + task sync in one request)
+export function useStartSession() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (data: {
+            durationMinutes: number
+            preferredSessionId?: string
+            selectedTasks: StartSessionTaskInput[]
+        }) => {
+            const res = await fetch('/api/sessions/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            })
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => null) as { error?: string } | null
+                throw new Error(error?.error || 'Failed to start session')
+            }
+
+            return res.json() as Promise<StartSessionResponse>
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['sessions'] })
+            queryClient.invalidateQueries({ queryKey: ['session', data.session.id] })
         },
     })
 }

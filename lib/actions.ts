@@ -2,7 +2,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { MOCK_AUTH_COOKIE_NAME, getDefaultMockAuthUser, isMockAuthEnabled } from '@/lib/mock-auth'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { ROUTES } from '@/lib/routes'
 
 export async function authenticate(
     prevState: string | undefined,
@@ -25,7 +28,7 @@ export async function authenticate(
         return error.message
     }
 
-    redirect('/dashboard')
+    redirect(ROUTES.HOME)
 }
 
 export async function signInWithGoogle() {
@@ -52,8 +55,32 @@ export async function signInWithGoogle() {
     }
 }
 
+export async function signInWithMockUser() {
+    if (!isMockAuthEnabled()) {
+        return 'Mock auth is not enabled.'
+    }
+
+    const cookieStore = await cookies()
+    const mockUser = getDefaultMockAuthUser()
+    const isHttps = (process.env.NEXT_PUBLIC_SITE_URL || '').startsWith('https://')
+
+    cookieStore.set(MOCK_AUTH_COOKIE_NAME, JSON.stringify(mockUser), {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isHttps,
+        maxAge: 60 * 60 * 24 * 30,
+    })
+
+    redirect(ROUTES.HOME)
+}
+
 export async function signOut() {
     const supabase = await createClient()
     await supabase.auth.signOut()
-    redirect('/login')
+
+    const cookieStore = await cookies()
+    cookieStore.delete(MOCK_AUTH_COOKIE_NAME)
+
+    redirect(ROUTES.LOGIN)
 }

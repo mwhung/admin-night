@@ -40,6 +40,7 @@ model User {
   tasks                   Task[]
   workSessionParticipants WorkSessionParticipant[]
   achievements            UserAchievement[]
+  communityReactionEvents CommunityReactionEvent[]
 
   @@map("users")
 }
@@ -109,6 +110,8 @@ model WorkSession {
   createdAt       DateTime      @default(now())
 
   participants WorkSessionParticipant[]
+  communityReactionEvents CommunityReactionEvent[]
+  sessionReactions        CommunitySessionReaction[]
 
   @@index([scheduledStart])
   @@index([status])
@@ -176,7 +179,38 @@ model CommunityReaction {
   updatedAt   DateTime @updatedAt
 
   @@unique([type, windowType, windowStart])
+  @@index([windowType, windowStart])
   @@map("community_reactions")
+}
+
+model CommunityReactionEvent {
+  id        String   @id @default(cuid())
+  type      String   // "clap", "fire", "leaf"
+  userId    String
+  sessionId String?
+  createdAt DateTime @default(now())
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session WorkSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
+  @@map("community_reaction_events")
+}
+
+model CommunitySessionReaction {
+  id        String   @id @default(cuid())
+  sessionId String
+  type      String   // "clap", "fire", "leaf"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  session WorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, type])
+  @@index([sessionId])
+  @@map("community_session_reactions")
 }
 
 model CommunityMilestone {

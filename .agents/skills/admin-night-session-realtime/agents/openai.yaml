@@ -1,0 +1,4 @@
+interface:
+  display_name: "Admin Night Session Realtime"
+  short_description: "Build and debug session lifecycle and presence flows"
+  default_prompt: "Use $admin-night-session-realtime to implement this session timer or presence task."

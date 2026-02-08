@@ -13,9 +13,26 @@
     @apply border-border;
   }
 
+  html,
   body {
-    @apply bg-background text-foreground;
+    min-height: 100%;
+  }
+
+  body {
+    @apply text-foreground;
     font-family: var(--font-therapeutic);
-    transition: background-color 0.4s ease, color 0.4s ease;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(1200px 680px at -12% -18%, rgba(255, 255, 255, 0.62), transparent 62%),
+      radial-gradient(980px 520px at 112% -16%, rgba(184, 204, 224, 0.36), transparent 58%),
+      linear-gradient(180deg, var(--background) 0%, var(--background-warm) 100%);
+    background-attachment: fixed;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+    line-height: 1.45;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 24%, white);
+    color: var(--primary-foreground);
   }
 }

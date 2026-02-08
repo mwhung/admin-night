@@ -2,7 +2,6 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Sparkles } from 'lucide-react'
 
 interface CollectiveExhaleProps {
     count: number
@@ -81,27 +80,34 @@ export function CollectiveExhale({ count }: CollectiveExhaleProps) {
             </div>
 
             {/* Micro-Particles (Reclaim Attention) */}
-            {[...Array(20)].map((_, i) => (
-                <motion.div
-                    key={i}
-                    className="absolute size-px bg-primary/40"
-                    initial={{
-                        x: Math.random() * 400 - 200,
-                        y: Math.random() * 400 - 200,
-                        opacity: 0
-                    }}
-                    animate={{
-                        y: [null, -100],
-                        opacity: [0, 0.4, 0],
-                        scale: [1, 2, 1]
-                    }}
-                    transition={{
-                        duration: 7 + Math.random() * 10,
-                        repeat: Infinity,
-                        delay: Math.random() * 10
-                    }}
-                />
-            ))}
+            {[...Array(20)].map((_, i) => {
+                const baseX = ((i * 73) % 400) - 200
+                const baseY = ((i * 97) % 400) - 200
+                const duration = 7 + (i % 10)
+                const delay = (i * 0.5) % 10
+
+                return (
+                    <motion.div
+                        key={i}
+                        className="absolute size-px bg-primary/40"
+                        initial={{
+                            x: baseX,
+                            y: baseY,
+                            opacity: 0
+                        }}
+                        animate={{
+                            y: [null, -100],
+                            opacity: [0, 0.4, 0],
+                            scale: [1, 2, 1]
+                        }}
+                        transition={{
+                            duration,
+                            repeat: Infinity,
+                            delay
+                        }}
+                    />
+                )
+            })}
         </div>
     )
 }

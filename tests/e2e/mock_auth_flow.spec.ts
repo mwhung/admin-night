@@ -21,21 +21,21 @@ test.describe('Mock Auth Flow', () => {
         }]);
     });
 
-    test('should access dashboard directly with mock auth', async ({ page }) => {
-        await page.goto('/dashboard');
+    test('should redirect away from login with mock auth', async ({ page }) => {
+        await page.goto('/login');
 
-        // Should not be redirected to login
-        await expect(page).toHaveURL(/dashboard/);
+        // Mock-authenticated users should be redirected to the app home
+        await expect(page).toHaveURL(/focus/);
 
-        // Verify we see dashboard content
-        await expect(page.getByText(/Insights & History/i)).toBeVisible();
+        // Verify setup screen is visible
+        await expect(page.getByText(/1\. Declutter Your Mind/i)).toBeVisible();
     });
 
     test('should navigate through session flow with mock auth', async ({ page }) => {
-        await page.goto('/admin-mode');
+        await page.goto('/focus');
 
         // Should see the setup screen
-        await expect(page.getByText(/1\. Choose Focus Time/i)).toBeVisible();
+        await expect(page.getByText(/1\. Declutter Your Mind/i)).toBeVisible();
 
         // Add a task
         await page.getByPlaceholder(/enter a new task/i).fill('Mocked Auth Task');
@@ -44,17 +44,20 @@ test.describe('Mock Auth Flow', () => {
 
         // Start session
         await page.getByRole('button', { name: /start session/i }).click();
+        await expect(page).toHaveURL(/\/sessions\//, { timeout: 15000 });
 
         // Verify session view
-        await expect(page.getByText(/today's tasks/i)).toBeVisible();
+        await expect(page.getByText(/today's tasks/i)).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /exit session early/i })).toBeVisible();
         await expect(page.getByText('Mocked Auth Task').first()).toBeVisible();
 
         // Complete task
-        await page.getByText('Mocked Auth Task').first().click();
+        await page.getByRole('button', { name: /mocked auth task/i }).first().click();
         await expect(page.getByText('1 of 1 completed')).toBeVisible();
 
         // End session
         await page.getByRole('button', { name: /exit session early/i }).click();
-        await expect(page.getByText(/brain space released/i)).toBeVisible();
+        await expect(page).toHaveURL(/\/sessions\/.+\/summary$/, { timeout: 15000 });
+        await expect(page.getByRole('heading', { name: /released/i })).toBeVisible({ timeout: 15000 });
     });
 });

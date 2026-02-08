@@ -15,12 +15,12 @@ test.describe('Authentication', () => {
         await expect(page).toHaveURL(/login/)
     })
 
-    test('should redirect to dashboard after login', async ({ page }) => {
+    test('should enter app via mock auth button', async ({ page }) => {
         await page.goto('/login')
-        await page.getByLabel('Email').fill('m@example.com')
-        await page.getByLabel('Password').fill('password123')
-        await page.getByRole('button', { name: /enter your quiet space/i }).click()
-        // Should redirect to dashboard
-        await expect(page).toHaveURL(/dashboard/)
+        await page.getByRole('button', { name: /continue with mock auth \(dev\)/i }).click()
+
+        // Should redirect to app home
+        await expect(page).toHaveURL(/focus/)
+        await expect(page.getByText(/1\. declutter your mind/i)).toBeVisible()
     })
 })

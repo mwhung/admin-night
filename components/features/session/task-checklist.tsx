@@ -18,12 +18,16 @@ export interface TaskItem {
 interface TaskChecklistProps {
     tasks: TaskItem[]
     onToggle: (taskId: string) => void
+    showSummary?: boolean
+    compact?: boolean
     className?: string
 }
 
 export function TaskChecklist({
     tasks,
     onToggle,
+    showSummary = true,
+    compact = false,
     className,
 }: TaskChecklistProps) {
     const [celebratingId, setCelebratingId] = useState<string | null>(null)
@@ -41,38 +45,48 @@ export function TaskChecklist({
 
     return (
         <div className={cn('w-full max-w-sm', className)}>
-            {/* Progress Header */}
-            <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-muted-foreground">
-                    {completedCount} of {tasks.length} tasks
-                </p>
-                <div className="flex items-center gap-1">
-                    {completedCount === tasks.length && tasks.length > 0 && (
-                        <Sparkles className="h-4 w-4 text-primary/40 animate-pulse" />
-                    )}
-                    <span className="text-sm font-medium">{Math.round(progress)}%</span>
-                </div>
-            </div>
+            {showSummary && (
+                <>
+                    {/* Progress Header */}
+                    <div className="mb-4 flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            {completedCount} of {tasks.length} tasks
+                        </p>
+                        <div className="flex items-center gap-1">
+                            {completedCount === tasks.length && tasks.length > 0 && (
+                                <Sparkles className="h-4 w-4 text-primary/40 motion-safe:animate-pulse" />
+                            )}
+                            <span className="text-sm font-medium">{Math.round(progress)}%</span>
+                        </div>
+                    </div>
 
-            {/* Progress Bar */}
-            <div className="h-1.5 bg-muted rounded-full mb-4 overflow-hidden">
-                <div
-                    className="h-full bg-success rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${progress}%` }}
-                />
-            </div>
+                    {/* Progress Bar */}
+                    <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                            className="h-full rounded-full bg-success transition-all duration-500 ease-out"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                </>
+            )}
 
             {/* Task List */}
             <div className="space-y-2">
+                {tasks.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
+                        No tasks yet. Open Modify Tasks to add one.
+                    </div>
+                )}
                 {tasks.map((task) => (
                     <button
                         key={task.id}
                         onClick={() => handleToggle(task.id, task.completed)}
                         className={cn(
-                            'group w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300',
+                            'group flex w-full items-center gap-3 rounded-xl transition-all duration-300',
                             'hover:bg-muted/50',
+                            compact ? 'px-3 py-2.5' : 'p-3',
                             task.completed && 'bg-primary/5',
-                            celebratingId === task.id && 'animate-celebrate'
+                            celebratingId === task.id && 'motion-safe:animate-celebrate'
                         )}
                     >
                         {/* Checkbox */}
@@ -86,16 +100,16 @@ export function TaskChecklist({
                             )}
                         >
                             {task.completed && (
-                                <Check className="h-4 w-4 text-success-foreground animate-checkmark" />
+                                <Check className="h-4 w-4 text-success-foreground motion-safe:animate-checkmark" />
                             )}
 
                             {/* Celebration particles */}
                             {celebratingId === task.id && (
                                 <>
-                                    <span className="absolute -top-1 -left-1 w-2 h-2 bg-success/60 rounded-full animate-particle-1" />
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-success/50 rounded-full animate-particle-2" />
-                                    <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-success/40 rounded-full animate-particle-3" />
-                                    <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-success/30 rounded-full animate-particle-4" />
+                                    <span className="absolute -top-1 -left-1 w-2 h-2 bg-success/60 rounded-full motion-safe:animate-particle-1" />
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-success/50 rounded-full motion-safe:animate-particle-2" />
+                                    <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-success/40 rounded-full motion-safe:animate-particle-3" />
+                                    <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-success/30 rounded-full motion-safe:animate-particle-4" />
                                 </>
                             )}
                         </div>

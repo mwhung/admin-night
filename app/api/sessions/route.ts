@@ -6,13 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
-import { z } from 'zod'
-
-// Validation schema for creating a session
-const createSessionSchema = z.object({
-    scheduledStart: z.coerce.date(),
-    durationMinutes: z.number().min(15).max(60).default(25),
-})
+import { createSessionSchema } from '@/lib/contracts/session'
 
 // GET /api/sessions - List sessions
 export async function GET(request: NextRequest) {

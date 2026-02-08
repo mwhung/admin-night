@@ -7,15 +7,19 @@ import { Button } from "@/components/ui/button"
 import {
     Orbit,
     Footprints,
-    Play
+    Play,
+    Users,
+    Sparkles,
+    Wind
 } from 'lucide-react'
 import Link from "next/link"
 import { CollectiveExhale } from "@/components/features/community/collective-exhale"
 import { VictoryFeed } from "@/components/features/community/victory-feed"
-import { Typography } from "@/components/ui/typography"
 import { motion } from 'framer-motion'
 import { MilestoneProgress } from "@/components/features/community/milestone-progress"
 import { DeadpanFacts } from "@/components/features/community/deadpan-facts"
+import { cn } from "@/lib/utils"
+import { cardLayout } from "@/components/ui/card-layouts"
 
 interface GlobalStats {
     community: {
@@ -34,6 +38,30 @@ interface GlobalStats {
             totalSteps: number
             fact: string
         }
+        reactions?: {
+            daily: {
+                byType: {
+                    clap: number
+                    fire: number
+                    leaf: number
+                }
+                total: number
+            }
+            weekly: {
+                total: number
+                reactionDensity: number
+                sessionParticipationRate: number
+                userParticipationRate: number
+            }
+            monthly: {
+                total: number
+            }
+        }
+        metrics?: {
+            reactionDensity: number
+            sessionParticipationRate: number
+            userParticipationRate: number
+        }
         // Legacy support if needed, or remove if API is fully migrated
         avgBloomTimeHours?: number
         peakFocusHour?: string
@@ -43,7 +71,6 @@ interface GlobalStats {
 
 export default function CommunityPage() {
     const [stats, setStats] = useState<GlobalStats | null>(null)
-    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -52,143 +79,176 @@ export default function CommunityPage() {
                 if (statsRes.ok) setStats(await statsRes.json())
             } catch (err) {
                 console.error("Failed to fetch community stats", err)
-            } finally {
-                setLoading(false)
             }
         }
         fetchData()
     }, [])
 
-    const labelStyle = "text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60"
+    const labelStyle = "type-section-label"
+    const metaStyle = "type-caption mt-3 leading-relaxed"
+    const totalReleased = stats?.community.totalTasksCompleted ?? 0
+    const activeParticipants = stats?.community.daily.activeUsers ?? 0
+    const dailyReactions = stats?.community.reactions?.daily.total ?? 0
+    const reclaimedClarity = stats?.community.avgBloomTimeHours ?? 72
+    const weeklyProgress = stats?.community.weekly.progress ?? 0
+    const weeklyGoal = stats?.community.weekly.goal ?? 10000
 
     return (
-        <div className="container mx-auto p-8 space-y-16 max-w-4xl animate-in fade-in duration-1000 mb-20">
-            {/* 1. Header & Atmosphere Layer */}
-            <section className="space-y-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-10">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col gap-2"
-                    >
-                        <h1 className="text-4xl font-extralight tracking-tight text-foreground/90 font-sans">
-                            The Collective Pulse
-                        </h1>
-                        <p className="text-muted-foreground font-light tracking-wide text-lg">
-                            Witness the shared rhythm of release and the weight of burdens letting go in real-time.
-                        </p>
-                    </motion.div>
-
-                    <div className="flex gap-4">
-                        <Button variant="outline" asChild className="h-14 border-primary/5 hover:bg-primary/5 rounded-full px-8 transition-all hover:scale-105 glass-therapeutic">
-                            <Link href="/history">
-                                <Footprints className="size-4 mr-2" />
-                                Your Journey
-                            </Link>
-                        </Button>
-                        <Button asChild className="h-14 shadow-2xl shadow-primary/20 bg-primary hover:scale-105 transition-all rounded-full px-12">
-                            <Link href="/admin-mode">
-                                <Play className="size-4 mr-2 fill-current" />
-                                Start Session
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Atmosphere Hero: Energy Ball */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2, duration: 1 }}
-                    className="relative w-full aspect-[21/9] rounded-[2.5rem] overflow-hidden glass-therapeutic border-primary/5 shadow-2xl"
-                >
-                    <CollectiveExhale count={stats?.community.totalTasksCompleted || 0} />
-                </motion.div>
-            </section>
-
-            {/* 2. Victory & Insight Layer */}
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Victory Feed (Wide) */}
+        <div className="container mx-auto p-4 sm:p-5 md:p-6 space-y-6 md:space-y-8 max-w-4xl animate-in fade-in duration-1000 mb-20">
+            <div className="flex flex-col gap-2 mb-6 md:mb-8">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    className="lg:col-span-2"
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex flex-col gap-2"
                 >
-                    <Card className="h-full rounded-[2.5rem] border-primary/5 glass-therapeutic overflow-hidden shadow-xl">
-                        <VictoryFeed />
+                    <h1 className="type-page-title font-sans">
+                        The Collective Pulse
+                    </h1>
+                    <p className="type-page-subtitle max-w-2xl">
+                        Witness the shared rhythm of release and the weight of burdens letting go in real-time.
+                    </p>
+                </motion.div>
+            </div>
+
+            <div className="grid gap-x-5 gap-y-2 sm:gap-x-6 sm:gap-y-2 md:grid-cols-3">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <Card className={cn("shadow-sm overflow-hidden relative group min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
+                        <div className="absolute top-0 right-0 p-3 opacity-20">
+                            <Wind className="size-12 text-primary" />
+                        </div>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
+                            <CardTitle className={labelStyle}>Collective Releases</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-2 pb-5">
+                            <div className="type-metric-value">{totalReleased.toLocaleString()}</div>
+                            <p className={metaStyle}>Tasks completed by the community.</p>
+                        </CardContent>
                     </Card>
                 </motion.div>
 
-                {/* Mental Bloom (Focused) */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                >
-                    <Card className="h-full rounded-[2.5rem] border-primary/10 bg-primary/5 relative overflow-hidden group">
-                        <CardHeader className="p-8 pb-0">
-                            <CardTitle className={labelStyle}>Reclaimed Clarity</CardTitle>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <Card className={cn("shadow-sm overflow-hidden relative group min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
+                        <div className="absolute top-0 right-0 p-3 opacity-20">
+                            <Users className="size-12 text-primary" />
+                        </div>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
+                            <CardTitle className={labelStyle}>Active Participants</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-8 pt-2 space-y-4">
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-extralight text-primary/80 tabular-nums">
-                                    {stats?.community.avgBloomTimeHours || '72'}
-                                </span>
-                                <span className="text-lg font-light text-muted-foreground">%</span>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-sm font-light text-muted-foreground leading-relaxed">
+                        <CardContent className="pt-2 pb-5">
+                            <div className="type-metric-value">{activeParticipants}</div>
+                            <p className={metaStyle}>People currently contributing today.</p>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Card className={cn("shadow-sm overflow-hidden relative group min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
+                        <div className="absolute top-0 right-0 p-3 opacity-20">
+                            <Sparkles className="size-12 text-primary" />
+                        </div>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
+                            <CardTitle className={labelStyle}>Today&apos;s Reactions</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-2 pb-5">
+                            <div className="type-metric-value">{dailyReactions}</div>
+                            <p className={metaStyle}>Clap, fire, and leaf reactions sent today.</p>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+            >
+                <Card className={cn(cardLayout.insight)}>
+                    <CardHeader className="pb-3 border-b border-border/60 bg-muted/25">
+                        <CardTitle className={labelStyle}>Collective Resonance</CardTitle>
+                        <CardDescription className="type-caption mt-0.5">
+                            Live view of shared release momentum.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="relative w-full aspect-[21/9]">
+                            <CollectiveExhale count={totalReleased} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            <div className="grid gap-x-7 gap-y-3 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-3.5">
+                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                        <Card className={cn("h-full", cardLayout.insight)}>
+                            <VictoryFeed />
+                        </Card>
+                    </motion.div>
+
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                        <Card className={cn(cardLayout.dataSurface)}>
+                            <CardHeader className="pb-3 border-b border-border/60 bg-muted/25">
+                                <CardTitle className={labelStyle}>Weekly Milestone</CardTitle>
+                                <CardDescription className="type-caption mt-0.5">
+                                    Progress toward this week&apos;s shared target.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 sm:p-5">
+                                <MilestoneProgress current={weeklyProgress} target={weeklyGoal} />
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
+
+                <div className="space-y-3">
+                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                        <Card className={cn("relative overflow-hidden min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
+                                <CardTitle className={labelStyle}>Reclaimed Clarity</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-2 pb-5 space-y-3">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="type-metric-value">{reclaimedClarity}</span>
+                                    <span className="text-lg font-medium text-muted-foreground">%</span>
+                                </div>
+                                <p className="type-body-soft">
                                     Average reduction in mental drag across all participants this week.
                                 </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {['Focus', 'Flow', 'Release'].map(tag => (
-                                        <span key={tag} className="text-[9px] px-4 py-1.5 rounded-full bg-background border border-border uppercase tracking-widest font-bold opacity-60">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
+                            </CardContent>
+                            <div className="absolute -bottom-10 -right-10 text-primary/[0.06] group-hover:scale-110 transition-transform duration-1000">
+                                <Orbit className="size-64" />
                             </div>
+                        </Card>
+                    </motion.div>
+
+                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                        <DeadpanFacts fact={stats?.community.monthly.fact} />
+                    </motion.div>
+
+                    <Card className={cn(cardLayout.dataSurface)}>
+                        <CardHeader className="pb-3 border-b border-border/60 bg-muted/25">
+                            <CardTitle className={labelStyle}>Next Step</CardTitle>
+                            <CardDescription className="type-caption mt-0.5">
+                                Continue your own focus flow.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-2">
+                            <Button asChild className="w-full h-11 rounded-full bg-primary text-primary-foreground">
+                                <Link href="/focus">
+                                    <Play className="size-4 mr-2 fill-current" />
+                                    Start Session
+                                </Link>
+                            </Button>
+                            <Button variant="outline" asChild className="w-full h-11 rounded-full border-primary/30 hover:bg-primary/10">
+                                <Link href="/history">
+                                    <Footprints className="size-4 mr-2" />
+                                    Your Journey
+                                </Link>
+                            </Button>
                         </CardContent>
-                        <div className="absolute -bottom-10 -right-10 text-primary/[0.03] group-hover:scale-110 transition-transform duration-1000">
-                            <Orbit className="size-64" />
-                        </div>
                     </Card>
-                </motion.div>
-
-                {/* Deadpan Facts (Monthly Reflection) */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                >
-                    <DeadpanFacts fact={stats?.community.monthly.fact} />
-                </motion.div>
-            </section>
-
-            {/* 3. Ritual Rhythm Layer - Weekly Milestone */}
-            <section className="space-y-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="p-8 rounded-[2.5rem] border border-primary/10 bg-background/50 backdrop-blur-sm"
-                >
-                    <MilestoneProgress
-                        current={stats?.community.weekly.progress || 0}
-                        target={stats?.community.weekly.goal || 10000}
-                    />
-                </motion.div>
-            </section>
-
-            {/* Aesthetic Ending */}
-            <footer className="pt-12 pb-12 text-center space-y-8 opacity-40">
-                <div className="flex justify-center gap-12 h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase tracking-widest">Admin Night</p>
-                    <p className="text-sm font-light italic">"You are not doing this alone."</p>
                 </div>
-            </footer>
+            </div>
         </div>
     )
 }

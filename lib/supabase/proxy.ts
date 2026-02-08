@@ -1,40 +1,29 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { AUTH_ROUTES, PROTECTED_ROUTES, ROUTES } from '@/lib/routes'
+import { MOCK_AUTH_COOKIE_NAME, resolveMockAuthUser } from '@/lib/mock-auth'
 
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
     })
 
-    // E2E Testing Bypass: Strictly disabled in production for security
-    let user = null
-    if (
-        process.env.NEXT_PUBLIC_E2E_TESTING === 'true' &&
-        process.env.NODE_ENV !== 'production' &&
-        process.env.VERCEL_ENV !== 'production'
-    ) {
-        const mockUserCookie = request.cookies.get('e2e-mock-user')?.value
-        if (mockUserCookie) {
-            try {
-                user = JSON.parse(mockUserCookie)
-            } catch (e) {
-                console.error('Invalid E2E mock user in middleware', e)
-            }
-        }
-    }
+    let isAuthenticated = Boolean(
+        resolveMockAuthUser(request.cookies.get(MOCK_AUTH_COOKIE_NAME)?.value)
+    )
 
-    if (!user) {
+    if (!isAuthenticated) {
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
             {
                 cookies: {
                     getAll() {
                         return request.cookies.getAll()
                     },
                     setAll(cookiesToSet) {
-                        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
                         supabaseResponse = NextResponse.next({
                             request,
                         })
@@ -46,33 +35,29 @@ export async function updateSession(request: NextRequest) {
             }
         )
 
-        const {
-            data: { user: supabaseUser },
-        } = await supabase.auth.getUser()
-        user = supabaseUser
+        const { data } = await supabase.auth.getClaims()
+        isAuthenticated = Boolean(data?.claims)
     }
 
     const { pathname } = request.nextUrl
 
     // Protected routes
-    const protectedRoutes = ['/dashboard', '/inbox', '/session', '/settings']
-    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+    const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
 
     // Auth routes (login/register)
-    const authRoutes = ['/login', '/register']
-    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+    const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
 
-    if (!user && isProtectedRoute) {
+    if (!isAuthenticated && isProtectedRoute) {
         // no user, potentially respond by redirecting the user to the login page
         const url = request.nextUrl.clone()
-        url.pathname = '/login'
+        url.pathname = ROUTES.LOGIN
         return NextResponse.redirect(url)
     }
 
-    if (user && isAuthRoute) {
-        // user is logged in, redirect to dashboard
+    if (isAuthenticated && isAuthRoute) {
+        // user is logged in, redirect to home
         const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
+        url.pathname = ROUTES.HOME
         return NextResponse.redirect(url)
     }
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Admin Night Specialists"
+  short_description: "Route work across frontend, API, session, AI, and QA"
+  default_prompt: "Use $admin-night-specialists to implement this Admin Night task with the right specialist workflow."

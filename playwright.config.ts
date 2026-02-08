@@ -1,9 +1,8 @@
 
 import { defineConfig, devices } from '@playwright/test'
-import path from 'path'
 
 // Use process.env.PORT by default and fallback to port 3000
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3000
 
 // Set webServer.url and use.baseURL with the location of the WebServer respecting the correct set port
 const baseURL = `http://localhost:${PORT}`
@@ -34,11 +33,14 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'npm run dev',
+        command: `npm run dev -- --port ${PORT}`,
         url: baseURL,
         reuseExistingServer: false,
         env: {
             NEXT_PUBLIC_E2E_TESTING: 'true',
+            NEXT_PUBLIC_MOCK_AUTH_USER_ID: 'e2e-mock-user-id',
+            NEXT_PUBLIC_MOCK_AUTH_USER_EMAIL: 'tester@example.com',
+            NEXT_PUBLIC_MOCK_AUTH_USER_NAME: 'E2E Tester',
         },
     },
 })

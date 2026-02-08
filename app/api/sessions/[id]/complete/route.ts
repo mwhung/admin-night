@@ -2,18 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
-import { ACHIEVEMENTS, getAchievement, getRandomHumor } from '@/lib/achievements/definitions'
+import { ACHIEVEMENTS, getRandomHumor } from '@/lib/achievements/definitions'
 import { generateSessionSummary } from '@/lib/ai/summary-generator'
+import { completeSessionSchema } from '@/lib/contracts/session'
 import { z } from 'zod'
 
-// Define the request body schema
-const completeSessionSchema = z.object({
-    actualDurationSeconds: z.number().min(0),
-    totalPauseSeconds: z.number().min(0),
-    pauseCount: z.number().min(0),
-    tasksCompletedCount: z.number().min(0),
-    tasksWorkedOn: z.array(z.string()).optional(),
-})
+const isPrismaUniqueConstraintError = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') return false
+    if (!('code' in error)) return false
+    return error.code === 'P2002'
+}
 
 export async function POST(
     request: NextRequest,
@@ -27,7 +25,21 @@ export async function POST(
 
         const { id } = await params
         const body = await request.json()
-        const stats = completeSessionSchema.parse(body)
+        const normalized = {
+            actualDurationSeconds:
+                body.actualDurationSeconds ??
+                (typeof body.durationMinutes === 'number'
+                    ? body.durationMinutes * 60
+                    : 0),
+            totalPauseSeconds: body.totalPauseSeconds ?? 0,
+            pauseCount: body.pauseCount ?? 0,
+            tasksCompletedCount:
+                body.tasksCompletedCount ??
+                (typeof body.tasksCompleted === 'number' ? body.tasksCompleted : 0),
+            tasksWorkedOn: body.tasksWorkedOn,
+        }
+
+        const stats = completeSessionSchema.parse(normalized)
 
         // 1. Fetch Session & Participant Record
         const participant = await prisma.workSessionParticipant.findUnique({
@@ -44,6 +56,15 @@ export async function POST(
 
         if (!participant) {
             return NextResponse.json({ error: 'Session not found or user not participating' }, { status: 404 })
+        }
+
+        if (participant.leftAt && participant.achievementSummary) {
+            return NextResponse.json({
+                success: true,
+                alreadyCompleted: true,
+                newAchievements: [],
+                summary: participant.achievementSummary,
+            })
         }
 
         // 2. Update Participant Stats (Mark as completed logically)
@@ -76,6 +97,8 @@ export async function POST(
         // Filter for post_session types
         const candidates = ACHIEVEMENTS.filter(a => a.triggerType === 'post_session')
 
+        const unlockedCandidates = []
+
         // Evaluate each candidate
         for (const ach of candidates) {
             let unlocked = false
@@ -92,24 +115,42 @@ export async function POST(
             // Add more conditions here...
 
             if (unlocked) {
-                // Check if already owned
-                const existing = await prisma.userAchievement.findUnique({
-                    where: { userId_achievementId: { userId: user.id, achievementId: ach.id } }
-                })
+                unlockedCandidates.push(ach)
+            }
+        }
 
-                if (!existing) {
-                    // Unlock!
-                    const record = await prisma.userAchievement.create({
-                        data: {
-                            userId: user.id,
-                            achievementId: ach.id,
-                            sessionId: id,
-                            unlockedSource: 'post_session',
-                            evidenceSnapshot: ach.description, // Simplified
-                            humorSnapshot: getRandomHumor(ach.id)
-                        }
-                    })
-                    newUnlockedAchievements.push(ach.title)
+        const unlockedAchievementIds = unlockedCandidates.map((ach) => ach.id)
+        const existingAchievements = unlockedAchievementIds.length > 0
+            ? await prisma.userAchievement.findMany({
+                where: {
+                    userId: user.id,
+                    achievementId: { in: unlockedAchievementIds },
+                },
+                select: {
+                    achievementId: true,
+                },
+            })
+            : []
+        const existingAchievementSet = new Set(existingAchievements.map((achievement) => achievement.achievementId))
+
+        for (const ach of unlockedCandidates) {
+            if (existingAchievementSet.has(ach.id)) continue
+
+            try {
+                await prisma.userAchievement.create({
+                    data: {
+                        userId: user.id,
+                        achievementId: ach.id,
+                        sessionId: id,
+                        unlockedSource: 'post_session',
+                        evidenceSnapshot: ach.description, // Simplified
+                        humorSnapshot: getRandomHumor(ach.id)
+                    }
+                })
+                newUnlockedAchievements.push(ach.title)
+            } catch (createError) {
+                if (!isPrismaUniqueConstraintError(createError)) {
+                    throw createError
                 }
             }
         }

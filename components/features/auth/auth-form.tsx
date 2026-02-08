@@ -1,26 +1,23 @@
 'use client'
 
 import { useActionState, useState, useTransition } from 'react'
-import { authenticate, signInWithGoogle } from '@/lib/actions'
+import { authenticate, signInWithGoogle, signInWithMockUser } from '@/lib/actions'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Moon, Sparkles, Eye, EyeOff, Loader2, Check, X } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useRouter } from 'next/navigation'
+import { Moon, Eye, EyeOff, Loader2, Check } from "lucide-react"
 
 interface AuthFormProps {
     initialMode?: 'login' | 'register'
     title?: string
     subtitle?: string
-    onSuccess?: () => void
 }
 
-export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: AuthFormProps) {
-    const router = useRouter()
+export function AuthForm({ initialMode = 'login', title, subtitle }: AuthFormProps) {
     const [mode, setMode] = useState<'login' | 'register'>(initialMode)
     const [showPassword, setShowPassword] = useState(false)
     const [isGooglePending, startGoogleTransition] = useTransition()
+    const [isMockPending, startMockTransition] = useTransition()
 
     // Login State
     const [loginError, loginDispatch, isLoginPending] = useActionState(
@@ -38,6 +35,12 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
     const handleGoogleSignIn = () => {
         startGoogleTransition(async () => {
             await signInWithGoogle()
+        })
+    }
+
+    const handleMockSignIn = () => {
+        startMockTransition(async () => {
+            await signInWithMockUser()
         })
     }
 
@@ -73,6 +76,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
 
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerEmail)
     const isPasswordValid = registerPassword.length >= 6
+    const isMockAuthEnabled = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' || process.env.NEXT_PUBLIC_E2E_TESTING === 'true'
 
     const displayTitle = title || (mode === 'login' ? 'Welcome back' : 'Create your space')
     const displaySubtitle = subtitle || (mode === 'login' ? 'Return to your quiet space' : 'Begin your journey of release')
@@ -87,10 +91,10 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
                     </div>
                 </div>
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-extralight tracking-tight text-[#2d2a26] font-sans">
+                    <h2 className="text-[1.7rem] font-medium tracking-[-0.015em] text-[#2d2a26] font-sans">
                         {displayTitle}
                     </h2>
-                    <p className="text-[#3d362f]/50 font-light text-xs tracking-wide">
+                    <p className="type-caption text-[#3d362f]/55">
                         {displaySubtitle}
                     </p>
                 </div>
@@ -130,11 +134,24 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
                     Continue with Google
                 </Button>
 
+                {isMockAuthEnabled && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full h-12 text-sm font-medium rounded-[0.8rem] bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                        onClick={handleMockSignIn}
+                        disabled={isMockPending}
+                    >
+                        {isMockPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                        {isMockPending ? 'Entering mock mode...' : 'Continue with Mock Auth (Dev)'}
+                    </Button>
+                )}
+
                 <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-[#3d362f]/10" />
                     </div>
-                    <div className="relative flex justify-center text-[9px] uppercase tracking-[0.2em] font-bold text-[#3d362f]/30">
+                    <div className="relative flex justify-center type-caption text-[#3d362f]/38 uppercase tracking-[0.1em] font-semibold">
                         <span className="bg-white px-4">
                             or with email
                         </span>
@@ -145,7 +162,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
                     <form action={loginDispatch} className="space-y-4">
                         <div className="space-y-3">
                             <div className="space-y-1.5">
-                                <Label htmlFor="email" className="text-xs font-medium text-[#2d2a26] ml-1">Email</Label>
+                                <Label htmlFor="email" className="type-section-label text-[#2d2a26] ml-1 tracking-[0.06em]">Email</Label>
                                 <Input
                                     id="email"
                                     name="email"
@@ -156,7 +173,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="password" className="text-xs font-medium text-[#2d2a26] ml-1">Password</Label>
+                                <Label htmlFor="password" className="type-section-label text-[#2d2a26] ml-1 tracking-[0.06em]">Password</Label>
                                 <div className="relative">
                                     <Input
                                         id="password"
@@ -196,7 +213,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
                     <form onSubmit={handleRegister} className="space-y-4">
                         <div className="space-y-3">
                             <div className="space-y-1.5">
-                                <Label htmlFor="register-email" className="text-xs font-medium text-[#2d2a26] ml-1">Email</Label>
+                                <Label htmlFor="register-email" className="type-section-label text-[#2d2a26] ml-1 tracking-[0.06em]">Email</Label>
                                 <Input
                                     id="register-email"
                                     type="email"
@@ -208,7 +225,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="register-password" className="text-xs font-medium text-[#2d2a26] ml-1">Password</Label>
+                                <Label htmlFor="register-password" className="type-section-label text-[#2d2a26] ml-1 tracking-[0.06em]">Password</Label>
                                 <div className="relative">
                                     <Input
                                         id="register-password"
@@ -257,12 +274,12 @@ export function AuthForm({ initialMode = 'login', title, subtitle, onSuccess }: 
             <div className="text-center pt-2">
                 <button
                     onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                    className="text-sm font-light text-[#3d362f]/60 hover:text-[#3d362f] transition-colors"
+                    className="type-body-soft text-[#3d362f]/65 hover:text-[#3d362f] transition-colors"
                 >
                     {mode === 'login' ? (
-                        <>New here? <span className="font-medium text-[#3d362f]">Create your space</span></>
+                        <>New here? <span className="font-semibold text-[#3d362f]">Create your space</span></>
                     ) : (
-                        <>Already have a space? <span className="font-medium text-[#3d362f]">Sign in</span></>
+                        <>Already have a space? <span className="font-semibold text-[#3d362f]">Sign in</span></>
                     )}
                 </button>
             </div>

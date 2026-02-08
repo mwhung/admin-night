@@ -1,38 +1,53 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { MOCK_AUTH_COOKIE_NAME, resolveMockAuthUser } from '@/lib/mock-auth'
+import { Prisma } from '@prisma/client'
 
 export async function getCurrentUser() {
-    // E2E Testing Bypass: Allows tests to simulate a logged-in user without real Supabase calls
-    // CRITICAL: This is strictly disabled in production for security.
-    if (
-        process.env.NEXT_PUBLIC_E2E_TESTING === 'true' &&
-        process.env.NODE_ENV !== 'production' &&
-        process.env.VERCEL_ENV !== 'production'
-    ) {
-        const { cookies } = await import('next/headers')
-        const cookieStore = await cookies()
-        const mockUserJson = cookieStore.get('e2e-mock-user')?.value
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const mockUser = resolveMockAuthUser(cookieStore.get(MOCK_AUTH_COOKIE_NAME)?.value)
 
-        if (mockUserJson) {
+    // Development Mock Auth: allows local/e2e login bypass while staying disabled in production.
+    if (mockUser) {
+        let dbUser = await prisma.user.findUnique({ where: { email: mockUser.email } })
+        if (!dbUser) {
+            dbUser = await prisma.user.findUnique({ where: { id: mockUser.id } })
+        }
+
+        if (!dbUser) {
             try {
-                const mockUser = JSON.parse(mockUserJson)
-                // Ensure the mock user exists in Prisma for data consistency
-                let dbUser = await prisma.user.findUnique({ where: { email: mockUser.email } })
-                if (!dbUser) {
-                    dbUser = await prisma.user.create({
-                        data: {
-                            id: mockUser.id,
-                            email: mockUser.email,
-                            name: mockUser.name || 'E2E Tester',
-                        }
-                    })
+                dbUser = await prisma.user.create({
+                    data: {
+                        id: mockUser.id,
+                        email: mockUser.email,
+                        name: mockUser.name || 'Mock User',
+                    }
+                })
+            } catch (error) {
+                // Parallel test workers may race to create the same mock user.
+                if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                    dbUser =
+                        await prisma.user.findUnique({ where: { email: mockUser.email } }) ||
+                        await prisma.user.findUnique({ where: { id: mockUser.id } })
+                } else {
+                    throw error
                 }
-                return dbUser
-            } catch (e) {
-                console.error('Invalid E2E mock user JSON', e)
             }
         }
+
+        if (dbUser && (dbUser.email !== mockUser.email || dbUser.name !== (mockUser.name || 'Mock User'))) {
+            dbUser = await prisma.user.update({
+                where: { id: dbUser.id },
+                data: {
+                    email: mockUser.email,
+                    name: mockUser.name || 'Mock User',
+                },
+            })
+        }
+
+        return dbUser ?? null
     }
 
     const supabase = await createClient()

@@ -1,31 +1,27 @@
 /* ============================================
-   🧘 Therapeutic Utilities
+   Therapeutic Utilities
    ============================================ */
 
 /* Therapeutic Shadows */
 .shadow-therapeutic {
-    box-shadow:
-        0 4px 20px oklch(0.35 0.02 230 / 0.06),
-        0 1px 4px oklch(0.35 0.02 230 / 0.03);
+    box-shadow: var(--shadow-soft);
 }
 
 .dark .shadow-therapeutic {
-    box-shadow:
-        0 4px 20px oklch(0 0 0 / 0.25),
-        0 1px 4px oklch(0 0 0 / 0.15);
+    box-shadow: var(--shadow-soft);
 }
 
 /* Glassmorphism - Therapeutic version */
 .glass-therapeutic {
-    background: oklch(0.99 0.005 230 / 0.75);
+    background: var(--surface-elevated);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid oklch(0.92 0.015 230 / 0.5);
+    border: 1px solid var(--stroke-soft);
 }
 
 .dark .glass-therapeutic {
-    background: oklch(0.18 0.015 240 / 0.75);
-    border: 1px solid oklch(0.30 0.015 240 / 0.3);
+    background: var(--surface-elevated);
+    border: 1px solid var(--stroke-soft);
 }
 
 /* Therapeutic Hover States */
@@ -36,4 +32,53 @@
 
 .hover-lift:hover {
     transform: translateY(-2px);
+}
+
+/* Typographic rhythm */
+.type-page-title {
+    font-size: clamp(1.95rem, 2.8vw, 2.45rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    font-weight: 500;
+    color: var(--foreground);
+}
+
+.type-page-subtitle {
+    font-size: clamp(1rem, 1.4vw, 1.1rem);
+    line-height: 1.52;
+    letter-spacing: 0.006em;
+    font-weight: 400;
+    color: var(--muted-foreground);
+}
+
+.type-section-label {
+    font-size: 0.71rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+}
+
+.type-metric-value {
+    font-size: clamp(2rem, 3.25vw, 2.45rem);
+    line-height: 1;
+    letter-spacing: -0.015em;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+}
+
+.type-body-soft {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    letter-spacing: 0.003em;
+    color: var(--muted-foreground);
+}
+
+.type-caption {
+    font-size: 0.69rem;
+    line-height: 1.38;
+    letter-spacing: 0.028em;
+    color: var(--muted-foreground);
 }

@@ -5,7 +5,6 @@ import { NextResponse } from "next/server"
 export async function GET() {
     try {
         // Real stats from DB
-        const totalTasks = await prisma.task.count()
         const completedTasks = await prisma.task.count({
             where: { state: 'RESOLVED' }
         })

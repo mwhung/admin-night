@@ -16,8 +16,6 @@ import { AchievementToast } from '@/components/features/achievements'
 
 interface ActiveSessionViewProps {
     sessionId: string
-    userId: string
-    userName?: string
     durationMinutes: number
     startTime: Date
     onLeave: () => void
@@ -34,8 +32,6 @@ export interface SessionStats {
 
 export function ActiveSessionView({
     sessionId,
-    userId,
-    userName,
     durationMinutes,
     startTime,
     onLeave,
@@ -43,12 +39,9 @@ export function ActiveSessionView({
     className,
 }: ActiveSessionViewProps) {
     const [isMuted, setIsMuted] = useState(true)
-    const [sessionStartTime] = useState(new Date())
 
-    const { participants, participantCount, isConnected } = useSessionPresence({
+    const { participantCount, isConnected } = useSessionPresence({
         sessionId,
-        userId,
-        userName,
     })
 
     // Achievement tracking
@@ -74,13 +67,13 @@ export function ActiveSessionView({
 
     const handleComplete = useCallback(() => {
         const stats: SessionStats = {
-            actualDurationSeconds: Math.floor((Date.now() - sessionStartTime.getTime()) / 1000),
+            actualDurationSeconds: Math.floor((Date.now() - startTime.getTime()) / 1000),
             totalPauseSeconds: 0, // TODO: track actual pause time
             pauseCount: sessionState.pauseCount,
             tasksCompletedCount: sessionState.tasksCompletedCount,
         }
         onComplete?.(stats)
-    }, [onComplete, sessionStartTime, sessionState])
+    }, [onComplete, startTime, sessionState])
 
     const handlePause = useCallback(() => {
         trackPause()
@@ -158,34 +151,6 @@ export function ActiveSessionView({
                 <LogOut className="h-5 w-5 mr-2" />
                 Leave Session
             </Button>
-
-            {/* Participant Avatars */}
-            {participantCount > 1 && (
-                <div className="mt-8 text-center">
-                    <p className="text-sm text-muted-foreground mb-3">
-                        Working together with
-                    </p>
-                    <div className="flex -space-x-2 justify-center">
-                        {participants
-                            .filter((p) => p.userId !== userId)
-                            .slice(0, 5)
-                            .map((participant, index) => (
-                                <div
-                                    key={participant.userId}
-                                    className="h-10 w-10 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-medium"
-                                    title={participant.userName || 'Anonymous'}
-                                >
-                                    {participant.userName?.[0]?.toUpperCase() || '?'}
-                                </div>
-                            ))}
-                        {participantCount > 6 && (
-                            <div className="h-10 w-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
-                                +{participantCount - 6}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* Achievement Toast */}
             <AchievementToast

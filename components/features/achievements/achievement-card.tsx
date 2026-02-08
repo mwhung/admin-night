@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Trophy, Lock, Moon, Zap, Wind, Footprints, Sparkles, type LucideIcon } from 'lucide-react'
-import { getAchievement, type AchievementDef, type Rarity } from '@/lib/achievements/definitions'
+import { getAchievement, type Rarity } from '@/lib/achievements/definitions'
 
 const iconMap: Record<string, LucideIcon> = {
     Moon,

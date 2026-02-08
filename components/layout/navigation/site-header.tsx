@@ -1,33 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Moon, Sparkles, LogIn, LogOut, UserPlus, User } from 'lucide-react'
+import { Moon, LogOut, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ParticipantCount } from '@/components/features/session'
-import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useSessions } from '@/lib/hooks/useSessions'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { useSessionPresence } from '@/lib/realtime'
 
 export function SiteHeader() {
-    const [liveCount, setLiveCount] = useState(12) // Default mock
-
     const { user, loading } = useAuth()
     const supabase = createClient()
-
-    useEffect(() => {
-        // Simulate live participant count
-        setLiveCount(Math.floor(Math.random() * 5) + 8)
-
-        const interval = setInterval(() => {
-            setLiveCount(prev => {
-                const change = Math.random() > 0.5 ? 1 : -1
-                return Math.max(1, Math.min(20, prev + change))
-            })
-        }, 30000)
-        return () => clearInterval(interval)
-    }, [])
+    const shouldLoadSessionMetrics = !loading && Boolean(user)
+    const { participantCount: onlineCount, isConnected: isPresenceConnected } = useSessionPresence({
+        sessionId: 'global-online',
+    })
+    const { data: activeSessionsData } = useSessions({
+        status: 'ACTIVE',
+        enabled: shouldLoadSessionMetrics,
+    })
+    const activeSessionId = shouldLoadSessionMetrics
+        ? activeSessionsData?.sessions[0]?.id ?? ''
+        : ''
+    const shouldTrackFocusedPresence = shouldLoadSessionMetrics && Boolean(activeSessionId)
+    const { participantCount: focusedPresenceCount } = useSessionPresence({
+        sessionId: activeSessionId || 'no-active-session',
+        enabled: shouldTrackFocusedPresence,
+    })
+    const focusedCount = shouldTrackFocusedPresence
+        ? Math.min(focusedPresenceCount, onlineCount)
+        : 0
+    const metricNumberClass = 'tabular-nums text-sm font-bold leading-none'
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
@@ -35,42 +40,52 @@ export function SiteHeader() {
     }
 
     return (
-        <header className="w-full z-50 p-4 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/50">
-            <div className="flex items-center gap-2">
+        <header className="sticky top-0 w-full z-50 p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-background/55 backdrop-blur-xl backdrop-saturate-150 border-b border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+            <div className="flex items-center gap-2 min-w-0">
                 <div className="bg-primary/10 p-1.5 rounded-lg">
                     <Moon className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex flex-col">
-                    <span className="text-sm font-extralight tracking-widest uppercase">Admin Night</span>
-                    <span className="text-[10px] text-muted-foreground font-medium tracking-[0.2em] -mt-1 uppercase opacity-50">Deep Focus</span>
-                </div>
+                <span className="type-section-label uppercase text-foreground/85 tracking-[0.1em]">ADMIN NIGHT</span>
             </div>
 
             <Badge
                 variant="outline"
                 className="bg-primary/5 text-primary border-primary/20 px-3 py-1 gap-2 h-auto shadow-sm"
+                role="status"
+                aria-live="polite"
+                aria-label={`${onlineCount} online, ${focusedCount} focused`}
             >
-                <ParticipantCount
-                    count={liveCount}
-                    isConnected={true}
-                    size="sm"
-                    showLabel={true}
-                />
+                <span className="inline-flex items-center gap-1.5 sm:hidden">
+                    <span className={metricNumberClass}>{focusedCount}</span>
+                    <span className="text-xs font-medium text-muted-foreground">focused</span>
+                </span>
+
+                <span className="hidden items-center gap-1.5 sm:inline-flex">
+                    <ParticipantCount
+                        count={onlineCount}
+                        isConnected={isPresenceConnected}
+                        size="sm"
+                        showLabel={false}
+                    />
+                    <span className="text-xs font-medium text-muted-foreground">online</span>
+                    <span className="text-xs text-muted-foreground/60">·</span>
+                    <span className={metricNumberClass}>{focusedCount}</span>
+                    <span className="text-xs font-medium text-muted-foreground">focused</span>
+                </span>
             </Badge>
 
-            <div className="flex items-center gap-4">
-
+            <div className="justify-self-end">
                 <div className="flex items-center gap-2 border-l pl-4 border-border/50">
                     {!loading && (
                         <>
                             {!user ? (
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="sm" asChild className="text-[11px] uppercase tracking-wider font-light h-8 px-3">
+                                    <Button variant="ghost" size="sm" asChild className="type-section-label h-8 px-3">
                                         <Link href="/login">
                                             Sign In
                                         </Link>
                                     </Button>
-                                    <Button variant="secondary" size="sm" asChild className="text-[11px] uppercase tracking-wider font-medium h-8 px-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border-none">
+                                    <Button variant="secondary" size="sm" asChild className="type-section-label h-8 px-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border-none">
                                         <Link href="/register">
                                             Register
                                         </Link>
@@ -81,12 +96,13 @@ export function SiteHeader() {
                                     <Link href="/settings" className="flex items-center gap-2 hover:opacity-70 transition-opacity">
                                         <div className="size-8 rounded-full bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
                                             {user.user_metadata?.avatar_url ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
                                                 <img src={user.user_metadata.avatar_url} alt="" className="size-full rounded-full object-cover" />
                                             ) : (
                                                 <User className="size-4 text-primary" />
                                             )}
                                         </div>
-                                        <span className="text-[11px] uppercase tracking-wider font-medium hidden sm:inline-block">
+                                        <span className="type-caption uppercase tracking-[0.08em] font-semibold hidden sm:inline-block text-foreground/80">
                                             {user.user_metadata?.name || user.email?.split('@')[0]}
                                         </span>
                                     </Link>

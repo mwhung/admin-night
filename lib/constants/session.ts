@@ -1,0 +1,3 @@
+export const SESSION_DURATION_MIN = 15
+export const SESSION_DURATION_MAX = 60
+export const DEFAULT_SESSION_DURATION = 25

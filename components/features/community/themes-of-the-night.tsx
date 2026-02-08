@@ -18,6 +18,9 @@ export function ThemesOfTheNight({ themes }: ThemesOfTheNightProps) {
             {themes.map((theme, i) => {
                 const fontSize = 12 + (theme.weight / 2)
                 const opacity = 0.3 + (theme.weight / 40)
+                const horizontalDrift = ((i % 5) - 2) * 1.5
+                const yDuration = 3 + (i % 3) * 0.5
+                const xDuration = 4 + (i % 4) * 0.4
 
                 return (
                     <motion.div
@@ -26,17 +29,17 @@ export function ThemesOfTheNight({ themes }: ThemesOfTheNightProps) {
                         animate={{
                             opacity: opacity,
                             y: [0, -5, 0],
-                            x: [0, Math.random() * 4 - 2, 0]
+                            x: [0, horizontalDrift, 0]
                         }}
                         transition={{
                             delay: i * 0.1,
                             y: {
-                                duration: 3 + Math.random() * 2,
+                                duration: yDuration,
                                 repeat: Infinity,
                                 ease: "easeInOut"
                             },
                             x: {
-                                duration: 4 + Math.random() * 2,
+                                duration: xDuration,
                                 repeat: Infinity,
                                 ease: "easeInOut"
                             }

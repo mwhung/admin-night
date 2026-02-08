@@ -16,6 +16,14 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Development Mock Auth
+
+To bypass Supabase login locally and jump directly to authenticated UI flows:
+
+1. Set `NEXT_PUBLIC_MOCK_AUTH="true"` in your `.env`.
+2. Run `npm run dev`.
+3. Open `/login` and use `Continue with Mock Auth (Dev)` (or you will be auto-treated as logged in for guarded flows).
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

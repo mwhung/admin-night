@@ -1,0 +1,4 @@
+interface:
+  display_name: "Admin Night DevOps Testing"
+  short_description: "Harden CI, tests, and deployment for Admin Night"
+  default_prompt: "Use $admin-night-devops-testing to stabilize these tests and CI checks."

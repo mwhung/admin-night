@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/navigation/site-header"
 import { FloatingNav } from "@/components/layout/navigation/floating-nav"
+import { SessionPauseBubble } from "@/components/features/session"
 
 export default function RootLayout({
   children,
@@ -29,9 +30,10 @@ export default function RootLayout({
         <Providers>
           <div className="flex flex-col min-h-screen w-full bg-background font-sans">
             <SiteHeader />
-            <main className="flex-1 w-full pb-24">
+            <main className="flex-1 min-h-0 w-full pb-24">
               {children}
             </main>
+            <SessionPauseBubble />
             <FloatingNav />
           </div>
         </Providers>

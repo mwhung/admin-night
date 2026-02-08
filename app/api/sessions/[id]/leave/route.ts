@@ -22,8 +22,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         // Get body for optional tasks worked on
         let tasksWorkedOn: string[] = []
         try {
-            const body = await request.json()
-            tasksWorkedOn = body.tasksWorkedOn || []
+            const body = await request.json() as { tasksWorkedOn?: unknown }
+            if (Array.isArray(body.tasksWorkedOn)) {
+                tasksWorkedOn = body.tasksWorkedOn.filter(
+                    (taskId: unknown): taskId is string => typeof taskId === 'string'
+                )
+            }
         } catch {
             // Body is optional
         }
@@ -54,42 +58,49 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             )
         }
 
-        if (participation.leftAt) {
-            return NextResponse.json(
-                { error: 'Already left this session' },
-                { status: 400 }
-            )
-        }
-
-        // Update participation with leave time and tasks worked on
-        await prisma.workSessionParticipant.update({
-            where: { id: participation.id },
-            data: {
-                leftAt: new Date(),
-                tasksWorkedOn: tasksWorkedOn.length > 0 ? tasksWorkedOn : undefined,
-            },
-        })
-
-        // Get remaining participant count
-        const remainingCount = await prisma.workSessionParticipant.count({
-            where: {
-                sessionId,
-                leftAt: null,
-            },
-        })
-
-        // If no participants left and session is ACTIVE, complete it
-        if (remainingCount === 0 && workSession.status === 'ACTIVE') {
-            await prisma.workSession.update({
-                where: { id: sessionId },
-                data: { status: 'COMPLETED' },
+        const { remainingCount, alreadyLeft } = await prisma.$transaction(async (tx) => {
+            const leaveUpdate = await tx.workSessionParticipant.updateMany({
+                where: {
+                    id: participation.id,
+                    leftAt: null,
+                },
+                data: {
+                    leftAt: new Date(),
+                    tasksWorkedOn: tasksWorkedOn.length > 0 ? tasksWorkedOn : undefined,
+                },
             })
-        }
+
+            const count = await tx.workSessionParticipant.count({
+                where: {
+                    sessionId,
+                    leftAt: null,
+                },
+            })
+
+            // Transition to completed only when this was the final active participant.
+            if (count === 0) {
+                await tx.workSession.updateMany({
+                    where: {
+                        id: sessionId,
+                        status: 'ACTIVE',
+                    },
+                    data: { status: 'COMPLETED' },
+                })
+            }
+
+            return {
+                remainingCount: count,
+                alreadyLeft: leaveUpdate.count === 0,
+            }
+        })
 
         return NextResponse.json({
             success: true,
             participantCount: remainingCount,
-            message: 'Successfully left the session',
+            alreadyLeft,
+            message: alreadyLeft
+                ? 'Leave already recorded for this session'
+                : 'Successfully left the session',
         })
     } catch (error) {
         console.error('Error leaving session:', error)

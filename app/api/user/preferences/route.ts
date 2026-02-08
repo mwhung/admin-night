@@ -2,6 +2,7 @@
 import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 const PreferencesSchema = z.object({
@@ -50,7 +51,10 @@ export async function PATCH(req: Request) {
             select: { preferences: true }
         })
 
-        const currentPrefs = (dbUser?.preferences as any) || {}
+        const currentPrefs: Prisma.JsonObject =
+            dbUser?.preferences && typeof dbUser.preferences === "object" && !Array.isArray(dbUser.preferences)
+                ? (dbUser.preferences as Prisma.JsonObject)
+                : {}
         const updatedPrefs = { ...currentPrefs, ...validatedData }
 
         const updatedUser = await prisma.user.update({

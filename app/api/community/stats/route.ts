@@ -1,73 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getCommunityReactionMetrics, syncCommunityMilestones } from '@/lib/community/aggregation'
 
-// Helper to get start dates for windows
-const getWindowStart = (type: 'daily' | 'weekly' | 'monthly') => {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-
-    if (type === 'daily') return now
-
-    if (type === 'weekly') {
-        const day = now.getDay()
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
-        now.setDate(diff)
-        return now
-    }
-
-    if (type === 'monthly') {
-        now.setDate(1)
-        return now
-    }
-
-    return now
+function parseTopCategories(value: unknown): string[] {
+    if (!Array.isArray(value)) return []
+    return value.filter((item): item is string => typeof item === 'string')
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
-        const dailyStart = getWindowStart('daily')
-        const weeklyStart = getWindowStart('weekly')
-        const monthlyStart = getWindowStart('monthly')
-
-        // Fetch milestones for windows (create if not exist logic handled in aggregator separate job, 
-        // but for now we query what exists or return 0s)
-
-        // Parallel queries for speed
-        const [dailyStats, weeklyStats, monthlyStats] = await Promise.all([
-            prisma.communityMilestone.findUnique({
-                where: { windowType_windowStart: { windowType: 'daily', windowStart: dailyStart } }
+        const [milestones, reactionMetrics, totalCompleted] = await Promise.all([
+            syncCommunityMilestones(),
+            getCommunityReactionMetrics(),
+            prisma.task.count({
+                where: { state: 'RESOLVED' },
             }),
-            prisma.communityMilestone.findUnique({
-                where: { windowType_windowStart: { windowType: 'weekly', windowStart: weeklyStart } }
-            }),
-            prisma.communityMilestone.findUnique({
-                where: { windowType_windowStart: { windowType: 'monthly', windowStart: monthlyStart } }
-            })
         ])
 
-        // Get total completed tasks (legacy global stat support)
-        const totalCompleted = await prisma.task.count({
-            where: { state: 'RESOLVED' }
-        })
+        const weeklyGoal = 10000
+        const weeklyProgress = Math.min(milestones.weekly.totalSteps, weeklyGoal)
 
         return NextResponse.json({
             community: {
                 totalTasksCompleted: totalCompleted,
                 daily: {
-                    totalSteps: dailyStats?.totalSteps || 0,
-                    activeUsers: dailyStats?.activeUsers || 0,
-                    topCategories: dailyStats?.topCategories || []
+                    totalSteps: milestones.daily.totalSteps,
+                    activeUsers: milestones.daily.activeUsers,
+                    topCategories: parseTopCategories(milestones.daily.topCategories),
                 },
                 weekly: {
-                    totalSteps: weeklyStats?.totalSteps || 0,
-                    goal: 10000,
-                    progress: weeklyStats?.totalSteps || 0
+                    totalSteps: milestones.weekly.totalSteps,
+                    goal: weeklyGoal,
+                    progress: weeklyProgress,
                 },
                 monthly: {
-                    totalSteps: monthlyStats?.totalSteps || 0,
-                    fact: "This month, we collectively cleared enough admin to bore a small bureaucracy to tears."
-                }
-            }
+                    totalSteps: milestones.monthly.totalSteps,
+                    fact: 'This month, we collectively cleared enough admin to bore a small bureaucracy to tears.',
+                },
+                reactions: reactionMetrics,
+                metrics: {
+                    reactionDensity: reactionMetrics.weekly.reactionDensity,
+                    sessionParticipationRate: reactionMetrics.weekly.sessionParticipationRate,
+                    userParticipationRate: reactionMetrics.weekly.userParticipationRate,
+                },
+            },
         })
 
     } catch (error) {

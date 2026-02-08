@@ -1,0 +1,12 @@
+import { redirect } from 'next/navigation'
+
+interface SessionPageProps {
+    params: Promise<{
+        sessionId: string
+    }>
+}
+
+export default async function LegacyAdminModeSessionPage({ params }: SessionPageProps) {
+    const { sessionId } = await params
+    redirect(`/sessions/${sessionId}`)
+}

@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
+import { isInternalApiRequest } from '@/lib/internal-api'
 import { z } from 'zod'
 
 const updateSessionSchema = z.object({
@@ -22,29 +23,68 @@ interface RouteParams {
 // GET /api/sessions/[id]
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
+        const isInternalRequest = isInternalApiRequest(request)
         const user = await getCurrentUser()
-        if (!user?.id) {
+        if (!user?.id && !isInternalRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const { id } = await params
 
-        const workSession = await prisma.workSession.findUnique({
-            where: { id },
-            include: {
-                participants: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                image: true,
+        if (isInternalRequest) {
+            const workSession = await prisma.workSession.findUnique({
+                where: { id },
+                include: {
+                    participants: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    image: true,
+                                },
                             },
                         },
                     },
                 },
-                _count: {
-                    select: { participants: true },
+            })
+
+            if (!workSession) {
+                return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+            }
+
+            const activeParticipants = workSession.participants.filter((p) => !p.leftAt)
+
+            return NextResponse.json({
+                session: {
+                    id: workSession.id,
+                    scheduledStart: workSession.scheduledStart.toISOString(),
+                    scheduledEnd: workSession.scheduledEnd.toISOString(),
+                    durationMinutes: workSession.durationMinutes,
+                    status: workSession.status,
+                    participantCount: activeParticipants.length,
+                    participants: activeParticipants.map((p) => ({
+                        userId: p.user.id,
+                        userName: p.user.name,
+                        userImage: p.user.image,
+                        joinedAt: p.joinedAt.toISOString(),
+                    })),
+                    isParticipating: user?.id
+                        ? activeParticipants.some((p) => p.userId === user.id)
+                        : false,
+                },
+            })
+        }
+
+        const workSession = await prisma.workSession.findUnique({
+            where: { id },
+            include: {
+                participants: {
+                    select: {
+                        userId: true,
+                        joinedAt: true,
+                        leftAt: true,
+                    },
                 },
             },
         })
@@ -53,6 +93,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 })
         }
 
+        const userId = user?.id
         const activeParticipants = workSession.participants.filter((p) => !p.leftAt)
 
         return NextResponse.json({
@@ -63,15 +104,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 durationMinutes: workSession.durationMinutes,
                 status: workSession.status,
                 participantCount: activeParticipants.length,
-                participants: activeParticipants.map((p) => ({
-                    userId: p.user.id,
-                    userName: p.user.name,
-                    userImage: p.user.image,
-                    joinedAt: p.joinedAt.toISOString(),
-                })),
-                isParticipating: activeParticipants.some(
-                    (p) => p.userId === user.id
-                ),
+                isParticipating: Boolean(userId && activeParticipants.some((p) => p.userId === userId)),
             },
         })
     } catch (error) {

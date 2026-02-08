@@ -38,9 +38,9 @@ export function VictoryFeed() {
     }, [])
 
     return (
-        <div className="h-full w-full flex flex-col justify-center p-8 space-y-8">
+        <div className="h-full w-full flex flex-col justify-center p-4 sm:p-5 space-y-5">
             <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary/40">Recent Victories</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Victories</p>
                 <div className="h-12 flex items-center">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -61,8 +61,8 @@ export function VictoryFeed() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 pt-4 border-t border-primary/5">
-                {SAMPLE_VICTORIES.slice(0, 3).map((v, i) => (
+            <div className="grid grid-cols-1 gap-2.5 pt-3 border-t border-border/60">
+                {SAMPLE_VICTORIES.slice(0, 3).map((v) => (
                     <div key={v.id} className="flex items-center justify-between opacity-40 group hover:opacity-100 transition-opacity">
                         <div className="flex items-center gap-3">
                             <div className="size-1.5 rounded-full bg-primary/20 group-hover:bg-primary transition-colors" />
@@ -73,8 +73,8 @@ export function VictoryFeed() {
                 ))}
             </div>
 
-            <div className="pt-2">
-                <button className="text-[10px] uppercase tracking-widest font-bold text-primary/30 hover:text-primary/60 transition-colors flex items-center gap-2 group">
+            <div className="pt-1">
+                <button className="text-[11px] uppercase tracking-[0.12em] font-semibold text-primary/40 hover:text-primary/70 transition-colors flex items-center gap-2 group">
                     View Collective Pulse <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>

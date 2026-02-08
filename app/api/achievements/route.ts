@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
     try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const sessionId = searchParams.get('sessionId')
 
-        const where: any = {
+        const where: Prisma.UserAchievementWhereInput = {
             userId: user.id
         }
 

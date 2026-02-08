@@ -4,13 +4,13 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabasePublishableKey) {
     console.warn('Supabase credentials not configured. Realtime features will be disabled.')
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+export const supabase = createClient(supabaseUrl || '', supabasePublishableKey || '', {
     realtime: {
         params: {
             eventsPerSecond: 10,
@@ -19,9 +19,8 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
 })
 
 export type RealtimeSessionPayload = {
-    user_id: string
-    user_name?: string
     joined_at: string
+    tasks_completed?: number
 }
 
 export function createSessionChannel(sessionId: string) {

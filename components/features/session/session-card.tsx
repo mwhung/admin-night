@@ -72,6 +72,7 @@ export function SessionCard({
 
     return (
         <Card
+            data-session-id={id}
             className={cn(
                 'relative overflow-hidden transition-all duration-300 hover:shadow-lg',
                 status === 'ACTIVE' && 'ring-2 ring-primary/50',

@@ -10,8 +10,9 @@
 
 1. **Guest Mode (Anonymous)**
    - No registration/login required.
-   - Access to active sessions.
-   - No task recommendations or personal history.
+   - Can create and join sessions in real time.
+   - Can view community information.
+   - No task recommendations, personal history, task drawer, or other cumulative features.
    - Records are not persisted across devices or sessions.
 
 2. **Registered Mode (User)**
@@ -120,7 +121,7 @@ A low‑friction inbox to capture admin‑type tasks without clarification.
 **Status: Descope for MVP (Confirmed)**
 - Functionality absorbed by **6.3 Admin Mode UI** during the "Setup" phase.
 - Users capture tasks directly when starting a session.
-- Captured tasks will be stored in a "Task Drawer" (conceptual) to be automatically surfaced in the next session.
+- Captured tasks for registered users will be stored in a "Task Drawer" (conceptual) to be automatically surfaced in the next session.
 - Outside of active sessions, there is currently no separate entry point for task capture in MVP.
 
 ---
@@ -128,13 +129,15 @@ A low‑friction inbox to capture admin‑type tasks without clarification.
 ### 6.2 Admin Night Sessions
 
 **Description**  
-Scheduled shared time blocks where users work on admin tasks together.
+Shared time blocks where users work on admin tasks together.
 
 **Requirements**
-- Fixed weekly time slots (configured by system)
-- Join / leave session
+- Real-time create / join / leave session flow (Guest + Registered)
 - Show live participant count
-- Session timer (25–45 min)
+- Session timer (custom 15–60 min)
+
+**Future Direction**
+- Add "Community Day" style fixed shared windows once participation patterns are stable.
 
 **Non‑Goals**
 - Chat
@@ -220,7 +223,8 @@ Provide users with granular control over their therapeutic environment and data.
 ## 7. Non‑Functional Requirements
 
 ### 7.1 Performance
-- Session join latency < 2 seconds
+- Session join latency target (production): < 2 seconds
+- Session join smoke benchmark (development/E2E): < 6 seconds
 - AI response < 5 seconds (acceptable)
 
 ### 7.2 Accessibility
@@ -256,7 +260,7 @@ Provide users with granular control over their therapeutic environment and data.
 
 ### 9.3 Retention Signals
 - Weekly return rate
-- Re‑joining the same time slot
+- Re‑joining shared sessions week over week
 
 ---
 
@@ -264,7 +268,7 @@ Provide users with granular control over their therapeutic environment and data.
 
 | Risk | Mitigation |
 |----|-----------|
-| Low session attendance | Start with fewer fixed slots |
+| Low session attendance | Introduce Community Day fixed shared windows after usage patterns are observed |
 | AI suggestions feel wrong | Allow easy skip / edit |
 | Users expect chat | Clear positioning & copy |
 
@@ -295,11 +299,10 @@ Provide users with granular control over their therapeutic environment and data.
 
 ## 12. Open Questions
 
-- Ideal session length: 25 vs 45 min?
-- How many weekly slots at launch?
+- What should the default session length be within the 15–60 min range?
+- When should Community Day fixed shared windows launch, and how many per week?
 - Should users pick a task before joining?
 
 ---
 
 **End of PRD**
-

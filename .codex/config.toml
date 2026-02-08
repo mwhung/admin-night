@@ -1,0 +1,20 @@
+# Project-level Codex configuration for Admin Night.
+
+project_doc_fallback_filenames = [
+  ".agent/instructions.md",
+  "STATUS.md",
+  "BACKLOG.md",
+]
+project_doc_max_bytes = 65536
+
+[[skills.config]]
+path = ".agents/skills/admin-night-specialists"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/admin-night-session-realtime"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/admin-night-devops-testing"
+enabled = true

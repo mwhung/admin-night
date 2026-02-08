@@ -6,25 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import {
     User,
-    Shield,
     Database,
     Sparkles,
-    History,
-    ArrowRight,
-    Zap,
-    Target,
-    Lock,
     Clock,
-    Bell,
     Palette,
     Volume2,
     Eye,
-    BarChart3,
     BrainCircuit,
     Info,
-    Loader2
+    Loader2,
+    type LucideIcon,
 } from "lucide-react"
-import Link from "next/link"
 import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { GuestPlaceholder } from "@/components/features/auth/guest-placeholder"
@@ -72,7 +64,7 @@ export default function SettingsPage() {
     }, [user])
 
     // Update Preference Function
-    const updatePreference = useCallback(async (key: string, value: any) => {
+    const updatePreference = useCallback(async (key: string, value: unknown) => {
         if (!user) return // Don't save for guests
 
         setSavingSetting(key)
@@ -173,13 +165,13 @@ export default function SettingsPage() {
         )
     }
 
-    const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any, title: string, subtitle?: string }) => (
+    const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: LucideIcon, title: string, subtitle?: string }) => (
         <div className="flex flex-col gap-1 mb-6">
             <div className="flex items-center gap-2 text-primary/80">
                 <Icon className="size-5" />
-                <h3 className="text-xl font-light tracking-tight">{title}</h3>
+                <h3 className="text-[1.05rem] font-medium tracking-[-0.012em] text-foreground/90">{title}</h3>
             </div>
-            {subtitle && <p className="text-sm text-muted-foreground font-light">{subtitle}</p>}
+            {subtitle && <p className="type-body-soft max-w-2xl">{subtitle}</p>}
         </div>
     )
 
@@ -187,14 +179,18 @@ export default function SettingsPage() {
         savingSetting === id && <Loader2 className="size-3 animate-spin text-primary ml-2" />
     )
 
+    const settingLabelClass = "text-sm font-medium tracking-[-0.005em] text-foreground/90"
+    const settingMetaClass = "type-caption"
+    const optionChipClass = "px-4 py-1.5 rounded-full text-sm font-medium tracking-[-0.005em] transition-all duration-300 capitalize"
+
     return (
-        <div className="container mx-auto p-8 max-w-4xl min-h-screen">
+        <div className="container mx-auto p-4 sm:p-5 md:p-6 max-w-4xl min-h-screen">
             {/* Header */}
-            <div className="flex flex-col gap-2 mb-10">
-                <h2 className="text-3xl font-extralight tracking-tight text-foreground/90">
+            <div className="flex flex-col gap-2 mb-8 md:mb-10">
+                <h2 className="type-page-title">
                     {user ? `Greetings, ${user.user_metadata?.name || 'Friend'}` : 'App Preferences'}
                 </h2>
-                <p className="text-muted-foreground font-light tracking-wide text-lg">
+                <p className="type-page-subtitle max-w-2xl">
                     Tailor your environment for quiet focus and relief.
                 </p>
             </div>
@@ -214,11 +210,11 @@ export default function SettingsPage() {
                                 {/* Default Duration */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-0.5">
-                                        <div className="flex items-center text-sm font-medium">
+                                        <div className={cn("flex items-center", settingLabelClass)}>
                                             Default Session Duration
                                             <LoadingIndicator id="session_duration" />
                                         </div>
-                                        <div className="text-xs text-muted-foreground">The standard time block for your focus sessions.</div>
+                                        <div className={settingMetaClass}>The standard time block for your focus sessions.</div>
                                     </div>
                                     <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
                                         {[25, 45, 60].map((d) => (
@@ -230,7 +226,7 @@ export default function SettingsPage() {
                                                     updatePreference('session_duration', d)
                                                 }}
                                                 className={cn(
-                                                    "px-4 py-1.5 rounded-full text-xs transition-all duration-300",
+                                                    optionChipClass,
                                                     duration === d
                                                         ? "bg-primary text-primary-foreground shadow-sm"
                                                         : "hover:bg-primary/10 text-muted-foreground",
@@ -261,11 +257,11 @@ export default function SettingsPage() {
                                 {/* Focus Aesthetic */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-0.5">
-                                        <div className="flex items-center text-sm font-medium">
+                                        <div className={cn("flex items-center", settingLabelClass)}>
                                             Focus Aesthetic
                                             <LoadingIndicator id="aesthetic_mode" />
                                         </div>
-                                        <div className="text-xs text-muted-foreground">Adjust the interface to your visual comfort.</div>
+                                        <div className={settingMetaClass}>Adjust the interface to your visual comfort.</div>
                                     </div>
                                     <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
                                         {['light', 'dark', 'adaptive'].map((mode) => (
@@ -277,7 +273,7 @@ export default function SettingsPage() {
                                                     updatePreference('aesthetic_mode', mode)
                                                 }}
                                                 className={cn(
-                                                    "px-4 py-1.5 rounded-full text-xs transition-all duration-300 capitalize",
+                                                    optionChipClass,
                                                     aesthetic === mode
                                                         ? "bg-primary text-primary-foreground shadow-sm"
                                                         : "hover:bg-primary/10 text-muted-foreground",
@@ -301,7 +297,7 @@ export default function SettingsPage() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Volume2 className={cn("size-4", ambientSound ? "text-primary" : "text-muted-foreground/60")} />
-                                                <span className={cn("text-sm font-medium", ambientSound ? "text-foreground" : "text-muted-foreground/60")}>Soundscapes</span>
+                                                <span className={cn("text-sm font-medium tracking-[-0.005em]", ambientSound ? "text-foreground" : "text-muted-foreground/60")}>Soundscapes</span>
                                             </div>
                                             <button
                                                 disabled={savingSetting !== null}
@@ -322,7 +318,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground font-light italic uppercase tracking-widest">Background textures to mask distraction.</p>
+                                        <p className="type-caption italic">Background textures to mask distraction.</p>
                                     </div>
 
                                     <div className={cn(
@@ -332,7 +328,7 @@ export default function SettingsPage() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles className={cn("size-4", completionCues ? "text-primary" : "text-muted-foreground/60")} />
-                                                <span className={cn("text-sm font-medium", completionCues ? "text-foreground" : "text-muted-foreground/60")}>Task Sounds</span>
+                                                <span className={cn("text-sm font-medium tracking-[-0.005em]", completionCues ? "text-foreground" : "text-muted-foreground/60")}>Task Sounds</span>
                                             </div>
                                             <button
                                                 disabled={savingSetting !== null}
@@ -353,7 +349,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground font-light italic uppercase tracking-widest">Auditory relief when steps are finished.</p>
+                                        <p className="type-caption italic">Auditory relief when steps are finished.</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -374,11 +370,11 @@ export default function SettingsPage() {
                                 {/* Presence Visibility */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-0.5">
-                                        <div className="flex items-center text-sm font-medium">
+                                        <div className={cn("flex items-center", settingLabelClass)}>
                                             Presence Visibility
                                             <LoadingIndicator id="presence_visibility" />
                                         </div>
-                                        <div className="text-xs text-muted-foreground">How others perceive you during active sessions.</div>
+                                        <div className={settingMetaClass}>How others perceive you during active sessions.</div>
                                     </div>
                                     <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
                                         {['public', 'anonymous', 'private'].map((p) => (
@@ -390,7 +386,7 @@ export default function SettingsPage() {
                                                     updatePreference('presence_visibility', p)
                                                 }}
                                                 className={cn(
-                                                    "px-4 py-1.5 rounded-full text-xs transition-all duration-300 capitalize",
+                                                    optionChipClass,
                                                     presence === p
                                                         ? "bg-primary text-primary-foreground shadow-sm"
                                                         : "hover:bg-primary/10 text-muted-foreground",
@@ -408,11 +404,11 @@ export default function SettingsPage() {
                                 {/* Insight Level */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-0.5">
-                                        <div className="flex items-center text-sm font-medium">
+                                        <div className={cn("flex items-center", settingLabelClass)}>
                                             History Data Detail
                                             <LoadingIndicator id="insight_level" />
                                         </div>
-                                        <div className="text-xs text-muted-foreground">Depth of data preserved in your focus history.</div>
+                                        <div className={settingMetaClass}>Depth of data preserved in your focus history.</div>
                                     </div>
                                     <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
                                         {['basic', 'detailed', 'deep'].map((l) => (
@@ -424,7 +420,7 @@ export default function SettingsPage() {
                                                     updatePreference('insight_level', l)
                                                 }}
                                                 className={cn(
-                                                    "px-4 py-1.5 rounded-full text-xs transition-all duration-300 capitalize",
+                                                    optionChipClass,
                                                     insightLevel === l
                                                         ? "bg-primary text-primary-foreground shadow-sm"
                                                         : "hover:bg-primary/10 text-muted-foreground",
@@ -444,13 +440,13 @@ export default function SettingsPage() {
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <Database className="size-4 text-primary/60" />
-                                            <span className="text-sm font-medium">Data Sovereignty</span>
+                                            <span className={settingLabelClass}>Data Sovereignty</span>
                                         </div>
                                         <div className="flex flex-col gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="w-full justify-start rounded-xl border-border/40 bg-background/50 hover:bg-background font-light"
+                                                className="w-full justify-start rounded-xl border-border/40 bg-background/50 hover:bg-background"
                                                 onClick={handleExport}
                                                 disabled={savingSetting !== null}
                                             >
@@ -460,7 +456,7 @@ export default function SettingsPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="w-full justify-start rounded-xl text-destructive hover:text-destructive hover:bg-destructive/5 font-light"
+                                                className="w-full justify-start rounded-xl text-destructive hover:text-destructive hover:bg-destructive/5"
                                                 onClick={handlePurge}
                                                 disabled={savingSetting !== null}
                                             >
@@ -471,7 +467,7 @@ export default function SettingsPage() {
                                     </div>
                                     <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
                                         <Info className="size-5 text-primary/60 mt-0.5" />
-                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                        <p className="type-caption leading-relaxed">
                                             Admin Night is built on transparency. We do not sell focus data. Your history is yours to keep or destroy.
                                         </p>
                                     </div>
@@ -495,14 +491,14 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <h4 className="text-xl font-light tracking-tight">Focus Intelligence</h4>
-                                    <p className="text-sm text-muted-foreground font-light tracking-wide max-w-sm">
+                                    <h4 className="text-[1.05rem] font-medium tracking-[-0.012em] text-foreground/90">Focus Intelligence</h4>
+                                    <p className="type-body-soft max-w-sm">
                                         We are developing AI integrations to help you break down vague, overwhelming admin tasks into concrete first steps.
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {['Clarification Depth', 'Semantic Tagging', 'Auto-Planning'].map(tag => (
-                                        <span key={tag} className="px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-[10px] uppercase tracking-widest font-bold text-primary/60">
+                                        <span key={tag} className="px-3 py-1 rounded-full bg-primary/5 border border-primary/10 type-section-label text-primary/60">
                                             {tag}
                                         </span>
                                     ))}
@@ -510,7 +506,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex flex-col justify-center items-center md:items-end text-center md:text-right gap-3">
                                 <div className="p-1.5 px-4 bg-muted/40 rounded-full border border-border/40">
-                                    <span className="text-[10px] text-muted-foreground/60 italic font-medium uppercase tracking-widest">Expansion in Progress</span>
+                                    <span className="type-caption text-muted-foreground/70 italic uppercase tracking-[0.08em] font-medium">Expansion in Progress</span>
                                 </div>
                             </div>
                         </div>
@@ -528,6 +524,7 @@ export default function SettingsPage() {
                             <CardHeader className="flex flex-row items-center gap-6 p-8">
                                 <div className="size-20 rounded-full bg-background flex items-center justify-center border border-primary/20 shadow-inner overflow-hidden">
                                     {user.user_metadata?.avatar_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img src={user.user_metadata.avatar_url} alt="" className="size-full object-cover" />
                                     ) : (
                                         <User className="size-10 text-primary/40" />
@@ -535,12 +532,12 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <CardTitle className="text-2xl font-light">{user.user_metadata?.name || 'Friend of Focus'}</CardTitle>
-                                        <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Pro Member</div>
+                                        <CardTitle className="text-[1.35rem] font-medium tracking-[-0.012em]">{user.user_metadata?.name || 'Friend of Focus'}</CardTitle>
+                                        <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full type-section-label">Pro Member</div>
                                     </div>
-                                    <CardDescription className="font-light opacity-60">{user.email}</CardDescription>
+                                    <CardDescription className="type-caption opacity-75">{user.email}</CardDescription>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-border/40 px-6 font-light">
+                                <Button variant="outline" className="rounded-full border-border/40 px-6">
                                     Manage Profile
                                 </Button>
                             </CardHeader>

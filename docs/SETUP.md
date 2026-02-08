@@ -10,13 +10,14 @@
 ### Option 1: Supabase (Recommended)
 
 1. Create a new Supabase project at https://supabase.com
-2. Copy your project URL and anon key
+2. Copy your project URL and publishable key
 3. Get your database connection string from Settings > Database
 4. Update `.env` file:
    ```
    DATABASE_URL="your-supabase-connection-string"
    NEXT_PUBLIC_SUPABASE_URL="your-project-url"
-   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+   INTERNAL_API_KEY="a-long-random-secret-used-by-trusted-backend-only"
    ```
 
 ### Option 2: Local PostgreSQL
@@ -40,6 +41,10 @@ npx prisma generate
 # Run migrations
 npx prisma migrate dev --name init
 
+# If your database already has tables but no Prisma migration history yet,
+# apply incremental SQL migrations directly:
+npx prisma db execute --file prisma/migrations/20260207234000_reaction_event_and_session_aggregates/migration.sql --schema prisma/schema.prisma
+
 # (Optional) Open Prisma Studio to view your database
 npx prisma studio
 ```
@@ -57,6 +62,27 @@ npx prisma studio
    NEXTAUTH_SECRET="your-generated-secret"
    NEXTAUTH_URL="http://localhost:3000"
    ```
+
+## Internal Session Detail Access (Backend Only)
+
+Use this only for trusted backend services that are allowed to read participant identifiers.
+
+1. Ensure `INTERNAL_API_KEY` is set in deployment environment.
+2. When backend calls `GET /api/sessions/:id`, include header:
+   - `x-internal-api-key: <INTERNAL_API_KEY>`
+   - or `Authorization: Bearer <INTERNAL_API_KEY>`
+3. End-user requests (without this key) only receive aggregate session fields.
+
+Example (server-side):
+
+```ts
+import { withInternalApiAuth } from '@/lib/internal-api'
+
+const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/sessions/${sessionId}`, {
+  headers: withInternalApiAuth(),
+  cache: 'no-store',
+})
+```
 
 ## AI Provider Setup
 

@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Moon, History, Settings, Orbit } from 'lucide-react'
+import { ROUTES } from '@/lib/routes'
 
 const navItems = [
     {
         title: 'Focus',
-        href: '/admin-mode',
+        href: ROUTES.FOCUS,
         icon: Moon,
     },
     {
@@ -40,7 +41,9 @@ export function FloatingNav() {
                         flex items-center gap-1
                         animate-in fade-in slide-in-from-bottom-4 duration-500">
             {navItems.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = item.href === ROUTES.FOCUS
+                    ? pathname === ROUTES.FOCUS || pathname.startsWith(`${ROUTES.SESSIONS}/`)
+                    : pathname === item.href
                 return (
                     <Link
                         key={item.href}

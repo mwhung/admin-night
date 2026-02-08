@@ -5,6 +5,9 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+const SUMMARY_FALLBACK = 'The night is over. Your tasks are done.'
+const SUMMARY_TIMEOUT_MS = 2000
+
 export async function generateSessionSummary(context: {
     durationMinutes: number;
     tasksCompleted: number;
@@ -31,16 +34,24 @@ export async function generateSessionSummary(context: {
       - "Three pauses? A hydrating strategy. I respect it."
     `;
 
-        const completion = await openai.chat.completions.create({
+        if (!process.env.OPENAI_API_KEY) {
+            return SUMMARY_FALLBACK
+        }
+
+        const llmSummaryPromise = openai.chat.completions.create({
             messages: [{ role: 'system', content: prompt }],
             model: 'gpt-4o-mini',
             max_tokens: 50,
             temperature: 0.7,
-        });
+        }).then((completion) => completion.choices[0].message.content || 'Session complete.')
 
-        return completion.choices[0].message.content || 'Session complete.';
+        const timeoutPromise = new Promise<string>((resolve) => {
+            setTimeout(() => resolve(SUMMARY_FALLBACK), SUMMARY_TIMEOUT_MS)
+        })
+
+        return await Promise.race([llmSummaryPromise, timeoutPromise])
     } catch (error) {
         console.error('LLM Generation Error:', error);
-        return 'The night is over. Your tasks are done.'; // Fallback
+        return SUMMARY_FALLBACK
     }
 }

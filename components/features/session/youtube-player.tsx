@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Volume2, VolumeX, SkipForward, Pause, Play, Music2 } from 'lucide-react'
+import { useState } from 'react'
+import { Volume2, VolumeX, Pause, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -236,6 +236,14 @@ export function MiniPlayer({ playlist, isPlaying, onPlayingChange }: MiniPlayerP
 
     return (
         <>
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onPlayingChange(!isPlaying)}
+                title={isPlaying ? 'Pause' : 'Play'}
+            >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
             <Button
                 variant="ghost"
                 size="icon"

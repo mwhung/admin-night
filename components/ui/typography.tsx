@@ -36,19 +36,24 @@ export interface TypographyProps
     as?: "h1" | "h2" | "h3" | "h4" | "p" | "span" | "div" | "blockquote" | "code"
 }
 
-const Typography = React.forwardRef<HTMLElement, TypographyProps>(
-    ({ className, variant, affinity, as, ...props }, ref) => {
-        const Component = as || (variant?.startsWith("h") ? (variant as any) : variant === "inlineCode" ? "code" : "p")
-
-        return (
-            <Component
-                className={cn(typographyVariants({ variant, affinity, className }))}
-                ref={ref}
-                {...props}
-            />
-        )
+function Typography({ className, variant, affinity, as, ...props }: TypographyProps) {
+    let componentTag: TypographyProps["as"] = as ?? "p"
+    if (!as) {
+        if (variant === "h1" || variant === "h2" || variant === "h3" || variant === "h4") {
+            componentTag = variant
+        } else if (variant === "inlineCode") {
+            componentTag = "code"
+        }
     }
-)
-Typography.displayName = "Typography"
+
+    const Component = componentTag
+
+    return (
+        <Component
+            className={cn(typographyVariants({ variant, affinity, className }))}
+            {...props}
+        />
+    )
+}
 
 export { Typography, typographyVariants }

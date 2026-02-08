@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { Button } from "@/components/ui/button"
 
 interface IntentBubble {
     category: string
@@ -16,6 +15,7 @@ interface IntentWallProps {
 export function IntentWall({ onSelect, className }: IntentWallProps) {
     const [intents, setIntents] = useState<IntentBubble[]>([])
     const [loading, setLoading] = useState(true)
+    const prefersReducedMotion = useReducedMotion()
 
     useEffect(() => {
         const fetchIntents = async () => {
@@ -45,20 +45,6 @@ export function IntentWall({ onSelect, className }: IntentWallProps) {
         fetchIntents()
     }, [])
 
-    // Gentler floating animation variants
-    const floatVariants = {
-        animate: (i: number) => ({
-            y: [0, -10, 0],
-            x: [0, i % 2 === 0 ? 5 : -5, 0],
-            transition: {
-                duration: 3 + (i % 2),
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.2
-            }
-        })
-    }
-
     if (loading) return null
 
     return (
@@ -69,13 +55,24 @@ export function IntentWall({ onSelect, className }: IntentWallProps) {
                         {intents.map((item, i) => (
                             <motion.button
                                 key={item.category}
-                                custom={i}
-                                variants={floatVariants}
-                                animate="animate"
+                                animate={prefersReducedMotion
+                                    ? { opacity: 1, scale: 1 }
+                                    : {
+                                        y: [0, -6, 0],
+                                        x: [0, i % 2 === 0 ? 3 : -3, 0],
+                                    }}
+                                transition={prefersReducedMotion
+                                    ? { duration: 0.01 }
+                                    : {
+                                        duration: 5 + (i % 2),
+                                        repeat: Infinity,
+                                        ease: 'easeInOut',
+                                        delay: i * 0.2,
+                                    }}
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 exit={{ opacity: 0, scale: 0 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
-                                whileHover={{ scale: 1.1 }}
+                                whileHover={prefersReducedMotion ? undefined : { scale: 1.04 }}
                                 onClick={() => onSelect?.(item.category)}
                                 className={cn(
                                     "px-4 py-2 rounded-full border backdrop-blur-sm transition-colors",
