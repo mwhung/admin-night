@@ -12,6 +12,10 @@ interface Victory {
     time: string
 }
 
+interface VictoryFeedProps {
+    showHeading?: boolean
+}
+
 const SAMPLE_VICTORIES: Victory[] = [
     { id: '1', text: 'Someone just settled a recurring bill.', type: 'bill', time: '2m' },
     { id: '2', text: 'An overdue email was finally sent.', type: 'email', time: '5m' },
@@ -27,7 +31,7 @@ const icons = {
     admin: <CheckCircle2 className="size-4 text-primary/60" />,
 }
 
-export function VictoryFeed() {
+export function VictoryFeed({ showHeading = true }: VictoryFeedProps) {
     const [index, setIndex] = useState(0)
 
     useEffect(() => {
@@ -40,8 +44,10 @@ export function VictoryFeed() {
     return (
         <div className="h-full w-full flex flex-col justify-center p-4 sm:p-5 space-y-5">
             <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Victories</p>
-                <div className="h-12 flex items-center">
+                {showHeading && (
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Victories</p>
+                )}
+                <div className={showHeading ? "h-12 flex items-center" : "min-h-12 flex items-center"}>
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={index}
@@ -50,10 +56,10 @@ export function VictoryFeed() {
                             exit={{ opacity: 0, x: -20 }}
                             className="flex items-center gap-4"
                         >
-                            <div className="size-10 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
+                            <div className="flex size-10 items-center justify-center rounded-full border border-border/65 bg-surface-elevated/56">
                                 {icons[SAMPLE_VICTORIES[index].type]}
                             </div>
-                            <p className="text-base font-light text-foreground/80 leading-snug">
+                            <p className="text-[0.95rem] leading-[1.45] text-foreground/88">
                                 {SAMPLE_VICTORIES[index].text}
                             </p>
                         </motion.div>
@@ -61,20 +67,23 @@ export function VictoryFeed() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-2.5 pt-3 border-t border-border/60">
+            <div className="grid grid-cols-1 gap-2.5 border-t border-border/55 pt-3">
                 {SAMPLE_VICTORIES.slice(0, 3).map((v) => (
-                    <div key={v.id} className="flex items-center justify-between opacity-40 group hover:opacity-100 transition-opacity">
+                    <div
+                        key={v.id}
+                        className="group flex items-center justify-between rounded-lg px-1.5 py-1 opacity-70 transition-[opacity,background-color] hover:bg-muted/30 hover:opacity-100"
+                    >
                         <div className="flex items-center gap-3">
-                            <div className="size-1.5 rounded-full bg-primary/20 group-hover:bg-primary transition-colors" />
-                            <span className="text-sm font-light truncate max-w-[200px]">{v.text}</span>
+                            <div className="size-1.5 rounded-full bg-primary/24 transition-colors group-hover:bg-primary/70" />
+                            <span className="max-w-[200px] truncate text-sm text-foreground/88">{v.text}</span>
                         </div>
-                        <span className="text-[10px] font-medium tabular-nums">{v.time} ago</span>
+                        <span className="text-xs font-medium tabular-nums text-muted-foreground/88">{v.time} ago</span>
                     </div>
                 ))}
             </div>
 
             <div className="pt-1">
-                <button className="text-[11px] uppercase tracking-[0.12em] font-semibold text-primary/40 hover:text-primary/70 transition-colors flex items-center gap-2 group">
+                <button className="group flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary/52 transition-colors hover:text-primary/72">
                     View Collective Pulse <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>

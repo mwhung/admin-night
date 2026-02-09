@@ -52,7 +52,7 @@
 }
 
 .type-section-label {
-    font-size: 0.71rem;
+    font-size: 0.75rem;
     line-height: 1;
     letter-spacing: 0.08em;
     font-weight: 600;
@@ -77,8 +77,63 @@
 }
 
 .type-caption {
-    font-size: 0.69rem;
+    font-size: 0.75rem;
     line-height: 1.38;
     letter-spacing: 0.028em;
     color: var(--muted-foreground);
+}
+
+.type-block-title {
+    font-size: 1.02rem;
+    line-height: 1.22;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+    color: var(--foreground);
+}
+
+.type-card-value {
+    font-size: 1.55rem;
+    line-height: 1;
+    letter-spacing: -0.015em;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+}
+
+.type-card-support {
+    font-size: 0.78rem;
+    line-height: 1.44;
+    letter-spacing: 0.02em;
+    color: var(--muted-foreground);
+}
+
+/* Workbench spacing system */
+.workbench-pad-shell {
+    padding: var(--space-workbench-shell-pad);
+}
+
+.workbench-gap-grid {
+    gap: var(--space-workbench-grid-gap);
+}
+
+.workbench-gap-section {
+}
+
+.workbench-gap-section>*+* {
+    margin-top: var(--space-workbench-section-gap);
+}
+
+.workbench-gap-title {
+}
+
+.workbench-gap-title>*+* {
+    margin-top: var(--space-workbench-title-gap);
+}
+
+.workbench-pad-card {
+    padding: var(--space-workbench-card-pad-y) var(--space-workbench-card-pad-x);
+}
+
+.workbench-pad-card-tight {
+    padding: var(--space-workbench-card-tight-pad-y) var(--space-workbench-card-tight-pad-x);
 }

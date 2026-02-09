@@ -16,7 +16,7 @@ export function ThemesOfTheNight({ themes }: ThemesOfTheNightProps) {
     return (
         <div className="relative h-full w-full overflow-hidden flex flex-wrap items-center justify-center gap-4 p-8">
             {themes.map((theme, i) => {
-                const fontSize = 12 + (theme.weight / 2)
+                const fontSize = Math.max(12, 12 + (theme.weight / 2))
                 const opacity = 0.3 + (theme.weight / 40)
                 const horizontalDrift = ((i % 5) - 2) * 1.5
                 const yDuration = 3 + (i % 3) * 0.5

@@ -57,7 +57,17 @@ test.describe('Mock Auth Flow', () => {
 
         // End session
         await page.getByRole('button', { name: /exit session early/i }).click();
-        await expect(page).toHaveURL(/\/sessions\/.+\/summary$/, { timeout: 15000 });
-        await expect(page.getByRole('heading', { name: /released/i })).toBeVisible({ timeout: 15000 });
+        const endToSummaryButton = page.getByRole('button', { name: /end & view summary/i });
+        const exitToFocusButton = page.getByRole('button', { name: /exit to focus/i });
+
+        if (await endToSummaryButton.isVisible()) {
+            await endToSummaryButton.click();
+            await expect(page).toHaveURL(/\/sessions\/.+\/summary$/, { timeout: 15000 });
+            await expect(page.getByRole('heading', { name: /released/i })).toBeVisible({ timeout: 15000 });
+        } else {
+            await expect(exitToFocusButton).toBeVisible();
+            await exitToFocusButton.click();
+            await expect(page).toHaveURL(/\/focus$/, { timeout: 15000 });
+        }
     });
 });

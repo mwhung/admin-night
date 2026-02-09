@@ -55,15 +55,15 @@ export function RitualHeatmap({ hourlyActivity }: RitualHeatmapProps) {
             </div>
 
             <div className="absolute flex flex-col items-center text-center pointer-events-none">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">The Core Rhythm</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">The Core Rhythm</span>
                 <span className="text-xl font-light">24h Pulse</span>
             </div>
 
             {/* Labels for 12, 6, 18, 0 */}
-            <div className="absolute top-0 text-[10px] text-muted-foreground/40 font-mono">12:00</div>
-            <div className="absolute bottom-0 text-[10px] text-muted-foreground/40 font-mono">00:00</div>
-            <div className="absolute left-0 text-[10px] text-muted-foreground/40 font-mono">18:00</div>
-            <div className="absolute right-0 text-[10px] text-muted-foreground/40 font-mono">06:00</div>
+            <div className="absolute top-0 text-xs text-muted-foreground/40 font-mono">12:00</div>
+            <div className="absolute bottom-0 text-xs text-muted-foreground/40 font-mono">00:00</div>
+            <div className="absolute left-0 text-xs text-muted-foreground/40 font-mono">18:00</div>
+            <div className="absolute right-0 text-xs text-muted-foreground/40 font-mono">06:00</div>
         </div>
     )
 }

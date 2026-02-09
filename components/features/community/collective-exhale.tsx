@@ -5,9 +5,10 @@ import { motion } from 'framer-motion'
 
 interface CollectiveExhaleProps {
     count: number
+    showHeading?: boolean
 }
 
-export function CollectiveExhale({ count }: CollectiveExhaleProps) {
+export function CollectiveExhale({ count, showHeading = true }: CollectiveExhaleProps) {
     return (
         <div className="relative h-full w-full flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-transparent to-primary/[0.02]">
             {/* 2026 Energy Ball (Fluid Visual) */}
@@ -59,8 +60,10 @@ export function CollectiveExhale({ count }: CollectiveExhaleProps) {
             </div>
 
             <div className="relative z-10 text-center space-y-6">
-                <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-primary/40">Collective Resonance</p>
+                <div className={showHeading ? "space-y-1" : ""}>
+                    {showHeading && (
+                        <p className="text-xs font-bold uppercase tracking-[0.5em] text-primary/40">Collective Resonance</p>
+                    )}
                     <motion.div
                         key={count}
                         initial={{ scale: 0.95, opacity: 0 }}

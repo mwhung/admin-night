@@ -271,6 +271,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const [newAchievementsCount, setNewAchievementsCount] = useState(0)
     const [loadingSummary, setLoadingSummary] = useState(view === 'summary')
     const [isEndingSession, setIsEndingSession] = useState(false)
+    const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false)
     const [sessionEndError, setSessionEndError] = useState<string | null>(null)
     const [isStartingSession, setIsStartingSession] = useState(false)
     const [sessionStartError, setSessionStartError] = useState<string | null>(null)
@@ -369,6 +370,18 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
         router.replace(`/sessions/${preferredSessionId}`)
     }, [view, sessionId, runtimeSession.isActive, preferredSessionId, router])
+
+    useEffect(() => {
+        if (!isExitConfirmOpen) return
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return
+            setIsExitConfirmOpen(false)
+        }
+
+        window.addEventListener('keydown', handleEscape)
+        return () => window.removeEventListener('keydown', handleEscape)
+    }, [isExitConfirmOpen])
 
     useEffect(() => {
         if (view !== 'summary') return
@@ -824,19 +837,24 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         }
     }
 
-    const handleConfirmEndSession = async () => {
+    const handleConfirmEndSession = () => {
         if (isEndingSession) return
-        if (isStartingSession || !hasPersistedSession) {
+        if (isStartingSession) {
             setSessionStartError('Session is still syncing. Please wait a moment.')
             return
         }
 
-        const shouldEnd = window.confirm(
-            'End this session now and move to your summary?'
-        )
+        setIsExitConfirmOpen(true)
+    }
 
-        if (!shouldEnd) return
+    const handleCancelEndSession = () => {
+        if (isEndingSession) return
+        setIsExitConfirmOpen(false)
+    }
 
+    const handleEndSessionFromDialog = async () => {
+        if (isEndingSession || isStartingSession) return
+        setIsExitConfirmOpen(false)
         await handleEndSession()
     }
 
@@ -872,10 +890,72 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const sessionStageStatusMessage = hasPersistedSession
         ? null
         : (sessionStartError || 'Connecting this session to the shared room...')
+    const endSessionDialogTitle = hasPersistedSession
+        ? 'End session early?'
+        : 'Exit while session sync is pending?'
+    const endSessionDialogDescription = hasPersistedSession
+        ? 'You will leave now and continue to your session summary.'
+        : 'The session has not finished syncing. Exiting now returns you to Focus.'
+    const endSessionDialogAction = hasPersistedSession
+        ? 'End & View Summary'
+        : 'Exit to Focus'
     // ==================== SESSION VIEW ====================
     if (step === 'session') {
         return (
             <div className="relative h-full min-h-0 overflow-hidden">
+                {isExitConfirmOpen && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                        <div
+                            className="absolute inset-0 bg-background/75 backdrop-blur-sm"
+                            onClick={handleCancelEndSession}
+                            aria-hidden="true"
+                        />
+                        <Card
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="exit-session-confirm-title"
+                            aria-describedby="exit-session-confirm-description"
+                            className="relative w-full max-w-md border-border/85 bg-card/96 shadow-[0_26px_44px_rgba(31,42,55,0.28)]"
+                        >
+                            <CardHeader className="space-y-2">
+                                <CardTitle id="exit-session-confirm-title" className="text-lg">
+                                    {endSessionDialogTitle}
+                                </CardTitle>
+                                <CardDescription id="exit-session-confirm-description" className="text-sm">
+                                    {endSessionDialogDescription}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full sm:w-auto"
+                                    onClick={handleCancelEndSession}
+                                    disabled={isEndingSession}
+                                >
+                                    Keep Session
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    className="w-full sm:w-auto"
+                                    onClick={handleEndSessionFromDialog}
+                                    disabled={isEndingSession || isStartingSession}
+                                >
+                                    {isEndingSession ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Ending Session...
+                                        </>
+                                    ) : (
+                                        endSessionDialogAction
+                                    )}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
                 {/* Achievement Toast */}
                 <AchievementToast
                     achievement={pendingToast}
@@ -914,7 +994,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
                             {selectedTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-bold text-primary uppercase">Current Tasks</p>
+                                    <p className="text-xs font-bold text-primary uppercase">Current Tasks</p>
                                     <DndContext
                                         sensors={sensors}
                                         collisionDetection={closestCenter}
@@ -941,7 +1021,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             )}
 
                             <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Quick Add</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Quick Add</p>
                                 <div className="grid grid-cols-1 gap-2">
                                     {QUICK_TASK_SUGGESTION_SEEDS.filter(t => !selectedTaskTitleSet.has(normalizeTaskTitle(t.title))).slice(0, 3).map((task) => (
                                         <button
@@ -1063,7 +1143,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                         variant="ghost"
                                         className="h-10 w-full text-muted-foreground hover:text-destructive"
                                         onClick={handleConfirmEndSession}
-                                        disabled={isEndingSession || isStartingSession || !hasPersistedSession}
+                                        disabled={isEndingSession || isStartingSession}
                                     >
                                         {isEndingSession || isStartingSession ? (
                                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1074,9 +1154,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                             ? 'Ending Session...'
                                             : isStartingSession
                                                 ? 'Connecting Session...'
-                                                : !hasPersistedSession
-                                                    ? 'Waiting for Session Sync'
-                                                    : 'Exit Session Early'}
+                                                : 'Exit Session Early'}
                                     </Button>
                                     {sessionStartError && (
                                         <div className="space-y-2 text-center">
@@ -1153,11 +1231,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         {/* Status Summary */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-primary/5 rounded-2xl p-4 text-center border border-primary/10">
-                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Released</p>
+                                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Released</p>
                                 <p className="text-2xl font-light text-primary">{completedTasks.length}</p>
                             </div>
                             <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/50">
-                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Time Spent</p>
+                                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Time Spent</p>
                                 <p className="text-2xl font-light text-foreground/70">
                                     {elapsedSeconds < 60
                                         ? `${elapsedSeconds}s`
@@ -1170,7 +1248,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         <div className="space-y-4">
                             {completedTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">Released Items:</p>
+                                    <p className="text-xs font-bold text-success/70 uppercase tracking-widest">Released Items:</p>
                                     {completedTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -1185,8 +1263,8 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
                             {pendingTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Still Holding:</p>
-                                    <p className="text-[10px] text-muted-foreground/60 italic -mt-1 mb-2">They are safely stored Open Loops. Focus on your rest for now.</p>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Still Holding:</p>
+                                    <p className="text-xs text-muted-foreground/60 italic -mt-1 mb-2">They are safely stored Open Loops. Focus on your rest for now.</p>
                                     {pendingTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -1222,7 +1300,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     // ==================== SETUP VIEW ====================
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-            <div className="container mx-auto max-w-2xl py-12 px-4">
+            <div className="container mx-auto max-w-2xl pt-10 pb-12 px-4">
                 {/* Header */}
                 <div className="text-center mb-10">
                     <div className="mb-6 inline-flex">

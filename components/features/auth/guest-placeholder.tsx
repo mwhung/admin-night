@@ -13,7 +13,7 @@ interface GuestPlaceholderProps {
 export function GuestPlaceholder({ pageName, description }: GuestPlaceholderProps) {
     return (
         <div className="container mx-auto p-4 md:p-6 max-w-4xl animate-in fade-in duration-1000 flex flex-col items-center justify-center min-h-[80vh] space-y-6">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#3d362f]/35 font-semibold">{pageName}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#3d362f]/35 font-semibold">{pageName}</p>
             <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -29,7 +29,7 @@ export function GuestPlaceholder({ pageName, description }: GuestPlaceholderProp
                         {/* Secondary Context Description */}
                         {description && (
                             <div className="mt-6 pt-6 border-t border-[#3d362f]/5 text-center">
-                                <p className="text-[10px] text-[#3d362f]/40 font-light leading-relaxed italic">
+                                <p className="text-xs text-[#3d362f]/40 font-light leading-relaxed italic">
                                     &ldquo;{description}&rdquo;
                                 </p>
                             </div>

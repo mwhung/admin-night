@@ -1,17 +1,10 @@
-
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import {
-    Orbit,
-    Users,
-    Sparkles,
-    Wind
-} from 'lucide-react'
+import { type ComponentType, useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Orbit, Sparkles, Users, Wind } from 'lucide-react'
 import { CollectiveExhale } from "@/components/features/community/collective-exhale"
 import { VictoryFeed } from "@/components/features/community/victory-feed"
-import { motion } from 'framer-motion'
 import { MilestoneProgress } from "@/components/features/community/milestone-progress"
 import { DeadpanFacts } from "@/components/features/community/deadpan-facts"
 import { cn } from "@/lib/utils"
@@ -58,15 +51,22 @@ interface GlobalStats {
             sessionParticipationRate: number
             userParticipationRate: number
         }
-        // Legacy support if needed, or remove if API is fully migrated
         avgBloomTimeHours?: number
         peakFocusHour?: string
         mostProductiveDay?: string
     }
 }
 
+interface PulseMetric {
+    label: string
+    value: string
+    meta: string
+    icon: ComponentType<{ className?: string }>
+}
+
 export default function CommunityPage() {
     const [stats, setStats] = useState<GlobalStats | null>(null)
+    const prefersReducedMotion = useReducedMotion()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -80,8 +80,8 @@ export default function CommunityPage() {
         fetchData()
     }, [])
 
-    const labelStyle = "type-section-label"
-    const metaStyle = "type-caption mt-3 leading-relaxed"
+    const labelStyle = "type-section-label text-[0.76rem] tracking-[0.07em]"
+    const blockTitleStyle = "type-block-title"
     const totalReleased = stats?.community.totalTasksCompleted ?? 0
     const activeParticipants = stats?.community.daily.activeUsers ?? 0
     const dailyReactions = stats?.community.reactions?.daily.total ?? 0
@@ -89,138 +89,163 @@ export default function CommunityPage() {
     const weeklyProgress = stats?.community.weekly.progress ?? 0
     const weeklyGoal = stats?.community.weekly.goal ?? 10000
 
+    const pulseMetrics: PulseMetric[] = [
+        {
+            label: "Collective Releases",
+            value: totalReleased.toLocaleString(),
+            meta: "Tasks completed by the community.",
+            icon: Wind,
+        },
+        {
+            label: "Active Participants",
+            value: activeParticipants.toString(),
+            meta: "People currently contributing today.",
+            icon: Users,
+        },
+        {
+            label: "Today's Reactions",
+            value: dailyReactions.toString(),
+            meta: "Clap, fire, and leaf reactions sent today.",
+            icon: Sparkles,
+        },
+        {
+            label: "Reclaimed Clarity",
+            value: `${reclaimedClarity}%`,
+            meta: "Average reduction in mental drag this week.",
+            icon: Orbit,
+        },
+    ]
+
     return (
-        <div className="container mx-auto p-4 sm:p-5 md:p-6 space-y-6 md:space-y-8 max-w-4xl animate-in fade-in duration-1000 mb-20">
-            <div className="flex flex-col gap-2 mb-6 md:mb-8">
+        <div className={cn(
+            "container mx-auto mb-20 max-w-6xl p-4 sm:p-5 md:p-6",
+            !prefersReducedMotion && "animate-in fade-in duration-150"
+        )}>
+            <div className="space-y-2 pt-8 pb-10">
                 <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex flex-col gap-2"
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14 }}
+                    className="space-y-2"
                 >
-                    <h1 className="type-page-title font-sans">
-                        The Collective Pulse
-                    </h1>
-                    <p className="type-page-subtitle max-w-2xl">
-                        Witness the shared rhythm of release and the weight of burdens letting go in real-time.
+                    <h1 className="type-page-title font-sans">The Collective Pulse</h1>
+                    <p className="type-page-subtitle max-w-3xl">
+                        A calmer, single-surface view of shared release momentum and the footprints everyone leaves behind.
                     </p>
                 </motion.div>
             </div>
 
-            <div className="grid gap-x-5 gap-y-2 sm:gap-x-6 sm:gap-y-2 md:grid-cols-3">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <Card className={cn("shadow-sm overflow-hidden relative group min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
-                        <div className="absolute top-0 right-0 p-3 opacity-20">
-                            <Wind className="size-12 text-primary" />
-                        </div>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
-                            <CardTitle className={labelStyle}>Collective Releases</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-2 pb-5">
-                            <div className="type-metric-value">{totalReleased.toLocaleString()}</div>
-                            <p className={metaStyle}>Tasks completed by the community.</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <Card className={cn("shadow-sm overflow-hidden relative group min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
-                        <div className="absolute top-0 right-0 p-3 opacity-20">
-                            <Users className="size-12 text-primary" />
-                        </div>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
-                            <CardTitle className={labelStyle}>Active Participants</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-2 pb-5">
-                            <div className="type-metric-value">{activeParticipants}</div>
-                            <p className={metaStyle}>People currently contributing today.</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <Card className={cn("shadow-sm overflow-hidden relative group min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
-                        <div className="absolute top-0 right-0 p-3 opacity-20">
-                            <Sparkles className="size-12 text-primary" />
-                        </div>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
-                            <CardTitle className={labelStyle}>Today&apos;s Reactions</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-2 pb-5">
-                            <div className="type-metric-value">{dailyReactions}</div>
-                            <p className={metaStyle}>Clap, fire, and leaf reactions sent today.</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            </div>
-
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+            <div
+                className="rounded-[calc(var(--radius)+1.2rem)] p-[1px]"
+                style={{
+                    backgroundImage: "linear-gradient(135deg, color-mix(in srgb, var(--workbench-divider) 56%, transparent 44%) 0%, color-mix(in srgb, var(--workbench-divider) 24%, transparent 76%) 40%, color-mix(in srgb, var(--background) 72%, transparent 28%) 72%, var(--background) 100%)",
+                }}
             >
-                <Card className={cn(cardLayout.insight)}>
-                    <CardHeader className="pb-3 border-b border-border/60 bg-muted/25">
-                        <CardTitle className={labelStyle}>Collective Resonance</CardTitle>
-                        <CardDescription className="type-caption mt-0.5">
-                            Live view of shared release momentum.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="relative w-full aspect-[21/9]">
-                            <CollectiveExhale count={totalReleased} />
-                        </div>
-                    </CardContent>
-                </Card>
-            </motion.div>
-
-            <div className="grid gap-x-7 gap-y-3 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-3.5">
-                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                        <Card className={cn("h-full", cardLayout.insight)}>
-                            <VictoryFeed />
-                        </Card>
-                    </motion.div>
-
-                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                        <Card className={cn(cardLayout.dataSurface)}>
-                            <CardHeader className="pb-3 border-b border-border/60 bg-muted/25">
-                                <CardTitle className={labelStyle}>Weekly Milestone</CardTitle>
-                                <CardDescription className="type-caption mt-0.5">
-                                    Progress toward this week&apos;s shared target.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-4 sm:p-5">
-                                <MilestoneProgress current={weeklyProgress} target={weeklyGoal} />
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </div>
-
-                <div className="space-y-3">
-                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                        <Card className={cn("relative overflow-hidden min-h-[178px] md:min-h-[172px]", cardLayout.metric, cardLayout.interactive)}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-5 pb-1.5">
-                                <CardTitle className={labelStyle}>Reclaimed Clarity</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-2 pb-5 space-y-3">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="type-metric-value">{reclaimedClarity}</span>
-                                    <span className="text-lg font-medium text-muted-foreground">%</span>
+                <section
+                    className={cn(cardLayout.workbenchShellFrosted, "workbench-pad-shell")}
+                    aria-label="Community workbench"
+                >
+                    <div className="grid workbench-gap-grid lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+                        <div className="workbench-gap-section">
+                            <motion.section
+                                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14 }}
+                                className="workbench-gap-title"
+                                aria-label="Collective resonance"
+                            >
+                                <header className="space-y-1 px-1">
+                                    <p className={blockTitleStyle}>Collective Resonance</p>
+                                    <p className="type-caption">Live view of shared release momentum.</p>
+                                </header>
+                                <div className={cn(cardLayout.workbenchPrimary, "overflow-hidden")}>
+                                    <div className="relative w-full aspect-[16/7]">
+                                        <CollectiveExhale count={totalReleased} showHeading={false} />
+                                    </div>
                                 </div>
-                                <p className="type-body-soft">
-                                    Average reduction in mental drag across all participants this week.
-                                </p>
-                            </CardContent>
-                            <div className="absolute -bottom-10 -right-10 text-primary/[0.06] group-hover:scale-110 transition-transform duration-1000">
-                                <Orbit className="size-64" />
-                            </div>
-                        </Card>
-                    </motion.div>
+                            </motion.section>
 
-                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                        <DeadpanFacts fact={stats?.community.monthly.fact} />
-                    </motion.div>
-                </div>
+                            <motion.section
+                                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14, delay: 0.04 }}
+                                className="workbench-gap-title"
+                                aria-label="Victory feed"
+                            >
+                                <header className="space-y-1 px-1">
+                                    <p className={blockTitleStyle}>Victory Feed</p>
+                                    <p className="type-caption">Recent moments where people cleared one thing at a time.</p>
+                                </header>
+                                <div className={cn(cardLayout.workbenchSecondary)}>
+                                    <VictoryFeed showHeading={false} />
+                                </div>
+                            </motion.section>
+
+                            <motion.section
+                                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14, delay: 0.08 }}
+                                className="workbench-gap-title"
+                                aria-label="Weekly milestone"
+                            >
+                                <header className="space-y-1 px-1">
+                                    <p className={blockTitleStyle}>Weekly Milestone</p>
+                                    <p className="type-caption">Progress toward this week&apos;s shared target.</p>
+                                </header>
+                                <div className={cn(cardLayout.workbenchSecondary, "workbench-pad-card")}>
+                                    <MilestoneProgress current={weeklyProgress} target={weeklyGoal} showHeading={false} />
+                                </div>
+                            </motion.section>
+                        </div>
+
+                        <div className="workbench-gap-section" aria-label="Community context rail">
+                            <motion.section
+                                initial={prefersReducedMotion ? false : { opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14 }}
+                                className="workbench-gap-title"
+                                aria-label="Pulse snapshot"
+                            >
+                                <header className="space-y-1 px-1">
+                                    <p className={blockTitleStyle}>Pulse Snapshot</p>
+                                    <p className="type-caption">Current community signals in one glance.</p>
+                                </header>
+                                <div className={cn(cardLayout.workbenchRail, "workbench-pad-card")}>
+                                    <div className="divide-y divide-border/45">
+                                        {pulseMetrics.map((metric) => (
+                                            <div key={metric.label} className="flex items-start justify-between gap-3 py-3">
+                                                <div>
+                                                    <p className={labelStyle}>{metric.label}</p>
+                                                    <p className="type-card-value mt-1.5">
+                                                        {metric.value}
+                                                    </p>
+                                                    <p className="type-card-support mt-1.5">{metric.meta}</p>
+                                                </div>
+                                                <metric.icon className="mt-1 size-5 shrink-0 text-primary/70" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.section>
+
+                            <motion.section
+                                initial={prefersReducedMotion ? false : { opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14, delay: 0.04 }}
+                                className="workbench-gap-title"
+                                aria-label="Monthly report"
+                            >
+                                <header className="space-y-1 px-1">
+                                    <p className={blockTitleStyle}>Monthly Report</p>
+                                    <p className="type-caption">A short deadpan interpretation of this month&apos;s signal.</p>
+                                </header>
+                                <div className={cn(cardLayout.workbenchRail, "workbench-pad-card")}>
+                                    <DeadpanFacts mode="embedded" fact={stats?.community.monthly.fact} />
+                                </div>
+                            </motion.section>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     )

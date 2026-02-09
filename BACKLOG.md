@@ -21,6 +21,7 @@
 - [x] Unify Guest Placeholder UI (History & Settings)
 - [x] Implement high-fidelity mockup for AuthForm (Brown buttons, white bg, light blue inputs)
 - [x] Apply unified Auth UI to /login and /register pages (no-scroll layout)
+- [x] [UX/UI] Community 與 History 頁面改為非 Bento 的 Workbench 版型（主工作區 + 側欄）
 
 ---
 

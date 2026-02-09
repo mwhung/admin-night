@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -8,28 +8,51 @@ import { cardLayout } from '@/components/ui/card-layouts'
 
 interface DeadpanFactProps {
     fact?: string
+    mode?: 'card' | 'embedded'
+    className?: string
 }
 
-export function DeadpanFacts({ fact }: DeadpanFactProps) {
-    // Default fact if none provided
+export function DeadpanFacts({ fact, mode = 'card', className }: DeadpanFactProps) {
+    const prefersReducedMotion = useReducedMotion()
     const displayFact = fact || "Processing collective productivity... Output: Sufficient to justify existence."
 
+    if (mode === 'embedded') {
+        return (
+            <div className={cn("space-y-3.5", className)}>
+                <blockquote className={cn(
+                    cardLayout.metricStrip,
+                    "border-l-2 border-primary/24 py-2 pl-4 text-[0.94rem] font-mono italic leading-relaxed text-muted-foreground/85"
+                )}>
+                    &ldquo;{displayFact}&rdquo;
+                </blockquote>
+                <div className="flex gap-2">
+                    <div className={cn("h-1.5 w-1.5 rounded-full bg-primary/38", !prefersReducedMotion && "animate-pulse")} />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary/22" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary/12" />
+                </div>
+            </div>
+        )
+    }
+
     return (
-        <Card className={cn("h-full relative group", cardLayout.insight)}>
-            <CardHeader className="pb-3 border-b border-border/60 bg-muted/25 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        <Card className={cn("h-full", cardLayout.workbenchRail, className)}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/60 bg-muted/20 pb-3">
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     Monthly Report
                 </CardTitle>
                 <Terminal className="w-4 h-4 text-muted-foreground/60" />
             </CardHeader>
-            <CardContent className="p-4 sm:p-5">
-                <blockquote className="text-lg font-mono text-muted-foreground/80 leading-relaxed border-l-2 border-primary/20 pl-4 py-1 italic">
+            <CardContent className="space-y-3.5 p-4 sm:p-5">
+                <blockquote className={cn(
+                    cardLayout.metricStrip,
+                    "border-l-2 border-primary/24 py-2 pl-4 text-[0.94rem] font-mono italic leading-relaxed text-muted-foreground/85"
+                )}>
                     &ldquo;{displayFact}&rdquo;
                 </blockquote>
-                <div className="mt-4 flex gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary/20" />
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary/10" />
+                <div className="flex gap-2">
+                    <div className={cn("h-1.5 w-1.5 rounded-full bg-primary/45", !prefersReducedMotion && "animate-pulse")} />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary/24" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary/12" />
                 </div>
             </CardContent>
         </Card>

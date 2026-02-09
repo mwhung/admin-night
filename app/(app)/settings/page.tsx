@@ -20,6 +20,7 @@ import {
 import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { GuestPlaceholder } from "@/components/features/auth/guest-placeholder"
+import { useAestheticMode } from "@/lib/hooks/useAestheticMode"
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth()
@@ -28,11 +29,15 @@ export default function SettingsPage() {
 
     // Setting States
     const [duration, setDuration] = useState(25)
-    const [aesthetic, setAesthetic] = useState('adaptive')
     const [presence, setPresence] = useState('anonymous')
     const [insightLevel, setInsightLevel] = useState('detailed')
     const [ambientSound, setAmbientSound] = useState(false)
     const [completionCues, setCompletionCues] = useState(true)
+    const {
+        mode: aesthetic,
+        setMode: setAestheticMode,
+        isSaving: isAestheticModeSaving,
+    } = useAestheticMode({ userId: user?.id, syncFromServer: false })
 
     // Fetch Preferences
     useEffect(() => {
@@ -47,7 +52,6 @@ export default function SettingsPage() {
                 if (res.ok) {
                     const data = await res.json()
                     if (data.session_duration) setDuration(data.session_duration)
-                    if (data.aesthetic_mode) setAesthetic(data.aesthetic_mode)
                     if (data.presence_visibility) setPresence(data.presence_visibility)
                     if (data.insight_level) setInsightLevel(data.insight_level)
                     if (data.ambient_sound !== undefined) setAmbientSound(data.ambient_sound)
@@ -175,9 +179,11 @@ export default function SettingsPage() {
         </div>
     )
 
-    const LoadingIndicator = ({ id }: { id: string }) => (
-        savingSetting === id && <Loader2 className="size-3 animate-spin text-primary ml-2" />
-    )
+    const LoadingIndicator = ({ id }: { id: string }) => {
+        const isLoading = savingSetting === id || (id === 'aesthetic_mode' && isAestheticModeSaving)
+        if (!isLoading) return null
+        return <Loader2 className="size-3 animate-spin text-primary ml-2" />
+    }
 
     const settingLabelClass = "text-sm font-medium tracking-[-0.005em] text-foreground/90"
     const settingMetaClass = "type-caption"
@@ -186,7 +192,7 @@ export default function SettingsPage() {
     return (
         <div className="container mx-auto p-4 sm:p-5 md:p-6 max-w-4xl min-h-screen">
             {/* Header */}
-            <div className="flex flex-col gap-2 mb-8 md:mb-10">
+            <div className="flex flex-col gap-2 pt-8 mb-10">
                 <h2 className="type-page-title">
                     {user ? `Greetings, ${user.user_metadata?.name || 'Friend'}` : 'App Preferences'}
                 </h2>
@@ -264,20 +270,17 @@ export default function SettingsPage() {
                                         <div className={settingMetaClass}>Adjust the interface to your visual comfort.</div>
                                     </div>
                                     <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
-                                        {['light', 'dark', 'adaptive'].map((mode) => (
+                                        {(['light', 'dark', 'adaptive'] as const).map((mode) => (
                                             <button
                                                 key={mode}
-                                                disabled={savingSetting !== null}
                                                 onClick={() => {
-                                                    setAesthetic(mode)
-                                                    updatePreference('aesthetic_mode', mode)
+                                                    setAestheticMode(mode)
                                                 }}
                                                 className={cn(
                                                     optionChipClass,
                                                     aesthetic === mode
                                                         ? "bg-primary text-primary-foreground shadow-sm"
-                                                        : "hover:bg-primary/10 text-muted-foreground",
-                                                    savingSetting !== null && "opacity-50 cursor-not-allowed"
+                                                        : "hover:bg-primary/10 text-muted-foreground"
                                                 )}
                                             >
                                                 {mode}

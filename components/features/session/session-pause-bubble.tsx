@@ -64,7 +64,7 @@ export function SessionPauseBubble() {
 
             <div className="relative h-full w-full flex flex-col items-center justify-center leading-none">
                 <PauseCircle className="h-4 w-4 text-primary/85 mb-1" />
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Paused</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">Paused</span>
                 <span className="text-xs font-semibold tabular-nums text-foreground mt-1">
                     {formatRemaining(session.remainingSeconds)}
                 </span>

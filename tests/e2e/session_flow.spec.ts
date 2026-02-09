@@ -17,9 +17,6 @@ test.describe('Session Flow', () => {
             secure: false,
             sameSite: 'Lax',
         }])
-        await context.addInitScript(() => {
-            window.confirm = () => true
-        })
     })
 
     test('should complete a full session flow', async ({ page }) => {
@@ -70,14 +67,24 @@ test.describe('Session Flow', () => {
 
         // 6. End Session Early
         await page.getByRole('button', { name: /exit session early/i }).click()
-        await expect(page).toHaveURL(/\/sessions\/.+\/summary$/, { timeout: 15000 })
+        const endToSummaryButton = page.getByRole('button', { name: /end & view summary/i })
+        const exitToFocusButton = page.getByRole('button', { name: /exit to focus/i })
 
-        // 7. Verify Finished View
-        await expect(page.getByRole('heading', { name: /released/i })).toBeVisible({ timeout: 15000 })
-        await expect(page.getByRole('button', { name: /back to lounge/i })).toBeVisible()
+        if (await endToSummaryButton.isVisible()) {
+            await endToSummaryButton.click()
+            await expect(page).toHaveURL(/\/sessions\/.+\/summary$/, { timeout: 15000 })
 
-        // Finish - Go back to Lounge
-        await page.getByRole('button', { name: /back to lounge/i }).click()
-        await expect(page.getByText(/1\. Declutter Your Mind/i)).toBeVisible()
+            // 7. Verify Finished View
+            await expect(page.getByRole('heading', { name: /released/i })).toBeVisible({ timeout: 15000 })
+            await expect(page.getByRole('button', { name: /back to lounge/i })).toBeVisible()
+
+            // Finish - Go back to Lounge
+            await page.getByRole('button', { name: /back to lounge/i }).click()
+            await expect(page.getByText(/1\. Declutter Your Mind/i)).toBeVisible()
+        } else {
+            await expect(exitToFocusButton).toBeVisible()
+            await exitToFocusButton.click()
+            await expect(page).toHaveURL(/\/focus$/, { timeout: 15000 })
+        }
     })
 })

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Moon, LogOut, User } from 'lucide-react'
+import { Moon, Sun, LogOut, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ParticipantCount } from '@/components/features/session'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useSessions } from '@/lib/hooks/useSessions'
+import { useAestheticMode } from '@/lib/hooks/useAestheticMode'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useSessionPresence } from '@/lib/realtime'
@@ -14,6 +15,11 @@ import { useSessionPresence } from '@/lib/realtime'
 export function SiteHeader() {
     const headerRef = useRef<HTMLElement>(null)
     const { user, loading } = useAuth()
+    const {
+        mode: aestheticMode,
+        resolvedMode,
+        toggleLightDark,
+    } = useAestheticMode({ userId: user?.id })
     const supabase = createClient()
     const shouldLoadSessionMetrics = !loading && Boolean(user)
     const { participantCount: onlineCount, isConnected: isPresenceConnected } = useSessionPresence({
@@ -35,6 +41,8 @@ export function SiteHeader() {
         ? Math.min(focusedPresenceCount, onlineCount)
         : 0
     const metricNumberClass = 'tabular-nums text-sm font-bold leading-none'
+    const ThemeToggleIcon = resolvedMode === 'dark' ? Moon : Sun
+    const nextModeLabel = resolvedMode === 'dark' ? 'light' : 'dark'
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
@@ -107,6 +115,16 @@ export function SiteHeader() {
 
             <div className="justify-self-end">
                 <div className="flex items-center gap-2 border-l pl-4 border-border/50">
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={toggleLightDark}
+                        className="size-8 rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label={`Switch to ${nextModeLabel} mode. Current mode: ${aestheticMode}.`}
+                        title={`Switch to ${nextModeLabel} mode`}
+                    >
+                        <ThemeToggleIcon className="size-4" />
+                    </Button>
                     {!loading && (
                         <>
                             {!user ? (

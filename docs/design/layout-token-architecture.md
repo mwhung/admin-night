@@ -58,6 +58,97 @@ Rules:
 4. Keep sticky-header anchor behavior predictable.
 - Global `scroll-padding-top` should use `--layout-scroll-padding-top`.
 
+## 2026-02-09 UI Refinements
+
+### Typography Floor
+
+Scope:
+- Global micro typography used in session, community, auth placeholders, and shared UI badges.
+
+Contract:
+- Minimum rendered font size is `12px` (`0.75rem`).
+- Use `text-xs` as the smallest Tailwind text utility.
+- Do not introduce `text-[9px]`, `text-[10px]`, or `text-[11px]`.
+- Utility classes `type-section-label` and `type-caption` are standardized at `0.75rem`.
+- Dynamic font sizing must clamp to a lower bound of `12px` (for example via `Math.max(12, computedSize)`).
+
+Primary implementation files:
+- `/Users/minweih/Desktop/admin_night/app/styles/utilities.css`
+- `/Users/minweih/Desktop/admin_night/components/ui/badge.tsx`
+- `/Users/minweih/Desktop/admin_night/components/features/community/themes-of-the-night.tsx`
+
+### Workbench Hero Rhythm (History / Community / Settings)
+
+Scope:
+- `/Users/minweih/Desktop/admin_night/app/(app)/history/page.tsx`
+- `/Users/minweih/Desktop/admin_night/app/(app)/community/page.tsx`
+- `/Users/minweih/Desktop/admin_night/app/(app)/settings/page.tsx`
+
+Contract:
+- Keep header-to-title offset fixed at `pt-8`.
+- Keep title/subtitle stack density compact (`space-y-2` or `gap-2`).
+- Increase subtitle-to-content spacing to `10` scale units for better section separation:
+  - History/Community: `pb-10`
+  - Settings: `mb-10`
+
+### Hero Label Simplification
+
+Scope:
+- `/Users/minweih/Desktop/admin_night/app/(app)/history/page.tsx`
+- `/Users/minweih/Desktop/admin_night/app/(app)/community/page.tsx`
+
+Change:
+- Removed top helper labels `Personal Workbench` and `Community Workbench`.
+- Keep the main page title + subtitle as the only hero text to reduce visual noise.
+
+### Workbench Surface Contract (History / Community)
+
+Scope:
+- `/Users/minweih/Desktop/admin_night/app/(app)/history/page.tsx`
+- `/Users/minweih/Desktop/admin_night/app/(app)/community/page.tsx`
+- `/Users/minweih/Desktop/admin_night/components/ui/card-layouts.ts`
+- `/Users/minweih/Desktop/admin_night/app/styles/tokens.css`
+- `/Users/minweih/Desktop/admin_night/app/styles/utilities.css`
+
+Contract:
+- Replace bento-like compositions with a two-column workbench surface:
+  - `lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]`.
+- Keep the outer frame as a 1px gradient stroke from top-left to bottom-right, fading into `--background` at the tail.
+- Keep the main shell frosted and low-noise:
+  - Use `cardLayout.workbenchShellFrosted`.
+  - Light mode: no drop shadow.
+  - Dark mode: subtle shadow is allowed for depth separation.
+- Section structure must be consistent:
+  - `Title + subtitle` outside.
+  - `content` inside exactly one card layer.
+  - Avoid nested "card inside card" wrappers unless functionally required (for example, data scrollers or embedded sub-panels).
+- Use workbench spacing tokens only (no page-local magic numbers):
+  - `--space-workbench-shell-pad`
+  - `--space-workbench-grid-gap`
+  - `--space-workbench-section-gap`
+  - `--space-workbench-title-gap`
+  - `--space-workbench-card-pad-x/y`
+  - `--space-workbench-card-tight-pad-x/y`
+- Card tone hierarchy must stay coherent across light/dark modes:
+  - Primary: `workbenchPrimary`
+  - Secondary: `workbenchSecondary`
+  - Rail/context: `workbenchRail`
+  - Embedded strip: `metricStrip`
+- Typography must use shared utilities for consistency:
+  - `type-block-title`
+  - `type-card-value`
+  - `type-card-support`
+
+Implementation notes:
+- Outer gradient frame lives at page level (wrapper around `workbenchShellFrosted`).
+- Shared rhythm classes:
+  - `workbench-pad-shell`
+  - `workbench-gap-grid`
+  - `workbench-gap-section`
+  - `workbench-gap-title`
+  - `workbench-pad-card`
+  - `workbench-pad-card-tight`
+
 ## Implementation Checklist
 
 - Add/update token definitions in `app/styles/tokens.css`.

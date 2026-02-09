@@ -48,6 +48,10 @@
     --color-surface-3: var(--surface-3);
     --color-surface-elevated: var(--surface-elevated);
     --color-surface-active-soft: var(--surface-active-soft);
+    --color-workbench-shell: var(--workbench-shell);
+    --color-workbench-panel: var(--workbench-panel);
+    --color-workbench-rail: var(--workbench-rail);
+    --color-workbench-divider: var(--workbench-divider);
 
     --radius-sm: 0.625rem;
     --radius-md: 0.875rem;
@@ -73,6 +77,14 @@
     --layout-main-bottom-reserve: calc(var(--layout-floating-nav-height) + var(--layout-safe-bottom));
     --layout-session-main-height: calc(100svh - var(--layout-header-height) - var(--layout-main-bottom-reserve));
     --layout-scroll-padding-top: calc(var(--layout-header-height) + var(--layout-banner-content-gap));
+    --space-workbench-shell-pad: 0.9rem;
+    --space-workbench-grid-gap: 1.125rem;
+    --space-workbench-section-gap: 1.375rem;
+    --space-workbench-title-gap: 0.75rem;
+    --space-workbench-card-pad-x: 1.125rem;
+    --space-workbench-card-pad-y: 0.9rem;
+    --space-workbench-card-tight-pad-x: 1rem;
+    --space-workbench-card-tight-pad-y: 0.875rem;
 
     --background: #e8e7e4;
     --background-warm: #e7e1d7;
@@ -110,6 +122,10 @@
     --surface-3: rgba(255, 255, 255, 0.64);
     --surface-elevated: rgba(255, 255, 255, 0.82);
     --surface-active-soft: #ddd8d0;
+    --workbench-shell: rgba(251, 251, 249, 0.56);
+    --workbench-panel: rgba(247, 247, 245, 0.82);
+    --workbench-rail: rgba(243, 245, 247, 0.9);
+    --workbench-divider: rgba(255, 255, 255, 0.74);
     --task-selected-bg-soft: rgba(227, 236, 245, 0.72);
     --task-selected-bg: rgba(219, 230, 242, 0.82);
     --task-selected-bg-strong: rgba(208, 223, 238, 0.88);
@@ -123,6 +139,27 @@
     --shadow-soft: 0 8px 24px rgba(33, 43, 55, 0.07);
     --shadow-panel: 0 16px 38px rgba(33, 43, 55, 0.1);
     --shadow-pressed: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+@media (min-width: 48rem) {
+    :root {
+        --space-workbench-shell-pad: 1.25rem;
+        --space-workbench-grid-gap: 1.25rem;
+        --space-workbench-section-gap: 1.625rem;
+        --space-workbench-title-gap: 0.75rem;
+        --space-workbench-card-pad-x: 1.5rem;
+        --space-workbench-card-pad-y: 1.125rem;
+        --space-workbench-card-tight-pad-x: 1.25rem;
+        --space-workbench-card-tight-pad-y: 1rem;
+    }
+}
+
+@media (min-width: 80rem) {
+    :root {
+        --space-workbench-shell-pad: 1.5rem;
+        --space-workbench-grid-gap: 1.5rem;
+        --space-workbench-section-gap: 1.875rem;
+    }
 }
 
 .dark {
@@ -162,6 +199,10 @@
     --surface-3: rgba(29, 44, 64, 0.72);
     --surface-elevated: rgba(34, 51, 74, 0.86);
     --surface-active-soft: #304562;
+    --workbench-shell: rgba(17, 26, 38, 0.62);
+    --workbench-panel: rgba(25, 38, 55, 0.8);
+    --workbench-rail: rgba(30, 45, 66, 0.86);
+    --workbench-divider: rgba(173, 195, 222, 0.24);
     --task-selected-bg-soft: rgba(64, 84, 110, 0.56);
     --task-selected-bg: rgba(72, 95, 124, 0.62);
     --task-selected-bg-strong: rgba(89, 115, 147, 0.72);
@@ -175,4 +216,32 @@
     --shadow-soft: 0 8px 24px rgba(4, 9, 16, 0.35);
     --shadow-panel: 0 18px 42px rgba(4, 9, 16, 0.48);
     --shadow-pressed: inset 0 1px 0 rgba(215, 228, 246, 0.09);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --surface-1: #efeeeb;
+        --surface-2: #f2f1ee;
+        --surface-3: #f5f4f2;
+        --surface-elevated: #f6f5f3;
+        --workbench-shell: #efeeea;
+        --workbench-panel: #f4f3f0;
+        --workbench-rail: #f0f2f4;
+        --workbench-divider: rgba(220, 226, 233, 0.92);
+        --border: rgba(219, 226, 232, 0.88);
+        --input: #f5f6f8;
+    }
+
+    .dark {
+        --surface-1: #1a2637;
+        --surface-2: #1e2c40;
+        --surface-3: #223246;
+        --surface-elevated: #26384f;
+        --workbench-shell: #1a2738;
+        --workbench-panel: #223246;
+        --workbench-rail: #263a52;
+        --workbench-divider: rgba(132, 156, 187, 0.62);
+        --border: rgba(120, 146, 179, 0.58);
+        --input: #26374d;
+    }
 }

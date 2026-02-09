@@ -81,7 +81,7 @@ export function IntentWall({ onSelect, className }: IntentWallProps) {
                                 )}
                             >
                                 <span className="text-sm font-medium text-foreground/80">{item.category}</span>
-                                <span className="flex items-center justify-center min-w-[1.2rem] h-[1.2rem] text-[10px] font-bold rounded-full bg-primary/10 text-primary">
+                                <span className="flex items-center justify-center min-w-[1.2rem] h-[1.2rem] text-xs font-bold rounded-full bg-primary/10 text-primary">
                                     {item.count}
                                 </span>
                             </motion.button>
