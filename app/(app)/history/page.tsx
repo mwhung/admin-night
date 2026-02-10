@@ -29,15 +29,26 @@ interface HistoryGroup {
     participantCount: number
 }
 
-interface HistoryData {
-    stats: {
-        totalResolved: number
-        totalPending: number
-        totalFocusMinutes: number
-        dailyActivity: Record<string, number>
-    }
+interface HistoryStats {
+    totalResolved: number
+    totalPending: number
+    totalFocusMinutes: number
+    dailyActivity: Record<string, number>
+    totalSessions: number
+}
+
+interface HistoryPagination {
+    page: number
+    limit: number
+    hasMore: boolean
+    totalSessions: number
+}
+
+interface HistoryResponse {
+    stats?: HistoryStats
     historyGroups: HistoryGroup[]
-    allTasks: TaskRecord[]
+    pendingTasks?: TaskRecord[]
+    pagination: HistoryPagination
 }
 
 interface UserAchievementRecord {
@@ -48,26 +59,40 @@ interface UserAchievementRecord {
     humorSnapshot: string
 }
 
+const historyMarkersEnabled = process.env.NEXT_PUBLIC_ENABLE_HISTORY_MARKERS === 'true'
+const HISTORY_PAGE_SIZE = 10
+
 export default function HistoryPage() {
-    const [data, setData] = useState<HistoryData | null>(null)
+    const [stats, setStats] = useState<HistoryStats | null>(null)
+    const [pendingTasks, setPendingTasks] = useState<TaskRecord[]>([])
+    const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([])
+    const [historyPagination, setHistoryPagination] = useState<HistoryPagination | null>(null)
     const [achievements, setAchievements] = useState<UserAchievementRecord[]>([])
     const [initialLoading, setInitialLoading] = useState(true)
+    const [loadingMoreHistory, setLoadingMoreHistory] = useState(false)
     const prefersReducedMotion = useReducedMotion()
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const [historyRes, achievementsRes] = await Promise.all([
-                    fetch('/api/user/history'),
-                    fetch('/api/achievements')
+                    fetch(`/api/user/history?page=1&limit=${HISTORY_PAGE_SIZE}`),
+                    historyMarkersEnabled ? fetch('/api/achievements') : Promise.resolve(null),
                 ])
 
                 if (historyRes.ok) {
-                    const historyData = await historyRes.json()
-                    setData(historyData)
+                    const historyData = await historyRes.json() as HistoryResponse
+                    setHistoryGroups(historyData.historyGroups)
+                    setHistoryPagination(historyData.pagination)
+                    if (historyData.stats) {
+                        setStats(historyData.stats)
+                    }
+                    if (historyData.pendingTasks) {
+                        setPendingTasks(historyData.pendingTasks)
+                    }
                 }
 
-                if (achievementsRes.ok) {
+                if (achievementsRes?.ok) {
                     const achData = await achievementsRes.json()
                     setAchievements(achData.achievements || [])
                 }
@@ -79,6 +104,32 @@ export default function HistoryPage() {
         }
         fetchData()
     }, [])
+
+    const loadMoreHistory = async () => {
+        if (!historyPagination?.hasMore || loadingMoreHistory) {
+            return
+        }
+
+        setLoadingMoreHistory(true)
+        try {
+            const nextPage = historyPagination.page + 1
+            const response = await fetch(
+                `/api/user/history?page=${nextPage}&limit=${HISTORY_PAGE_SIZE}&includeOverview=false`
+            )
+
+            if (!response.ok) {
+                return
+            }
+
+            const nextPageData = await response.json() as HistoryResponse
+            setHistoryGroups((prev) => [...prev, ...nextPageData.historyGroups])
+            setHistoryPagination(nextPageData.pagination)
+        } catch (err) {
+            console.error("Failed to load more history", err)
+        } finally {
+            setLoadingMoreHistory(false)
+        }
+    }
 
     const { user, loading: authLoading } = useAuth()
     const loading = initialLoading || authLoading
@@ -100,14 +151,16 @@ export default function HistoryPage() {
         )
     }
 
-    const { stats, historyGroups, allTasks } = data || {
-        stats: { totalResolved: 0, totalPending: 0, totalFocusMinutes: 0, dailyActivity: {} },
-        historyGroups: [],
-        allTasks: []
+    const statsData = stats || {
+        totalResolved: 0,
+        totalPending: 0,
+        totalFocusMinutes: 0,
+        dailyActivity: {},
+        totalSessions: 0,
     }
 
-    const pendingTasks = allTasks.filter((task) => task.state !== 'RESOLVED')
-    const resolvedRatio = allTasks.length > 0 ? Math.round((stats.totalResolved / allTasks.length) * 100) : 100
+    const totalTaskCount = statsData.totalResolved + statsData.totalPending
+    const resolvedRatio = totalTaskCount > 0 ? Math.round((statsData.totalResolved / totalTaskCount) * 100) : 100
 
     const today = new Date()
     const calendarDays = Array.from({ length: 28 }, (_, index) => {
@@ -170,7 +223,7 @@ export default function HistoryPage() {
                                         <Wind className="size-4 text-primary/70" />
                                     </div>
                                     <p className="type-card-value mt-2">
-                                        {stats.totalResolved}
+                                        {statsData.totalResolved}
                                     </p>
                                     <p className="type-card-support mt-1.5">Closed loops no longer occupying your mind.</p>
                                 </div>
@@ -181,7 +234,7 @@ export default function HistoryPage() {
                                         <Clock className="size-4 text-primary/70" />
                                     </div>
                                     <p className="type-card-value mt-2">
-                                        {Math.floor(stats.totalFocusMinutes / 60)}h {stats.totalFocusMinutes % 60}m
+                                        {Math.floor(statsData.totalFocusMinutes / 60)}h {statsData.totalFocusMinutes % 60}m
                                     </p>
                                     <p className="type-card-support mt-1.5">Total footprints in the ritual of maintenance.</p>
                                 </div>
@@ -199,40 +252,42 @@ export default function HistoryPage() {
                             </div>
                         </motion.section>
 
-                        <motion.section
-                            initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14, delay: 0.04 }}
-                            className="workbench-gap-title"
-                            aria-label="Hidden achievements"
-                        >
-                            <header className="space-y-1 px-1">
-                                <p className={blockTitleStyle}>Hidden Achievements</p>
-                                <p className="type-caption">{achievements.length} unlocked</p>
-                            </header>
-                            {achievements.length === 0 ? (
-                                <div className="flex items-center gap-2.5 rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
-                                    <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
-                                        <Trophy className="size-3.5 text-white" />
+                        {historyMarkersEnabled && (
+                            <motion.section
+                                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14, delay: 0.04 }}
+                                className="workbench-gap-title"
+                                aria-label="Quiet markers"
+                            >
+                                <header className="space-y-1 px-1">
+                                    <p className={blockTitleStyle}>Quiet Markers</p>
+                                    <p className="type-caption">{achievements.length} recorded</p>
+                                </header>
+                                {achievements.length === 0 ? (
+                                    <div className="flex items-center gap-2.5 rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
+                                        <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
+                                            <Trophy className="size-3.5 text-white" />
+                                        </div>
+                                        <p className="text-sm italic text-muted-foreground">
+                                            &quot;Markers appear as your practice becomes steadier.&quot;
+                                        </p>
                                     </div>
-                                    <p className="text-sm italic text-muted-foreground">
-                                        &quot;Hidden achievements reveal themselves when the time is right.&quot;
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="grid gap-x-4 gap-y-2 md:grid-cols-2 lg:grid-cols-3">
-                                    {achievements.map((achievement) => (
-                                        <AchievementCard
-                                            key={achievement.id}
-                                            achievementId={achievement.achievementId}
-                                            unlockedAt={achievement.unlockedAt}
-                                            humorSnapshot={achievement.humorSnapshot}
-                                            evidenceSnapshot={achievement.evidenceSnapshot}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </motion.section>
+                                ) : (
+                                    <div className="grid gap-x-4 gap-y-2 md:grid-cols-2 lg:grid-cols-3">
+                                        {achievements.map((achievement) => (
+                                            <AchievementCard
+                                                key={achievement.id}
+                                                achievementId={achievement.achievementId}
+                                                unlockedAt={achievement.unlockedAt}
+                                                humorSnapshot={achievement.humorSnapshot}
+                                                evidenceSnapshot={achievement.evidenceSnapshot}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.section>
+                        )}
 
                         <motion.section
                             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -249,7 +304,7 @@ export default function HistoryPage() {
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {calendarDays.map((day) => {
                                         const dateStr = day.toISOString().split('T')[0]
-                                        const count = stats.dailyActivity[dateStr] || 0
+                                        const count = statsData.dailyActivity[dateStr] || 0
                                         return (
                                             <div
                                                 key={dateStr}
@@ -340,6 +395,19 @@ export default function HistoryPage() {
                                         )
                                     })
                                 )}
+
+                                {historyPagination?.hasMore && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={loadMoreHistory}
+                                        disabled={loadingMoreHistory}
+                                        className="h-8 w-full border-border/65 bg-surface-elevated/40 type-section-label hover:bg-muted/55"
+                                    >
+                                        {loadingMoreHistory ? "Loading..." : "Load Earlier Footprints"}
+                                    </Button>
+                                )}
                             </div>
                         </motion.section>
                         </div>
@@ -350,11 +418,11 @@ export default function HistoryPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14 }}
                             className="workbench-gap-title"
-                            aria-label="Still holding"
+                            aria-label="Task drawer"
                         >
                             <header className="space-y-1 px-1">
-                                <p className={blockTitleStyle}>Still Holding</p>
-                                <p className="type-caption">Open loops safely stored awaiting closure.</p>
+                                <p className={blockTitleStyle}>Task Drawer</p>
+                                <p className="type-caption">Open loops safely stored and waiting for closure.</p>
                             </header>
                             <div className={cn(cardLayout.workbenchRail, "overflow-hidden")}>
                                 <div className="custom-scrollbar max-h-none divide-y divide-border/40 overflow-y-auto md:max-h-[520px]">
@@ -408,19 +476,21 @@ export default function HistoryPage() {
                                 <p className={blockTitleStyle}>Progress Note</p>
                                 <p className="type-caption">A compact status of your long-running momentum.</p>
                             </header>
-                            <div className="grid gap-2.5 sm:grid-cols-2">
+                            <div className={cn("grid gap-2.5", historyMarkersEnabled && "sm:grid-cols-2")}>
                                 <div className="rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
                                     <p className={labelStyle}>Sessions Recorded</p>
                                     <p className="mt-1.5 text-[1.45rem] font-medium leading-none tracking-[-0.015em] text-foreground">
-                                        {historyGroups.length}
+                                        {statsData.totalSessions}
                                     </p>
                                 </div>
-                                <div className="rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
-                                    <p className={labelStyle}>Unlocked Markers</p>
-                                    <p className="mt-1.5 text-[1.45rem] font-medium leading-none tracking-[-0.015em] text-foreground">
-                                        {achievements.length}
-                                    </p>
-                                </div>
+                                {historyMarkersEnabled && (
+                                    <div className="rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
+                                        <p className={labelStyle}>Markers Recorded</p>
+                                        <p className="mt-1.5 text-[1.45rem] font-medium leading-none tracking-[-0.015em] text-foreground">
+                                            {achievements.length}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                             <p className="type-body-soft mt-3 italic text-foreground/85">
                                 &ldquo;The longest journey is simply a series of small, released burdens.&rdquo;

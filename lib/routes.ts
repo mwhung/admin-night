@@ -5,6 +5,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   SETTINGS: '/settings',
+  SETTINGS_ACCOUNT: '/settings/account',
 } as const
 
 export const AUTH_ROUTES = [ROUTES.LOGIN, ROUTES.REGISTER] as const

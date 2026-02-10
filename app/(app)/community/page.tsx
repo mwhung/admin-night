@@ -10,6 +10,12 @@ import { DeadpanFacts } from "@/components/features/community/deadpan-facts"
 import { cn } from "@/lib/utils"
 import { cardLayout } from "@/components/ui/card-layouts"
 
+interface CommunityVictory {
+    id: string
+    message: string
+    resolvedAt: string
+}
+
 interface GlobalStats {
     community: {
         totalTasksCompleted: number
@@ -51,9 +57,10 @@ interface GlobalStats {
             sessionParticipationRate: number
             userParticipationRate: number
         }
-        avgBloomTimeHours?: number
+        avgBloomTimeHours?: number | null
         peakFocusHour?: string
         mostProductiveDay?: string
+        recentVictories?: CommunityVictory[]
     }
 }
 
@@ -85,7 +92,11 @@ export default function CommunityPage() {
     const totalReleased = stats?.community.totalTasksCompleted ?? 0
     const activeParticipants = stats?.community.daily.activeUsers ?? 0
     const dailyReactions = stats?.community.reactions?.daily.total ?? 0
-    const reclaimedClarity = stats?.community.avgBloomTimeHours ?? 72
+    const avgBloomTimeHours = stats?.community.avgBloomTimeHours
+    const bloomTimeLabel =
+        typeof avgBloomTimeHours === 'number'
+            ? `${avgBloomTimeHours.toFixed(1)}h`
+            : '—'
     const weeklyProgress = stats?.community.weekly.progress ?? 0
     const weeklyGoal = stats?.community.weekly.goal ?? 10000
 
@@ -109,9 +120,9 @@ export default function CommunityPage() {
             icon: Sparkles,
         },
         {
-            label: "Reclaimed Clarity",
-            value: `${reclaimedClarity}%`,
-            meta: "Average reduction in mental drag this week.",
+            label: "Avg Bloom Time",
+            value: bloomTimeLabel,
+            meta: "Average hours from capture to release this week.",
             icon: Orbit,
         },
     ]
@@ -177,7 +188,10 @@ export default function CommunityPage() {
                                     <p className="type-caption">Recent moments where people cleared one thing at a time.</p>
                                 </header>
                                 <div className={cn(cardLayout.workbenchSecondary)}>
-                                    <VictoryFeed showHeading={false} />
+                                    <VictoryFeed
+                                        showHeading={false}
+                                        victories={stats?.community.recentVictories ?? []}
+                                    />
                                 </div>
                             </motion.section>
 
@@ -209,6 +223,9 @@ export default function CommunityPage() {
                                 <header className="space-y-1 px-1">
                                     <p className={blockTitleStyle}>Pulse Snapshot</p>
                                     <p className="type-caption">Current community signals in one glance.</p>
+                                    <p className="type-caption text-muted-foreground/85">
+                                        Only anonymous, aggregate signals are shown here.
+                                    </p>
                                 </header>
                                 <div className={cn(cardLayout.workbenchRail, "workbench-pad-card")}>
                                     <div className="divide-y divide-border/45">

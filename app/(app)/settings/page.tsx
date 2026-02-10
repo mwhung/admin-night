@@ -1,6 +1,7 @@
 'use client'
 
 import { Separator } from "@/components/ui/separator"
+import Link from "next/link"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,16 +22,110 @@ import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { GuestPlaceholder } from "@/components/features/auth/guest-placeholder"
 import { useAestheticMode } from "@/lib/hooks/useAestheticMode"
+import { ROUTES } from "@/lib/routes"
+
+type PresenceVisibility = 'public' | 'anonymous' | 'private'
+type InsightLevel = 'basic' | 'detailed' | 'deep'
+
+type PreferenceState = {
+    session_duration: number
+    presence_visibility: PresenceVisibility
+    insight_level: InsightLevel
+    ambient_sound: boolean
+    completion_cues: boolean
+}
+
+type SessionHistoryTaskRecord = {
+    id: string
+    title: string
+    state: string
+    createdAt: string
+    resolvedAt: string | null
+}
+
+type SessionHistoryGroup = {
+    id: string
+    sessionId: string
+    date: string
+    duration: number
+    tasks: SessionHistoryTaskRecord[]
+    participantCount: number
+}
+
+type SessionHistoryStats = {
+    totalResolved: number
+    totalPending: number
+    totalFocusMinutes: number
+    dailyActivity: Record<string, number>
+    totalSessions: number
+}
+
+type SessionHistoryPagination = {
+    page: number
+    limit: number
+    hasMore: boolean
+    totalSessions: number
+}
+
+type SessionHistoryResponse = {
+    stats?: SessionHistoryStats
+    historyGroups: SessionHistoryGroup[]
+    pendingTasks?: SessionHistoryTaskRecord[]
+    pagination: SessionHistoryPagination
+}
+
+type PurgeResponse = {
+    deleted: {
+        tasks: number
+        sessionParticipations: number
+    }
+}
+
+const PRESENCE_OPTIONS: PresenceVisibility[] = ['public', 'anonymous', 'private']
+const INSIGHT_LEVEL_OPTIONS: InsightLevel[] = ['basic', 'detailed', 'deep']
+const EXPORT_HISTORY_PAGE_SIZE = 30
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null
+}
+
+function getPreferenceErrorMessage(payload: unknown): string | null {
+    if (!isObjectRecord(payload)) return null
+
+    const error = payload.error
+    if (isObjectRecord(error) && typeof error.message === "string") {
+        return error.message
+    }
+
+    if (typeof payload.message === "string") {
+        return payload.message
+    }
+
+    return null
+}
+
+async function getErrorMessageFromResponse(
+    response: Response,
+    fallbackMessage: string
+): Promise<string> {
+    try {
+        const payload = await response.json()
+        return getPreferenceErrorMessage(payload) ?? fallbackMessage
+    } catch {
+        return fallbackMessage
+    }
+}
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth()
     const [preferencesLoading, setPreferencesLoading] = useState(true)
     const [savingSetting, setSavingSetting] = useState<string | null>(null)
+    const [settingsError, setSettingsError] = useState<string | null>(null)
 
     // Setting States
     const [duration, setDuration] = useState(25)
-    const [presence, setPresence] = useState('anonymous')
-    const [insightLevel, setInsightLevel] = useState('detailed')
+    const [presence, setPresence] = useState<PresenceVisibility>('anonymous')
+    const [insightLevel, setInsightLevel] = useState<InsightLevel>('detailed')
     const [ambientSound, setAmbientSound] = useState(false)
     const [completionCues, setCompletionCues] = useState(true)
     const {
@@ -59,6 +154,7 @@ export default function SettingsPage() {
                 }
             } catch (err) {
                 console.error("Failed to fetch preferences:", err)
+                setSettingsError("We couldn't load your saved preferences. Defaults are shown for now.")
             } finally {
                 setPreferencesLoading(false)
             }
@@ -68,36 +164,123 @@ export default function SettingsPage() {
     }, [user])
 
     // Update Preference Function
-    const updatePreference = useCallback(async (key: string, value: unknown) => {
+    const rollbackPreference = useCallback(<K extends keyof PreferenceState>(
+        key: K,
+        previousValue: PreferenceState[K]
+    ) => {
+        switch (key) {
+            case 'session_duration':
+                setDuration(previousValue as PreferenceState['session_duration'])
+                break
+            case 'presence_visibility':
+                setPresence(previousValue as PreferenceState['presence_visibility'])
+                break
+            case 'insight_level':
+                setInsightLevel(previousValue as PreferenceState['insight_level'])
+                break
+            case 'ambient_sound':
+                setAmbientSound(previousValue as PreferenceState['ambient_sound'])
+                break
+            case 'completion_cues':
+                setCompletionCues(previousValue as PreferenceState['completion_cues'])
+                break
+            default:
+                break
+        }
+    }, [])
+
+    const updatePreference = useCallback(async <K extends keyof PreferenceState>(
+        key: K,
+        value: PreferenceState[K],
+        previousValue: PreferenceState[K]
+    ) => {
         if (!user) return // Don't save for guests
 
         setSavingSetting(key)
+        setSettingsError(null)
         try {
             const res = await fetch('/api/user/preferences', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [key]: value })
             })
-            if (!res.ok) throw new Error("Update failed")
+            if (!res.ok) {
+                let serverMessage: string | null = null
+                try {
+                    const payload = await res.json()
+                    serverMessage = getPreferenceErrorMessage(payload)
+                } catch {
+                    serverMessage = null
+                }
+
+                throw new Error(serverMessage || "We couldn't save this setting. Please try again.")
+            }
         } catch (err) {
             console.error(`Failed to update ${key}:`, err)
-            // Rollback UI could go here if needed
+            rollbackPreference(key, previousValue)
+            setSettingsError(err instanceof Error ? err.message : "We couldn't save this setting. Please try again.")
         } finally {
             setSavingSetting(null)
         }
-    }, [user])
+    }, [rollbackPreference, user])
+
+    const fetchJsonOrThrow = useCallback(async <T,>(url: string, fallbackMessage: string): Promise<T> => {
+        const response = await fetch(url)
+        if (!response.ok) {
+            throw new Error(await getErrorMessageFromResponse(response, fallbackMessage))
+        }
+        return await response.json() as T
+    }, [])
+
+    const fetchAllHistoryForExport = useCallback(async () => {
+        let page = 1
+        let hasMore = true
+        const historyGroups: SessionHistoryGroup[] = []
+        let stats: SessionHistoryStats | undefined
+        let pendingTasks: SessionHistoryTaskRecord[] | undefined
+
+        while (hasMore) {
+            const includeOverview = page === 1 ? "true" : "false"
+            const historyPage = await fetchJsonOrThrow<SessionHistoryResponse>(
+                `/api/user/history?page=${page}&limit=${EXPORT_HISTORY_PAGE_SIZE}&includeOverview=${includeOverview}`,
+                "We couldn't export your session history."
+            )
+
+            historyGroups.push(...historyPage.historyGroups)
+            if (page === 1) {
+                stats = historyPage.stats
+                pendingTasks = historyPage.pendingTasks
+            }
+
+            hasMore = historyPage.pagination.hasMore
+            page += 1
+        }
+
+        return {
+            stats: stats ?? null,
+            pendingTasks: pendingTasks ?? [],
+            historyGroups,
+            totalSessions: historyGroups.length,
+            exportedPageSize: EXPORT_HISTORY_PAGE_SIZE,
+        }
+    }, [fetchJsonOrThrow])
 
     const handleExport = useCallback(async () => {
         if (!user) return
         setSavingSetting('export')
+        setSettingsError(null)
         try {
-            const [prefRes, taskRes] = await Promise.all([
-                fetch('/api/user/preferences'),
-                fetch('/api/tasks')
+            const [preferences, tasks, sessionHistory] = await Promise.all([
+                fetchJsonOrThrow<Record<string, unknown>>(
+                    '/api/user/preferences',
+                    "We couldn't export your preferences."
+                ),
+                fetchJsonOrThrow<Array<Record<string, unknown>>>(
+                    '/api/tasks',
+                    "We couldn't export your tasks."
+                ),
+                fetchAllHistoryForExport(),
             ])
-
-            const preferences = prefRes.ok ? await prefRes.json() : {}
-            const tasks = taskRes.ok ? await taskRes.json() : []
 
             const exportData = {
                 user: {
@@ -107,6 +290,7 @@ export default function SettingsPage() {
                 },
                 preferences,
                 tasks,
+                sessionHistory,
                 exportedAt: new Date().toISOString()
             }
 
@@ -121,27 +305,32 @@ export default function SettingsPage() {
             URL.revokeObjectURL(url)
         } catch (err) {
             console.error("Export failed:", err)
+            setSettingsError(err instanceof Error ? err.message : "We couldn't export your data. Please try again.")
         } finally {
             setSavingSetting(null)
         }
-    }, [user])
+    }, [fetchAllHistoryForExport, fetchJsonOrThrow, user])
 
     const handlePurge = useCallback(async () => {
         if (!user) return
-        if (!confirm("Are you absolutely sure? This will permanently delete all your task history and session data. This action cannot be undone.")) return
+        if (!confirm("Are you absolutely sure? This deletes all task history and session participation data. Preferences remain unchanged. This action cannot be undone.")) return
 
         setSavingSetting('purge')
+        setSettingsError(null)
         try {
             const res = await fetch('/api/user/purge', { method: 'DELETE' })
             if (res.ok) {
-                alert("Your history has been purged successfully.")
+                const purgeResult = await res.json() as PurgeResponse
+                alert(
+                    `History cleared. Deleted ${purgeResult.deleted.tasks} tasks and ${purgeResult.deleted.sessionParticipations} session records.`
+                )
                 window.location.reload() // Refresh to clear local state
             } else {
-                throw new Error("Purge failed")
+                throw new Error(await getErrorMessageFromResponse(res, "Purge failed"))
             }
         } catch (err) {
             console.error("Purge failed:", err)
-            alert("Failed to purge history. Please try again.")
+            setSettingsError(err instanceof Error ? err.message : "Failed to purge history. Please try again.")
         } finally {
             setSavingSetting(null)
         }
@@ -187,7 +376,11 @@ export default function SettingsPage() {
 
     const settingLabelClass = "text-sm font-medium tracking-[-0.005em] text-foreground/90"
     const settingMetaClass = "type-caption"
-    const optionChipClass = "px-4 py-1.5 rounded-full text-sm font-medium tracking-[-0.005em] transition-all duration-300 capitalize"
+    const focusRingClass = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    const optionChipClass = cn(
+        "px-4 py-1.5 rounded-full text-sm font-medium tracking-[-0.005em] transition-all duration-300 capitalize",
+        focusRingClass
+    )
 
     return (
         <div className="container mx-auto p-4 sm:p-5 md:p-6 max-w-4xl min-h-screen">
@@ -199,6 +392,15 @@ export default function SettingsPage() {
                 <p className="type-page-subtitle max-w-2xl">
                     Tailor your environment for quiet focus and relief.
                 </p>
+                {settingsError ? (
+                    <div
+                        role="alert"
+                        aria-live="polite"
+                        className="mt-3 max-w-2xl rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2"
+                    >
+                        <p className="type-caption text-destructive">{settingsError}</p>
+                    </div>
+                ) : null}
             </div>
 
             <div className="grid gap-16 pb-20">
@@ -222,14 +424,23 @@ export default function SettingsPage() {
                                         </div>
                                         <div className={settingMetaClass}>The standard time block for your focus sessions.</div>
                                     </div>
-                                    <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
+                                    <div
+                                        role="radiogroup"
+                                        aria-label="Default Session Duration"
+                                        className="flex p-1 bg-muted/30 rounded-full border border-border/40"
+                                    >
                                         {[25, 45, 60].map((d) => (
                                             <button
+                                                type="button"
                                                 key={d}
+                                                role="radio"
+                                                aria-checked={duration === d}
+                                                aria-label={`${d} minutes`}
                                                 disabled={savingSetting !== null}
                                                 onClick={() => {
+                                                    const previousDuration = duration
                                                     setDuration(d)
-                                                    updatePreference('session_duration', d)
+                                                    updatePreference('session_duration', d, previousDuration)
                                                 }}
                                                 className={cn(
                                                     optionChipClass,
@@ -269,10 +480,18 @@ export default function SettingsPage() {
                                         </div>
                                         <div className={settingMetaClass}>Adjust the interface to your visual comfort.</div>
                                     </div>
-                                    <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
+                                    <div
+                                        role="radiogroup"
+                                        aria-label="Focus Aesthetic"
+                                        className="flex p-1 bg-muted/30 rounded-full border border-border/40"
+                                    >
                                         {(['light', 'dark', 'adaptive'] as const).map((mode) => (
                                             <button
+                                                type="button"
                                                 key={mode}
+                                                role="radio"
+                                                aria-checked={aesthetic === mode}
+                                                aria-label={`${mode} theme`}
                                                 onClick={() => {
                                                     setAestheticMode(mode)
                                                 }}
@@ -300,28 +519,40 @@ export default function SettingsPage() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Volume2 className={cn("size-4", ambientSound ? "text-primary" : "text-muted-foreground/60")} />
-                                                <span className={cn("text-sm font-medium tracking-[-0.005em]", ambientSound ? "text-foreground" : "text-muted-foreground/60")}>Soundscapes</span>
+                                                <span
+                                                    id="ambient-sound-label"
+                                                    className={cn("text-sm font-medium tracking-[-0.005em]", ambientSound ? "text-foreground" : "text-muted-foreground/60")}
+                                                >
+                                                    Soundscapes
+                                                </span>
                                             </div>
                                             <button
+                                                type="button"
+                                                role="switch"
+                                                aria-checked={ambientSound}
+                                                aria-labelledby="ambient-sound-label"
+                                                aria-describedby="ambient-sound-description"
                                                 disabled={savingSetting !== null}
                                                 onClick={() => {
+                                                    const previousAmbientSound = ambientSound
                                                     const newVal = !ambientSound
                                                     setAmbientSound(newVal)
-                                                    updatePreference('ambient_sound', newVal)
+                                                    updatePreference('ambient_sound', newVal, previousAmbientSound)
                                                 }}
                                                 className={cn(
-                                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
                                                     ambientSound ? "bg-primary" : "bg-muted",
+                                                    focusRingClass,
                                                     savingSetting !== null && "opacity-50 cursor-not-allowed"
                                                 )}
                                             >
                                                 <span className={cn(
-                                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out",
-                                                    ambientSound ? "translate-x-4" : "translate-x-0"
+                                                    "pointer-events-none inline-block size-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out",
+                                                    ambientSound ? "translate-x-5" : "translate-x-0"
                                                 )} />
                                             </button>
                                         </div>
-                                        <p className="type-caption italic">Background textures to mask distraction.</p>
+                                        <p id="ambient-sound-description" className="type-caption italic">Background textures to mask distraction.</p>
                                     </div>
 
                                     <div className={cn(
@@ -331,28 +562,40 @@ export default function SettingsPage() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles className={cn("size-4", completionCues ? "text-primary" : "text-muted-foreground/60")} />
-                                                <span className={cn("text-sm font-medium tracking-[-0.005em]", completionCues ? "text-foreground" : "text-muted-foreground/60")}>Task Sounds</span>
+                                                <span
+                                                    id="completion-cues-label"
+                                                    className={cn("text-sm font-medium tracking-[-0.005em]", completionCues ? "text-foreground" : "text-muted-foreground/60")}
+                                                >
+                                                    Task Sounds
+                                                </span>
                                             </div>
                                             <button
+                                                type="button"
+                                                role="switch"
+                                                aria-checked={completionCues}
+                                                aria-labelledby="completion-cues-label"
+                                                aria-describedby="completion-cues-description"
                                                 disabled={savingSetting !== null}
                                                 onClick={() => {
+                                                    const previousCompletionCues = completionCues
                                                     const newVal = !completionCues
                                                     setCompletionCues(newVal)
-                                                    updatePreference('completion_cues', newVal)
+                                                    updatePreference('completion_cues', newVal, previousCompletionCues)
                                                 }}
                                                 className={cn(
-                                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
                                                     completionCues ? "bg-primary" : "bg-muted",
+                                                    focusRingClass,
                                                     savingSetting !== null && "opacity-50 cursor-not-allowed"
                                                 )}
                                             >
                                                 <span className={cn(
-                                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out",
-                                                    completionCues ? "translate-x-4" : "translate-x-0"
+                                                    "pointer-events-none inline-block size-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out",
+                                                    completionCues ? "translate-x-5" : "translate-x-0"
                                                 )} />
                                             </button>
                                         </div>
-                                        <p className="type-caption italic">Auditory relief when steps are finished.</p>
+                                        <p id="completion-cues-description" className="type-caption italic">Auditory relief when steps are finished.</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -379,14 +622,23 @@ export default function SettingsPage() {
                                         </div>
                                         <div className={settingMetaClass}>How others perceive you during active sessions.</div>
                                     </div>
-                                    <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
-                                        {['public', 'anonymous', 'private'].map((p) => (
+                                    <div
+                                        role="radiogroup"
+                                        aria-label="Presence Visibility"
+                                        className="flex p-1 bg-muted/30 rounded-full border border-border/40"
+                                    >
+                                        {PRESENCE_OPTIONS.map((p) => (
                                             <button
+                                                type="button"
                                                 key={p}
+                                                role="radio"
+                                                aria-checked={presence === p}
+                                                aria-label={p}
                                                 disabled={savingSetting !== null}
                                                 onClick={() => {
+                                                    const previousPresence = presence
                                                     setPresence(p)
-                                                    updatePreference('presence_visibility', p)
+                                                    updatePreference('presence_visibility', p, previousPresence)
                                                 }}
                                                 className={cn(
                                                     optionChipClass,
@@ -413,14 +665,23 @@ export default function SettingsPage() {
                                         </div>
                                         <div className={settingMetaClass}>Depth of data preserved in your focus history.</div>
                                     </div>
-                                    <div className="flex p-1 bg-muted/30 rounded-full border border-border/40">
-                                        {['basic', 'detailed', 'deep'].map((l) => (
+                                    <div
+                                        role="radiogroup"
+                                        aria-label="History Data Detail"
+                                        className="flex p-1 bg-muted/30 rounded-full border border-border/40"
+                                    >
+                                        {INSIGHT_LEVEL_OPTIONS.map((l) => (
                                             <button
+                                                type="button"
                                                 key={l}
+                                                role="radio"
+                                                aria-checked={insightLevel === l}
+                                                aria-label={l}
                                                 disabled={savingSetting !== null}
                                                 onClick={() => {
+                                                    const previousInsightLevel = insightLevel
                                                     setInsightLevel(l)
-                                                    updatePreference('insight_level', l)
+                                                    updatePreference('insight_level', l, previousInsightLevel)
                                                 }}
                                                 className={cn(
                                                     optionChipClass,
@@ -466,12 +727,15 @@ export default function SettingsPage() {
                                                 {savingSetting === 'purge' ? <Loader2 className="size-3 animate-spin mr-2" /> : null}
                                                 Purge All History
                                             </Button>
+                                            <p className="type-caption">
+                                                Export includes preferences, tasks, and full session participation history.
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
                                         <Info className="size-5 text-primary/60 mt-0.5" />
                                         <p className="type-caption leading-relaxed">
-                                            Admin Night is built on transparency. We do not sell focus data. Your history is yours to keep or destroy.
+                                            Admin Night is built on transparency. We do not sell focus data. Export your complete footprint or permanently clear your history at any time.
                                         </p>
                                     </div>
                                 </div>
@@ -540,8 +804,10 @@ export default function SettingsPage() {
                                     </div>
                                     <CardDescription className="type-caption opacity-75">{user.email}</CardDescription>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-border/40 px-6">
-                                    Manage Profile
+                                <Button asChild variant="outline" className="rounded-full border-border/40 px-6">
+                                    <Link href={ROUTES.SETTINGS_ACCOUNT}>
+                                        Manage Profile
+                                    </Link>
                                 </Button>
                             </CardHeader>
                         </Card>

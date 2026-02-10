@@ -7,39 +7,63 @@ import { CheckCircle2, Zap, Globe, Clock, ArrowRight } from 'lucide-react'
 
 interface Victory {
     id: string
-    text: string
-    type: 'bill' | 'email' | 'call' | 'admin'
-    time: string
+    message: string
+    resolvedAt: string | null
 }
 
 interface VictoryFeedProps {
     showHeading?: boolean
+    victories?: Victory[]
 }
 
-const SAMPLE_VICTORIES: Victory[] = [
-    { id: '1', text: 'Someone just settled a recurring bill.', type: 'bill', time: '2m' },
-    { id: '2', text: 'An overdue email was finally sent.', type: 'email', time: '5m' },
-    { id: '3', text: 'A difficult phone call reached closure.', type: 'call', time: '8m' },
-    { id: '4', text: '5 disorganized files were safely archived.', type: 'admin', time: '12m' },
-    { id: '5', text: 'The mental weight of insurance papers was released.', type: 'bill', time: '15m' },
-]
+const ICONS = [
+    Zap,
+    Globe,
+    Clock,
+    CheckCircle2,
+] as const
 
-const icons = {
-    bill: <Zap className="size-4 text-primary/60" />,
-    email: <Globe className="size-4 text-primary/60" />,
-    call: <Clock className="size-4 text-primary/60" />,
-    admin: <CheckCircle2 className="size-4 text-primary/60" />,
+function getRelativeTimeLabel(isoDate: string): string {
+    const resolvedAt = new Date(isoDate)
+    if (Number.isNaN(resolvedAt.getTime())) return 'Unknown time'
+
+    const diffMs = Date.now() - resolvedAt.getTime()
+    const diffMinutes = Math.max(0, Math.floor(diffMs / (1000 * 60)))
+
+    if (diffMinutes < 1) return 'just now'
+    if (diffMinutes < 60) return `${diffMinutes}m`
+
+    const diffHours = Math.floor(diffMinutes / 60)
+    if (diffHours < 24) return `${diffHours}h`
+
+    const diffDays = Math.floor(diffHours / 24)
+    return `${diffDays}d`
 }
 
-export function VictoryFeed({ showHeading = true }: VictoryFeedProps) {
+export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedProps) {
     const [index, setIndex] = useState(0)
+    const feedItems = victories.length > 0
+        ? victories
+        : [
+            {
+                id: 'empty-state',
+                message: 'No community releases have been recorded yet.',
+                resolvedAt: null,
+            },
+        ]
+    const itemCount = feedItems.length
 
     useEffect(() => {
+        if (itemCount <= 1) return
+
         const timer = setInterval(() => {
-            setIndex((prev) => (prev + 1) % SAMPLE_VICTORIES.length)
+            setIndex((prev) => (prev + 1) % itemCount)
         }, 4000)
         return () => clearInterval(timer)
-    }, [])
+    }, [itemCount])
+
+    const activeItem = feedItems[index % itemCount] ?? feedItems[0]
+    const ActiveIcon = ICONS[index % ICONS.length]
 
     return (
         <div className="h-full w-full flex flex-col justify-center p-4 sm:p-5 space-y-5">
@@ -57,10 +81,10 @@ export function VictoryFeed({ showHeading = true }: VictoryFeedProps) {
                             className="flex items-center gap-4"
                         >
                             <div className="flex size-10 items-center justify-center rounded-full border border-border/65 bg-surface-elevated/56">
-                                {icons[SAMPLE_VICTORIES[index].type]}
+                                <ActiveIcon className="size-4 text-primary/60" />
                             </div>
                             <p className="text-[0.95rem] leading-[1.45] text-foreground/88">
-                                {SAMPLE_VICTORIES[index].text}
+                                {activeItem.message}
                             </p>
                         </motion.div>
                     </AnimatePresence>
@@ -68,16 +92,18 @@ export function VictoryFeed({ showHeading = true }: VictoryFeedProps) {
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 border-t border-border/55 pt-3">
-                {SAMPLE_VICTORIES.slice(0, 3).map((v) => (
+                {feedItems.slice(0, 3).map((victory) => (
                     <div
-                        key={v.id}
+                        key={victory.id}
                         className="group flex items-center justify-between rounded-lg px-1.5 py-1 opacity-70 transition-[opacity,background-color] hover:bg-muted/30 hover:opacity-100"
                     >
                         <div className="flex items-center gap-3">
                             <div className="size-1.5 rounded-full bg-primary/24 transition-colors group-hover:bg-primary/70" />
-                            <span className="max-w-[200px] truncate text-sm text-foreground/88">{v.text}</span>
+                            <span className="max-w-[200px] truncate text-sm text-foreground/88">{victory.message}</span>
                         </div>
-                        <span className="text-xs font-medium tabular-nums text-muted-foreground/88">{v.time} ago</span>
+                        <span className="text-xs font-medium tabular-nums text-muted-foreground/88">
+                            {victory.resolvedAt ? `${getRelativeTimeLabel(victory.resolvedAt)} ago` : 'No recent data'}
+                        </span>
                     </div>
                 ))}
             </div>

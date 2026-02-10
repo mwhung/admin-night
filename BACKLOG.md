@@ -28,6 +28,7 @@
 ## 📝 快速紀錄區 (New Issues)
 <!-- 靈感或 Bug 發現時，直接在下方新增一行 - [ ] 即可 -->
 
+- [ ] [RELEASE][Auth] 部署前驗證真實 Supabase Auth 流程：在 `NEXT_PUBLIC_MOCK_AUTH=false` 下確認 `register` 與 email/password `sign in` 可用，並檢查 Email Confirmation 行為符合專案設定。
 - [ ] [UX/UI][Mobile][Session] `/sessions/[sessionId]` 手機版進行中頁面排版擠壓：`Modify Tasks` 與底部浮動導覽重疊、`Exit Session Early` 首屏可見性不足，需重整 safe-area 與按鈕區塊位置。
 - [ ] [FEAT][Session][PiP] Session 進行中使用者切到其他 tab 時提供子畫面模式：Chromium 採 Document Picture-in-Picture（先手動啟用、可評估 Chrome 134+ 自動 PiP），Safari/Firefox 維持浮球與回到 Session 的 fallback。
 - [ ] [UX/UI][A11y] Session 頁面小字與輔助色對比不足（含 muted / success 在淺色背景），需調整 token 以符合 WCAG 2.2。

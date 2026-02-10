@@ -28,7 +28,7 @@ export function MilestoneProgress({ current, target, className, showHeading = tr
                 </div>
                 <div className="flex items-center gap-2 rounded-full border border-primary/22 bg-primary/10 px-3 py-1 text-xs font-medium text-primary/78">
                     <Lock className="w-3 h-3" />
-                    <span>Mystery Unlock @ 100%</span>
+                    <span>Shared Relief Marker @ 100%</span>
                 </div>
             </div>
 
@@ -42,7 +42,7 @@ export function MilestoneProgress({ current, target, className, showHeading = tr
             </div>
 
             <p className="type-card-support text-right italic">
-                {100 - progress < 1 ? "Goal Met!" : `${Math.ceil(target - current)} more steps to unlock shared reward.`}
+                {100 - progress < 1 ? "Weekly marker reached." : `${Math.ceil(target - current)} more steps to reach this week's shared marker.`}
             </p>
         </div>
     )

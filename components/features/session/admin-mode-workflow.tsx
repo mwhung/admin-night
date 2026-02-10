@@ -1454,10 +1454,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                     <button
                                         onClick={() => setSelectedDuration(option.value as number | 'custom')}
                                         className={cn(
-                                            "relative p-4 rounded-xl border-2 transition-all text-left",
+                                            "relative p-4 rounded-xl border transition-[border-color,background-color,box-shadow,transform] duration-150 text-left",
                                             selectedDuration === option.value
-                                                ? "border-primary bg-primary/5 shadow-md"
-                                                : "border-muted hover:border-muted-foreground/30"
+                                                ? "border-[var(--task-selected-border-strong)] bg-[var(--task-selected-bg-soft)] shadow-[0_10px_22px_rgba(74,102,131,0.16)] ring-1 ring-[var(--task-selected-ring)]"
+                                                : "border-border/65 bg-surface-elevated/42 hover:border-border/80 hover:bg-surface-elevated/68"
                                         )}
                                     >
                                         {selectedDuration === option.value && (
@@ -1468,7 +1468,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                     </button>
 
                                     {option.value === 'custom' && selectedDuration === 'custom' && (
-                                        <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="flex items-center gap-2 rounded-xl border border-[var(--task-selected-border)] bg-[var(--task-selected-bg-soft)] px-3 py-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                                             <Input
                                                 type="number"

@@ -14,11 +14,29 @@ const PreferencesSchema = z.object({
     completion_cues: z.boolean().optional(),
 })
 
+function buildErrorResponse(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown
+) {
+    return NextResponse.json(
+        {
+            error: {
+                code,
+                message,
+                ...(details !== undefined ? { details } : {}),
+            },
+        },
+        { status }
+    )
+}
+
 export async function GET() {
     const user = await getCurrentUser()
 
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 })
+        return buildErrorResponse(401, "UNAUTHORIZED", "Authentication required.")
     }
 
     try {
@@ -30,7 +48,7 @@ export async function GET() {
         return NextResponse.json(dbUser?.preferences || {})
     } catch (error) {
         console.error("[PREFERENCES_GET]", error)
-        return new NextResponse("Internal Error", { status: 500 })
+        return buildErrorResponse(500, "PREFERENCES_GET_FAILED", "Failed to load user preferences.")
     }
 }
 
@@ -38,7 +56,7 @@ export async function PATCH(req: Request) {
     const user = await getCurrentUser()
 
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 })
+        return buildErrorResponse(401, "UNAUTHORIZED", "Authentication required.")
     }
 
     try {
@@ -67,9 +85,14 @@ export async function PATCH(req: Request) {
         return NextResponse.json(updatedUser.preferences)
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return new NextResponse(JSON.stringify(error.issues), { status: 422 })
+            return buildErrorResponse(
+                422,
+                "INVALID_PREFERENCES_PAYLOAD",
+                "Invalid preference payload.",
+                error.issues
+            )
         }
         console.error("[PREFERENCES_PATCH]", error)
-        return new NextResponse("Internal Error", { status: 500 })
+        return buildErrorResponse(500, "PREFERENCES_PATCH_FAILED", "Failed to save user preferences.")
     }
 }

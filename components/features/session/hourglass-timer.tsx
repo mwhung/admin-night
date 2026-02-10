@@ -118,8 +118,6 @@ export const HourglassTimer = forwardRef<HourglassTimerRef, HourglassTimerProps>
                     boxShadow: '0 10px 24px hsl(var(--primary) / 0.16)',
                 }}
             >
-                <div className="pointer-events-none absolute inset-0 rounded-[1.9rem] border border-primary/28" />
-
                 <div
                     className="pointer-events-none absolute inset-0 opacity-12"
                     style={{
