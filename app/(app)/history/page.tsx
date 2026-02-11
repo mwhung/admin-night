@@ -186,7 +186,7 @@ export default function HistoryPage() {
                 >
                     <h1 className="type-page-title font-sans">Your History</h1>
                     <p className="type-page-subtitle max-w-3xl">
-                        One calm surface for your timeline, progress markers, and loops still waiting for closure.
+                        Your session log. Receipts included.
                     </p>
                 </motion.div>
             </div>
@@ -219,13 +219,13 @@ export default function HistoryPage() {
                             <div className="grid gap-2.5 sm:grid-cols-3">
                                 <div className="rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
                                     <div className="flex items-center justify-between">
-                                        <p className={labelStyle}>Burdens Released</p>
+                                        <p className={labelStyle}>Closed Loops</p>
                                         <Wind className="size-4 text-primary/70" />
                                     </div>
                                     <p className="type-card-value mt-2">
                                         {statsData.totalResolved}
                                     </p>
-                                    <p className="type-card-support mt-1.5">Closed loops no longer occupying your mind.</p>
+                                    <p className="type-card-support mt-1.5">You don&apos;t need to think about these for now.</p>
                                 </div>
 
                                 <div className="rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
@@ -236,18 +236,18 @@ export default function HistoryPage() {
                                     <p className="type-card-value mt-2">
                                         {Math.floor(statsData.totalFocusMinutes / 60)}h {statsData.totalFocusMinutes % 60}m
                                     </p>
-                                    <p className="type-card-support mt-1.5">Total footprints in the ritual of maintenance.</p>
+                                    <p className="type-card-support mt-1.5">Total time spent in sessions.</p>
                                 </div>
 
                                 <div className="rounded-xl border border-border/65 bg-surface-elevated/52 workbench-pad-card-tight">
                                     <div className="flex items-center justify-between">
-                                        <p className={labelStyle}>Mind Clarity</p>
+                                        <p className={labelStyle}>Closure Rate</p>
                                         <Sparkles className="size-4 text-primary/70" />
                                     </div>
                                     <p className="type-card-value mt-2">
                                         {resolvedRatio}%
                                     </p>
-                                    <p className="type-card-support mt-1.5">Released items vs safely stored tasks.</p>
+                                    <p className="type-card-support mt-1.5">Closed loops vs open loops.</p>
                                 </div>
                             </div>
                         </motion.section>
@@ -270,7 +270,7 @@ export default function HistoryPage() {
                                             <Trophy className="size-3.5 text-white" />
                                         </div>
                                         <p className="text-sm italic text-muted-foreground">
-                                            &quot;Markers appear as your practice becomes steadier.&quot;
+                                            &quot;Markers appear when the data exists.&quot;
                                         </p>
                                     </div>
                                 ) : (
@@ -297,8 +297,8 @@ export default function HistoryPage() {
                             aria-label="Ritual calendar"
                         >
                             <header className="space-y-1 px-1">
-                                <p className={blockTitleStyle}>Ritual Calendar</p>
-                                <p className="type-caption">Presence in the shared ritual over the last 4 weeks.</p>
+                                <p className={blockTitleStyle}>4-Week Activity</p>
+                                <p className="type-caption">Sessions over the last 4 weeks.</p>
                             </header>
                             <div className={cn(cardLayout.workbenchSecondary, "workbench-pad-card")}>
                                 <div className="flex flex-wrap justify-center gap-2">
@@ -335,14 +335,14 @@ export default function HistoryPage() {
                             aria-label="Session footprints"
                         >
                             <header className="space-y-1 px-1">
-                                <p className={blockTitleStyle}>Session Footprints</p>
+                                <p className={blockTitleStyle}>Session Log</p>
                                 <p className="type-caption">Chronological records from focused sessions.</p>
                             </header>
                             <div className="space-y-2.5">
                                 {historyGroups.length === 0 ? (
                                     <div className="space-y-2 py-8 text-center">
                                         <Wind className="mx-auto size-6 text-muted-foreground/70" />
-                                        <p className="text-sm text-muted-foreground">Your journey is waiting for its first footprint.</p>
+                                        <p className="text-sm text-muted-foreground">No sessions yet. The log is empty. That&apos;s fine.</p>
                                     </div>
                                 ) : (
                                     historyGroups.map((group) => {
@@ -366,7 +366,7 @@ export default function HistoryPage() {
 
                                                 <div className="mt-2.5 space-y-1.5">
                                                     {group.tasks.length === 0 && (
-                                                        <p className="text-xs italic text-muted-foreground">Observation session only.</p>
+                                                        <p className="text-xs italic text-muted-foreground">No tasks recorded.</p>
                                                     )}
 
                                                     {group.tasks.map((task) => (
@@ -405,7 +405,7 @@ export default function HistoryPage() {
                                         disabled={loadingMoreHistory}
                                         className="h-8 w-full border-border/65 bg-surface-elevated/40 type-section-label hover:bg-muted/55"
                                     >
-                                        {loadingMoreHistory ? "Loading..." : "Load Earlier Footprints"}
+                                        {loadingMoreHistory ? "Loading..." : "Load Earlier Sessions"}
                                     </Button>
                                 )}
                             </div>
@@ -421,8 +421,8 @@ export default function HistoryPage() {
                             aria-label="Task drawer"
                         >
                             <header className="space-y-1 px-1">
-                                <p className={blockTitleStyle}>Task Drawer</p>
-                                <p className="type-caption">Open loops safely stored and waiting for closure.</p>
+                                <p className={blockTitleStyle}>Open Loops</p>
+                                <p className="type-caption">Open loops. On file for later.</p>
                             </header>
                             <div className={cn(cardLayout.workbenchRail, "overflow-hidden")}>
                                 <div className="custom-scrollbar max-h-none divide-y divide-border/40 overflow-y-auto md:max-h-[520px]">
@@ -430,7 +430,7 @@ export default function HistoryPage() {
                                         <div className="space-y-2 px-4 py-10 text-center sm:px-5">
                                             <Sparkles className="mx-auto size-5 text-primary/25" />
                                             <p className="text-xs italic text-muted-foreground">
-                                                &ldquo;All loops are closed. Your mind is clear.&rdquo;
+                                                &ldquo;All loops closed. Brain: off-duty.&rdquo;
                                             </p>
                                         </div>
                                     )}
@@ -448,7 +448,7 @@ export default function HistoryPage() {
                                                 <div className="size-1.5 shrink-0 rounded-full bg-primary/25 transition-colors group-hover/item:bg-primary" />
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate text-xs leading-tight text-foreground">{task.title}</p>
-                                                    <p className="type-caption italic">Waiting in storage</p>
+                                                    <p className="type-caption italic">On file</p>
                                                 </div>
                                             </motion.div>
                                         ))}
@@ -458,7 +458,7 @@ export default function HistoryPage() {
                                 <div className="border-t border-border/60 bg-muted/20 p-2.5">
                                     <Button variant="ghost" size="sm" className="h-8 w-full type-section-label text-primary hover:bg-primary/10" asChild>
                                         <Link href="/focus">
-                                            Face these tomorrow <ArrowRight className="ml-1 size-3" />
+                                            Not now. Tomorrow&apos;s problem. <ArrowRight className="ml-1 size-3" />
                                         </Link>
                                     </Button>
                                 </div>
@@ -493,7 +493,7 @@ export default function HistoryPage() {
                                 )}
                             </div>
                             <p className="type-body-soft mt-3 italic text-foreground/85">
-                                &ldquo;The longest journey is simply a series of small, released burdens.&rdquo;
+                                &ldquo;Small steps. Repeated. Somehow it works.&rdquo;
                             </p>
                         </motion.section>
                         </div>

@@ -139,9 +139,9 @@ export default function CommunityPage() {
                     transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.14 }}
                     className="space-y-2"
                 >
-                    <h1 className="type-page-title font-sans">The Collective Pulse</h1>
+                    <h1 className="type-page-title font-sans">Community Pulse</h1>
                     <p className="type-page-subtitle max-w-3xl">
-                        A calmer, single-surface view of shared release momentum and the footprints everyone leaves behind.
+                        Anonymous stats. Quiet accountability. Still no chat.
                     </p>
                 </motion.div>
             </div>
@@ -184,8 +184,8 @@ export default function CommunityPage() {
                                 aria-label="Victory feed"
                             >
                                 <header className="space-y-1 px-1">
-                                    <p className={blockTitleStyle}>Victory Feed</p>
-                                    <p className="type-caption">Recent moments where people cleared one thing at a time.</p>
+                                    <p className={blockTitleStyle}>Completion Feed</p>
+                                    <p className="type-caption">Recent loops closed. One at a time.</p>
                                 </header>
                                 <div className={cn(cardLayout.workbenchSecondary)}>
                                     <VictoryFeed

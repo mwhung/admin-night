@@ -9,7 +9,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Admin Night | Focus, Conquer, Flow",
-  description: "A therapeutic space for your personal admin tasks. Focus together, finish together.",
+  description: "A calm space for life admin tasks. Focus together, finish together. No confetti.",
 };
 
 import { Providers } from "@/components/providers";

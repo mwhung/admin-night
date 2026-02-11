@@ -34,9 +34,9 @@ function buildMonthlyFact(totalSteps: number, reactionTotal: number, activeUsers
 
 function buildVictoryMessage(index: number): string {
     const templates = [
-        'A pending admin loop was released.',
-        'One lingering form reached closure.',
-        'A small but heavy task is now off the mind.',
+        'Pending loop: closed.',
+        'Form filed.',
+        'Small task closed. Weight reduced (somewhat).',
         'Another life-admin item has been settled.',
         'A practical step was completed and filed.',
     ]

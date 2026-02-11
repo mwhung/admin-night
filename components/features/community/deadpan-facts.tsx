@@ -14,7 +14,7 @@ interface DeadpanFactProps {
 
 export function DeadpanFacts({ fact, mode = 'card', className }: DeadpanFactProps) {
     const prefersReducedMotion = useReducedMotion()
-    const displayFact = fact || "Processing collective productivity... Output: Sufficient to justify existence."
+    const displayFact = fact || "Processing collective productivity... Output: Within expected parameters."
 
     if (mode === 'embedded') {
         return (

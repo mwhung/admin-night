@@ -137,8 +137,8 @@ export function TaskChecklist({
             {/* All Done Message */}
             {completedCount === tasks.length && tasks.length > 0 && (
                 <div className="mt-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <p className="text-lg font-medium text-primary">🎉 All tasks complete!</p>
-                    <p className="text-sm text-muted-foreground">Amazing work!</p>
+                    <p className="text-lg font-medium text-primary">All tasks complete.</p>
+                    <p className="text-sm text-muted-foreground">Filed. You&apos;re done for now.</p>
                 </div>
             )}
         </div>

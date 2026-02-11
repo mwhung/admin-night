@@ -390,7 +390,7 @@ export default function SettingsPage() {
                     {user ? `Greetings, ${user.user_metadata?.name || 'Friend'}` : 'App Preferences'}
                 </h2>
                 <p className="type-page-subtitle max-w-2xl">
-                    Tailor your environment for quiet focus and relief.
+                    Session defaults, sound, and privacy. Quiet is the default.
                 </p>
                 {settingsError ? (
                     <div
@@ -466,7 +466,7 @@ export default function SettingsPage() {
                     <SectionHeader
                         icon={Palette}
                         title="Therapeutic Environment"
-                        subtitle="Craft the visual and auditory atmosphere of your sanctuary."
+                        subtitle="Theme and sound. Keep it quiet."
                     />
                     <div className="grid gap-6">
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 overflow-hidden">
@@ -595,7 +595,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p id="completion-cues-description" className="type-caption italic">Auditory relief when steps are finished.</p>
+                                        <p id="completion-cues-description" className="type-caption italic">A small sound when a task is marked done. No confetti.</p>
                                     </div>
                                 </div>
                             </CardContent>

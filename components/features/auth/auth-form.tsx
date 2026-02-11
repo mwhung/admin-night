@@ -78,8 +78,8 @@ export function AuthForm({ initialMode = 'login', title, subtitle }: AuthFormPro
     const isPasswordValid = registerPassword.length >= 6
     const isMockAuthEnabled = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' || process.env.NEXT_PUBLIC_E2E_TESTING === 'true'
 
-    const displayTitle = title || (mode === 'login' ? 'Welcome back' : 'Create your space')
-    const displaySubtitle = subtitle || (mode === 'login' ? 'Return to your quiet space' : 'Begin your journey of release')
+    const displayTitle = title || (mode === 'login' ? 'Welcome back' : 'Create account')
+    const displaySubtitle = subtitle || (mode === 'login' ? 'Back to the admin desk. Quiet mode: still on.' : 'Create an account. Paperwork first.')
 
     return (
         <div className="w-full max-w-sm mx-auto space-y-6 animate-in fade-in duration-1000">
@@ -153,7 +153,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle }: AuthFormPro
                     </div>
                     <div className="relative flex justify-center type-caption text-[#3d362f]/38 uppercase tracking-[0.1em] font-semibold">
                         <span className="bg-white px-4">
-                            or with email
+                            or, email. Classic.
                         </span>
                     </div>
                 </div>
@@ -206,7 +206,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle }: AuthFormPro
                             className="w-full h-12 bg-[#3d362f] hover:bg-[#2d2824] text-[#f5f0e8] text-base font-light rounded-[0.8rem] shadow-lg shadow-[#3d362f]/10 transition-all active:scale-[0.98]"
                         >
                             {isLoginPending ? <Loader2 className="size-5 animate-spin mr-2" /> : null}
-                            {isLoginPending ? 'Entering...' : 'Enter your quiet space'}
+                            {isLoginPending ? 'Signing in...' : 'Sign in'}
                         </Button>
                     </form>
                 ) : (
@@ -265,7 +265,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle }: AuthFormPro
                             className="w-full h-12 bg-[#3d362f] hover:bg-[#2d2824] text-[#f5f0e8] text-base font-light rounded-[0.8rem] shadow-lg shadow-[#3d362f]/10 transition-all active:scale-[0.98]"
                         >
                             {isRegisterPending ? <Loader2 className="size-5 animate-spin mr-2" /> : null}
-                            {isRegisterPending ? 'Creating...' : 'Create your space'}
+                            {isRegisterPending ? 'Creating account...' : 'Create account'}
                         </Button>
                     </form>
                 )}
@@ -277,7 +277,7 @@ export function AuthForm({ initialMode = 'login', title, subtitle }: AuthFormPro
                     className="type-body-soft text-[#3d362f]/65 hover:text-[#3d362f] transition-colors"
                 >
                     {mode === 'login' ? (
-                        <>New here? <span className="font-semibold text-[#3d362f]">Create your space</span></>
+                        <>New here? <span className="font-semibold text-[#3d362f]">Create account</span></>
                     ) : (
                         <>Already have a space? <span className="font-semibold text-[#3d362f]">Sign in</span></>
                     )}

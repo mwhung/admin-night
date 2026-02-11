@@ -94,12 +94,12 @@ export function SessionTimer({
             {/* Status Text */}
             {isComplete && (
                 <p className="text-sm text-primary font-light tracking-widest animate-pulse">
-                    儀式結束，辛苦了。
+                    Complete. You don&apos;t need to think about this for now.
                 </p>
             )}
             {isUrgent && !isComplete && (
                 <p className="text-sm text-primary/60 font-light">
-                    即將進入收尾時刻...
+                    Wrapping up soon...
                 </p>
             )}
         </div>

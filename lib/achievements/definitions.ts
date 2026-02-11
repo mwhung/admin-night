@@ -73,7 +73,7 @@ export function getAchievement(id: string): AchievementDef | undefined {
 
 export function getRandomHumor(id: string): string {
     const ach = getAchievement(id);
-    if (!ach || ach.humorOptions.length === 0) return "Achievement unlocked.";
+    if (!ach || ach.humorOptions.length === 0) return "Logged. No confetti.";
     const index = Math.floor(Math.random() * ach.humorOptions.length);
     return ach.humorOptions[index];
 }

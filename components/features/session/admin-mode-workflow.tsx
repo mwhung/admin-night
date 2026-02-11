@@ -1212,11 +1212,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             </div>
                         </div>
                         <CardTitle className="text-3xl font-light tracking-tight text-foreground/90">
-                            Released
+                            Filed.
                         </CardTitle>
                         <CardDescription className="text-base mt-4 font-light leading-relaxed">
-                            You&apos;ve let go of what you were tightly holding onto. <br />
-                            By closing these open loops, you&apos;ve given yourself the gift of a clearer mind.
+                            Some loops are closed. <br />
+                            You don&apos;t need to think about them for now.
                         </CardDescription>
                     </CardHeader>
 
@@ -1231,7 +1231,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         {/* Status Summary */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-primary/5 rounded-2xl p-4 text-center border border-primary/10">
-                                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Released</p>
+                                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Filed.</p>
                                 <p className="text-2xl font-light text-primary">{completedTasks.length}</p>
                             </div>
                             <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/50">
@@ -1248,7 +1248,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         <div className="space-y-4">
                             {completedTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-xs font-bold text-success/70 uppercase tracking-widest">Released Items:</p>
+                                    <p className="text-xs font-bold text-success/70 uppercase tracking-widest">Closed Loops:</p>
                                     {completedTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -1263,8 +1263,8 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
                             {pendingTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Still Holding:</p>
-                                    <p className="text-xs text-muted-foreground/60 italic -mt-1 mb-2">They are safely stored Open Loops. Focus on your rest for now.</p>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Still Open:</p>
+                                    <p className="text-xs text-muted-foreground/60 italic -mt-1 mb-2">Saved as Open Loops. Not urgent right now.</p>
                                     {pendingTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -1287,7 +1287,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                 className="w-full h-14 gap-2 text-md font-light rounded-2xl shadow-xl shadow-primary/10 transition-all hover:shadow-primary/20"
                                 onClick={handleBackToSetup}
                             >
-                                Back to Lounge
+                                Back to Focus
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
                         </div>
@@ -1315,7 +1315,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         Admin Night
                     </h1>
                     <p className="type-page-subtitle max-w-md mx-auto">
-                        Releasing burdens and closing open loops together
+                        Closing open loops together. Quietly. On purpose.
                     </p>
                 </div>
 

@@ -120,7 +120,7 @@ export function SessionSummary({
                                 transition={{ delay: 0.6 }}
                                 className="text-center text-sm text-muted-foreground"
                             >
-                                Keep going. The hidden ones reveal themselves eventually.
+                                No new markers this session. Still counts.
                             </motion.p>
                         )}
                     </motion.div>

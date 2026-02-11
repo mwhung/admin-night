@@ -47,7 +47,7 @@ export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedP
         : [
             {
                 id: 'empty-state',
-                message: 'No community releases have been recorded yet.',
+                message: 'No completions recorded yet.',
                 resolvedAt: null,
             },
         ]
@@ -69,7 +69,7 @@ export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedP
         <div className="h-full w-full flex flex-col justify-center p-4 sm:p-5 space-y-5">
             <div className="space-y-2">
                 {showHeading && (
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Victories</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Completions</p>
                 )}
                 <div className={showHeading ? "h-12 flex items-center" : "min-h-12 flex items-center"}>
                     <AnimatePresence mode="wait">
@@ -102,7 +102,7 @@ export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedP
                             <span className="max-w-[200px] truncate text-sm text-foreground/88">{victory.message}</span>
                         </div>
                         <span className="text-xs font-medium tabular-nums text-muted-foreground/88">
-                            {victory.resolvedAt ? `${getRelativeTimeLabel(victory.resolvedAt)} ago` : 'No recent data'}
+                            {victory.resolvedAt ? `${getRelativeTimeLabel(victory.resolvedAt)} ago` : 'No data yet'}
                         </span>
                     </div>
                 ))}
