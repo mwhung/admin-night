@@ -1,9 +1,9 @@
 export { FocusLedgerSection } from './sections/focus-ledger-section'
 export { ProgressNoteSection } from './sections/progress-note-section'
 export { QuietMarkersSection } from './sections/quiet-markers-section'
-export { RitualCalendarSection } from './sections/ritual-calendar-section'
-export { SessionFootprintsSection } from './sections/session-footprints-section'
-export { TaskDrawerSection } from './sections/task-drawer-section'
+export { FourWeekActivitySection } from './sections/four-week-activity-section'
+export { SessionLogSection } from './sections/session-log-section'
+export { OpenLoopsSection } from './sections/open-loops-section'
 export {
     buildHistoryCalendarDays,
     computeResolvedRatio,

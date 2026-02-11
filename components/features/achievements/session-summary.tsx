@@ -39,7 +39,7 @@ export function SessionSummary({
                             <div className="w-12 h-12 rounded-full border-2 border-muted animate-pulse" />
                             <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-amber-500 animate-pulse" />
                         </div>
-                        <p className="text-sm text-muted-foreground">Reflecting on your session...</p>
+                        <p className="text-sm text-muted-foreground">Compiling session summary...</p>
                     </motion.div>
                 ) : (
                     <motion.div
@@ -87,10 +87,10 @@ export function SessionSummary({
                                         </div>
                                         <div>
                                             <p className="text-sm font-semibold text-foreground">
-                                                Unlocked {newAchievementCount} new achievement{newAchievementCount > 1 ? 's' : ''}
+                                                Recorded {newAchievementCount} new marker{newAchievementCount > 1 ? 's' : ''}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                View in your collection
+                                                View in history
                                             </p>
                                         </div>
                                     </div>
@@ -120,7 +120,7 @@ export function SessionSummary({
                                 transition={{ delay: 0.6 }}
                                 className="text-center text-sm text-muted-foreground"
                             >
-                                No new markers this session. Still counts.
+                                No new markers this session. Still valid work.
                             </motion.p>
                         )}
                     </motion.div>

@@ -175,7 +175,7 @@ function SessionStageHeader({
         <CardHeader className="space-y-2 pb-2 sm:pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 <Clock className="h-4 w-4 text-primary/75" />
-                Focus Session
+                Session In Progress
             </CardTitle>
             <CardDescription
                 role={hasStatusMessage ? "status" : undefined}
@@ -706,7 +706,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             router.replace(`/sessions/${payload.session.id}`)
         } catch (err) {
             console.error('Failed to sync session start with server', err)
-            setSessionStartError('Unable to connect session right now. Retry in a moment.')
+            setSessionStartError('Unable to connect this session right now. Retry in a moment.')
         } finally {
             startingSessionRef.current = false
             setIsStartingSession(false)
@@ -827,7 +827,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             shouldNavigateToSummary = true
         } catch (err) {
             console.error('Failed to complete session', err)
-            setSessionEndError('Unable to end session right now. Please try again.')
+            setSessionEndError('Unable to end this session right now. Please try again.')
         } finally {
             if (shouldNavigateToSummary) {
                 router.push(`/sessions/${summarySessionId}/summary`)
@@ -889,16 +889,16 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const runtimeTimerRemaining = runtimeSession.isActive ? runtimeSession.remainingSeconds : actualDuration * 60
     const sessionStageStatusMessage = hasPersistedSession
         ? null
-        : (sessionStartError || 'Connecting this session to the shared room...')
+        : (sessionStartError || 'Connecting to shared session...')
     const endSessionDialogTitle = hasPersistedSession
-        ? 'End session early?'
-        : 'Exit while session sync is pending?'
+        ? 'End session now?'
+        : 'Leave before sync completes?'
     const endSessionDialogDescription = hasPersistedSession
-        ? 'You will leave now and continue to your session summary.'
-        : 'The session has not finished syncing. Exiting now returns you to Focus.'
+        ? 'You will end now and open the session summary.'
+        : 'This local session is not synced yet. Leaving returns you to Focus.'
     const endSessionDialogAction = hasPersistedSession
-        ? 'End & View Summary'
-        : 'Exit to Focus'
+        ? 'End and View Summary'
+        : 'Return to Focus'
     // ==================== SESSION VIEW ====================
     if (step === 'session') {
         return (
@@ -945,7 +945,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                     {isEndingSession ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Ending Session...
+                                            Ending...
                                         </>
                                     ) : (
                                         endSessionDialogAction
@@ -974,14 +974,14 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                 >
                     <div className="p-6 flex-1 overflow-y-auto space-y-6">
                         <div>
-                            <h2 className="text-xl font-light mb-1">Adjust Your Session</h2>
-                            <p className="text-xs text-muted-foreground uppercase tracking-widest">Timer pauses while you adjust tasks</p>
+                            <h2 className="text-xl font-light mb-1">Edit Session Tasks</h2>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest">Timer paused while editing</p>
                         </div>
 
                         <div className="space-y-4">
                             <div className="flex gap-2">
                                 <Input
-                                    placeholder="Add a missing task..."
+                                    placeholder="Add task..."
                                     value={newTaskInput}
                                     onChange={(e) => setNewTaskInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
@@ -994,7 +994,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
                             {selectedTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-xs font-bold text-primary uppercase">Current Tasks</p>
+                                    <p className="text-xs font-bold text-primary uppercase">Current List</p>
                                     <DndContext
                                         sensors={sensors}
                                         collisionDetection={closestCenter}
@@ -1021,7 +1021,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             )}
 
                             <div>
-                                <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Quick Add</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Quick add</p>
                                 <div className="grid grid-cols-1 gap-2">
                                     {QUICK_TASK_SUGGESTION_SEEDS.filter(t => !selectedTaskTitleSet.has(normalizeTaskTitle(t.title))).slice(0, 3).map((task) => (
                                         <button
@@ -1045,7 +1045,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             ) : (
                                 <CheckCircle2 className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
                             )}
-                            Save Changes & Resume
+                            Save and Resume
                         </Button>
                     </div>
                 </div>
@@ -1106,10 +1106,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             <CardHeader className="space-y-2 pb-2 sm:pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                                     <CheckCircle2 className="h-4 w-4 text-primary/75" />
-                                    Today&apos;s Tasks
+                                    Session Tasks
                                 </CardTitle>
                                 <CardDescription className="flex items-center justify-between text-sm text-muted-foreground">
-                                    <span>{completedCount} of {selectedTasks.length} completed</span>
+                                    <span>{completedCount} of {selectedTasks.length} filed</span>
                                     <span className="font-semibold text-foreground/70">{completionPercent}%</span>
                                 </CardDescription>
                                 <div className="h-1.5 overflow-hidden rounded-full bg-muted/70">
@@ -1136,7 +1136,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                         onClick={handleAdjustTasks}
                                     >
                                         <Plus className="h-4 w-4 mr-2" />
-                                        Modify Tasks
+                                        Edit Tasks
                                     </Button>
 
                                     <Button
@@ -1151,10 +1151,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                             <LogOut className="h-4 w-4 mr-2" />
                                         )}
                                         {isEndingSession
-                                            ? 'Ending Session...'
+                                            ? 'Ending...'
                                             : isStartingSession
-                                                ? 'Connecting Session...'
-                                                : 'Exit Session Early'}
+                                                ? 'Connecting...'
+                                                : 'End Session'}
                                     </Button>
                                     {sessionStartError && (
                                         <div className="space-y-2 text-center">
@@ -1169,7 +1169,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                                     onClick={handleRetrySessionStart}
                                                     disabled={isStartingSession}
                                                 >
-                                                    Retry Connection
+                                                    Retry Sync
                                                 </Button>
                                             )}
                                         </div>
@@ -1212,11 +1212,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             </div>
                         </div>
                         <CardTitle className="text-3xl font-light tracking-tight text-foreground/90">
-                            Filed.
+                            Session Filed.
                         </CardTitle>
                         <CardDescription className="text-base mt-4 font-light leading-relaxed">
-                            Some loops are closed. <br />
-                            You don&apos;t need to think about them for now.
+                            Session closed. <br />
+                            You don&apos;t need to think about this for now.
                         </CardDescription>
                     </CardHeader>
 
@@ -1248,7 +1248,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         <div className="space-y-4">
                             {completedTasks.length > 0 && (
                                 <div className="space-y-2">
-                                    <p className="text-xs font-bold text-success/70 uppercase tracking-widest">Closed Loops:</p>
+                                    <p className="text-xs font-bold text-success/70 uppercase tracking-widest">Filed:</p>
                                     {completedTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -1264,7 +1264,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             {pendingTasks.length > 0 && (
                                 <div className="space-y-2">
                                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Still Open:</p>
-                                    <p className="text-xs text-muted-foreground/60 italic -mt-1 mb-2">Saved as Open Loops. Not urgent right now.</p>
+                                    <p className="text-xs text-muted-foreground/60 italic -mt-1 mb-2">Saved as Open Loops. Can wait.</p>
                                     {pendingTasks.map((task) => (
                                         <div
                                             key={task.id}
@@ -1281,7 +1281,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         {/* Closure Quote & Action */}
                         <div className="text-center space-y-6 pt-6 border-t border-primary/5">
                             <p className="text-sm text-muted-foreground/80 font-light italic leading-relaxed">
-                                &ldquo;You don&apos;t need to do everything — you just need to stop carrying it.&rdquo;
+                                &ldquo;Enough for now. Continue next session.&rdquo;
                             </p>
                             <Button
                                 className="w-full h-14 gap-2 text-md font-light rounded-2xl shadow-xl shadow-primary/10 transition-all hover:shadow-primary/20"
@@ -1315,7 +1315,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         Admin Night
                     </h1>
                     <p className="type-page-subtitle max-w-md mx-auto">
-                        Closing open loops together. Quietly. On purpose.
+                        Shared admin block. Bring the list.
                     </p>
                 </div>
 
@@ -1324,17 +1324,17 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-[1.02rem] font-medium tracking-[-0.01em]">
                             <CheckCircle2 className="h-5 w-5" />
-                            1. Declutter Your Mind
+                            1. Pick Session Tasks
                         </CardTitle>
                         <CardDescription>
-                            Choose items to focus on during this session (Open Loops).
+                            Select what you&apos;ll handle in this block.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {/* Add Custom Task */}
                         <div className="flex gap-2">
                             <Input
-                                placeholder="Enter a new task..."
+                                placeholder="Add a task..."
                                 value={newTaskInput}
                                 onChange={(e) => setNewTaskInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
@@ -1353,7 +1353,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                         {/* Selected Tasks - Moved up for visibility */}
                         {selectedTasks.length > 0 && (
                             <div className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                                <p className="type-section-label text-primary">Selected for this session</p>
+                                <p className="type-section-label text-primary">Queued for this session</p>
                                 <DndContext
                                     sensors={sensors}
                                     collisionDetection={closestCenter}
@@ -1375,7 +1375,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                         </SortableContext>
                                     </div>
                                 </DndContext>
-                                <p className="type-caption italic text-center">Drag to reorder tasks</p>
+                                <p className="type-caption italic text-center">Drag to reorder.</p>
                             </div>
                         )}
 
@@ -1387,7 +1387,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                     <div className="flex items-center justify-between mb-3 border-t border-border/30 pt-4">
                                         <p className="type-section-label flex items-center gap-2">
                                             <InboxIcon className="h-3 w-3" />
-                                            From Your Task Drawer
+                                            From Task Drawer
                                         </p>
                                         {loadingHistory && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                                     </div>
@@ -1420,7 +1420,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
                             {displayedOtherSuggestions.length > 0 && (
                                 <div>
-                                    <p className="type-section-label mb-3">{setupDrawerPool.length > 0 ? 'Other Suggestions' : 'Quick Suggestions'}</p>
+                                    <p className="type-section-label mb-3">{setupDrawerPool.length > 0 ? 'More Suggestions' : 'Quick Suggestions'}</p>
                                     <div className="grid grid-cols-1 gap-2">
                                         {displayedOtherSuggestions.map((task) => (
                                             <button
@@ -1444,7 +1444,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-[1.02rem] font-medium tracking-[-0.01em]">
                             <Clock className="h-5 w-5" />
-                            2. Select Session Length
+                            2. Pick Session Length
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

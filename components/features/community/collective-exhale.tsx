@@ -62,7 +62,7 @@ export function CollectiveExhale({ count, showHeading = true }: CollectiveExhale
             <div className="relative z-10 text-center space-y-6">
                 <div className={showHeading ? "space-y-1" : ""}>
                     {showHeading && (
-                        <p className="text-xs font-bold uppercase tracking-[0.5em] text-primary/40">Collective Resonance</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.5em] text-primary/40">Community Presence</p>
                     )}
                     <motion.div
                         key={count}
@@ -76,7 +76,7 @@ export function CollectiveExhale({ count, showHeading = true }: CollectiveExhale
 
                 <div className="space-y-2 max-w-[280px] mx-auto">
                     <p className="text-lg font-light text-muted-foreground leading-relaxed">
-                        Moments of weightlessness shared today.
+                        Tasks closed by the group today.
                     </p>
                     <div className="h-px w-8 bg-primary/20 mx-auto mt-4" />
                 </div>

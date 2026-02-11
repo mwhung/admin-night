@@ -31,9 +31,9 @@ test.describe('Settings Account', () => {
         })
 
         await page.goto('/settings')
-        await expect(page.getByRole('heading', { name: /greetings,/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /hi,/i })).toBeVisible()
 
-        await page.getByRole('link', { name: /manage profile/i }).click()
+        await page.getByRole('link', { name: /manage account/i }).click()
         await expect(page).toHaveURL(/\/settings\/account$/)
         await expect(page.getByRole('heading', { name: /account & security/i })).toBeVisible()
 

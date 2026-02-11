@@ -79,7 +79,7 @@ export function AchievementCard({
                     </div>
                     <div>
                         <h4 className="text-sm font-medium text-muted-foreground">???</h4>
-                        <p className="text-xs text-muted-foreground/60">Hidden achievement</p>
+                        <p className="text-xs text-muted-foreground/60">Hidden marker</p>
                     </div>
                 </div>
             </div>
@@ -152,7 +152,7 @@ export function AchievementCard({
                 {/* Date */}
                 {formattedDate && (
                     <p className="mt-3 text-xs text-foreground/50">
-                        Unlocked on {formattedDate}
+                        Recorded on {formattedDate}
                     </p>
                 )}
             </div>

@@ -50,7 +50,7 @@ export function TaskChecklist({
                     {/* Progress Header */}
                     <div className="mb-4 flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            {completedCount} of {tasks.length} tasks
+                            {completedCount} of {tasks.length} filed
                         </p>
                         <div className="flex items-center gap-1">
                             {completedCount === tasks.length && tasks.length > 0 && (
@@ -74,7 +74,7 @@ export function TaskChecklist({
             <div className="space-y-2">
                 {tasks.length === 0 && (
                     <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
-                        No tasks yet. Open Modify Tasks to add one.
+                        No tasks yet. Open Edit Tasks to add one.
                     </div>
                 )}
                 {tasks.map((task) => (
@@ -137,8 +137,8 @@ export function TaskChecklist({
             {/* All Done Message */}
             {completedCount === tasks.length && tasks.length > 0 && (
                 <div className="mt-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <p className="text-lg font-medium text-primary">All tasks complete.</p>
-                    <p className="text-sm text-muted-foreground">Filed. You&apos;re done for now.</p>
+                    <p className="text-lg font-medium text-primary">All listed tasks filed.</p>
+                    <p className="text-sm text-muted-foreground">You don&apos;t need to think about this for now.</p>
                 </div>
             )}
         </div>

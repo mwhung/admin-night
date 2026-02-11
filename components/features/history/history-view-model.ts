@@ -4,7 +4,6 @@ export const HISTORY_PAGE_SIZE = 10
 const HISTORY_CALENDAR_DAYS = 28
 
 export const HISTORY_LABEL_STYLE = 'type-section-label text-[0.76rem] tracking-[0.07em]'
-export const HISTORY_BLOCK_TITLE_STYLE = 'type-block-title'
 
 const EMPTY_HISTORY_STATS: HistoryStats = {
     totalResolved: 0,

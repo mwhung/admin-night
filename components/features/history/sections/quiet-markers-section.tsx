@@ -1,6 +1,6 @@
 import { Trophy } from 'lucide-react'
 import { AchievementCard } from '@/components/features/achievements'
-import { HistorySection } from '@/components/features/history/history-section'
+import { WorkbenchSection } from '@/components/ui/workbench-section'
 import type { UserAchievementRecord } from '@/components/features/history/use-user-history'
 
 interface QuietMarkersSectionProps {
@@ -10,10 +10,10 @@ interface QuietMarkersSectionProps {
 
 export function QuietMarkersSection({ achievements, delay = 0 }: QuietMarkersSectionProps) {
     return (
-        <HistorySection
+        <WorkbenchSection
             ariaLabel="Quiet markers"
-            title="Quiet Markers"
-            subtitle={`${achievements.length} recorded`}
+            title="Markers"
+            subtitle={`${achievements.length} recorded entries`}
             delay={delay}
         >
             {achievements.length === 0 ? (
@@ -22,7 +22,7 @@ export function QuietMarkersSection({ achievements, delay = 0 }: QuietMarkersSec
                         <Trophy className="size-3.5 text-white" />
                     </div>
                     <p className="text-sm italic text-muted-foreground">
-                        &quot;Markers appear as your practice becomes steadier.&quot;
+                        &quot;No markers recorded yet. Normal.&quot;
                     </p>
                 </div>
             ) : (
@@ -38,6 +38,6 @@ export function QuietMarkersSection({ achievements, delay = 0 }: QuietMarkersSec
                     ))}
                 </div>
             )}
-        </HistorySection>
+        </WorkbenchSection>
     )
 }

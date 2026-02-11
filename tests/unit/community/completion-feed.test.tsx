@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { VictoryFeed } from '@/components/features/community/victory-feed'
+import { CompletionFeed } from '@/components/features/community/completion-feed'
 
-describe('VictoryFeed', () => {
+describe('CompletionFeed', () => {
     it('renders API-driven entries instead of static sample copy', () => {
         vi.useFakeTimers()
         vi.setSystemTime(new Date('2026-02-09T12:00:00.000Z'))
 
         render(
-            <VictoryFeed
+            <CompletionFeed
                 showHeading={false}
                 victories={[
                     {
@@ -27,9 +27,9 @@ describe('VictoryFeed', () => {
     })
 
     it('shows an explicit empty state when no victories are available', () => {
-        render(<VictoryFeed showHeading={false} victories={[]} />)
+        render(<CompletionFeed showHeading={false} victories={[]} />)
 
-        expect(screen.getAllByText('No community releases have been recorded yet.').length).toBeGreaterThan(0)
-        expect(screen.getByText('No recent data')).toBeTruthy()
+        expect(screen.getAllByText('No completions logged yet.').length).toBeGreaterThan(0)
+        expect(screen.getByText('No timestamp')).toBeTruthy()
     })
 })

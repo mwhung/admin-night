@@ -5,11 +5,11 @@ import { Zap } from 'lucide-react'
 import { GuestPlaceholder } from '@/components/features/auth/guest-placeholder'
 import {
     FocusLedgerSection,
+    FourWeekActivitySection,
+    OpenLoopsSection,
     ProgressNoteSection,
     QuietMarkersSection,
-    RitualCalendarSection,
-    SessionFootprintsSection,
-    TaskDrawerSection,
+    SessionLogSection,
     buildHistoryCalendarDays,
     computeResolvedRatio,
     getHistoryStatsData,
@@ -53,7 +53,7 @@ export default function HistoryPage() {
         return (
             <GuestPlaceholder
                 pageName="History"
-                description="History is available for registered members. Sign in to start tracing your footprints."
+                description="History is for registered members. Sign in to view your records."
             />
         )
     }
@@ -78,7 +78,7 @@ export default function HistoryPage() {
                 >
                     <h1 className="type-page-title font-sans">Your History</h1>
                     <p className="type-page-subtitle max-w-3xl">
-                        One calm surface for your timeline, progress markers, and loops still waiting for closure.
+                        Session records. No highlight reel.
                     </p>
                 </motion.div>
             </div>
@@ -102,13 +102,13 @@ export default function HistoryPage() {
                                 <QuietMarkersSection achievements={achievements} delay={0.04} />
                             )}
 
-                            <RitualCalendarSection
+                            <FourWeekActivitySection
                                 calendarDays={calendarDays}
                                 dailyActivity={statsData.dailyActivity}
                                 delay={0.08}
                             />
 
-                            <SessionFootprintsSection
+                            <SessionLogSection
                                 historyGroups={historyGroups}
                                 historyPagination={historyPagination}
                                 loadingMoreHistory={loadingMoreHistory}
@@ -118,7 +118,7 @@ export default function HistoryPage() {
                         </div>
 
                         <div className="workbench-gap-section" aria-label="History context rail">
-                            <TaskDrawerSection pendingTasks={pendingTasks} />
+                            <OpenLoopsSection pendingTasks={pendingTasks} />
 
                             <ProgressNoteSection
                                 totalSessions={statsData.totalSessions}

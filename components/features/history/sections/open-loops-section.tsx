@@ -5,21 +5,21 @@ import { Button } from '@/components/ui/button'
 import { cardLayout } from '@/components/ui/card-layouts'
 import { cn } from '@/lib/utils'
 import type { TaskRecord } from '@/lib/contracts/user-history'
-import { HistorySection } from '@/components/features/history/history-section'
+import { WorkbenchSection } from '@/components/ui/workbench-section'
 
-interface TaskDrawerSectionProps {
+interface OpenLoopsSectionProps {
     pendingTasks: TaskRecord[]
     delay?: number
 }
 
-export function TaskDrawerSection({ pendingTasks, delay = 0 }: TaskDrawerSectionProps) {
+export function OpenLoopsSection({ pendingTasks, delay = 0 }: OpenLoopsSectionProps) {
     const prefersReducedMotion = useReducedMotion()
 
     return (
-        <HistorySection
-            ariaLabel="Task drawer"
-            title="Task Drawer"
-            subtitle="Open loops safely stored and waiting for closure."
+        <WorkbenchSection
+            ariaLabel="Open loops"
+            title="Open Loops"
+            subtitle="Still open. Parked for later."
             axis="x"
             delay={delay}
         >
@@ -29,7 +29,7 @@ export function TaskDrawerSection({ pendingTasks, delay = 0 }: TaskDrawerSection
                         <div className="space-y-2 px-4 py-10 text-center sm:px-5">
                             <Sparkles className="mx-auto size-5 text-primary/25" />
                             <p className="text-xs italic text-muted-foreground">
-                                &ldquo;All loops are closed. Your mind is clear.&rdquo;
+                                &ldquo;No open loops on file.&rdquo;
                             </p>
                         </div>
                     )}
@@ -47,7 +47,7 @@ export function TaskDrawerSection({ pendingTasks, delay = 0 }: TaskDrawerSection
                                 <div className="size-1.5 shrink-0 rounded-full bg-primary/25 transition-colors group-hover/item:bg-primary" />
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-xs leading-tight text-foreground">{task.title}</p>
-                                    <p className="type-caption italic">Waiting in storage</p>
+                                    <p className="type-caption italic">Recorded</p>
                                 </div>
                             </motion.div>
                         ))}
@@ -62,11 +62,11 @@ export function TaskDrawerSection({ pendingTasks, delay = 0 }: TaskDrawerSection
                         asChild
                     >
                         <Link href="/focus">
-                            Face these tomorrow <ArrowRight className="ml-1 size-3" />
+                            Park it. Tomorrow can handle it. <ArrowRight className="ml-1 size-3" />
                         </Link>
                     </Button>
                 </div>
             </div>
-        </HistorySection>
+        </WorkbenchSection>
     )
 }

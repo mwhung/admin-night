@@ -147,7 +147,7 @@ export default function AccountSettingsPage() {
         return (
             <GuestPlaceholder
                 pageName="Account Settings"
-                description="Account and security controls are available for registered members."
+                description="Account and security controls are for registered members."
             />
         )
     }
@@ -164,7 +164,7 @@ export default function AccountSettingsPage() {
                 <div className="space-y-2">
                     <h1 className="type-page-title">Account & Security</h1>
                     <p className="type-page-subtitle max-w-2xl">
-                        Manage your identity, credential recovery, and session safety.
+                        Manage identity, password recovery, and sign-in safety.
                     </p>
                 </div>
                 {statusMessage ? (
@@ -187,7 +187,7 @@ export default function AccountSettingsPage() {
                             Profile
                         </CardTitle>
                         <CardDescription className="type-caption">
-                            Update the display name visible across your workspace.
+                            Update the display name shown in the app.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -221,7 +221,7 @@ export default function AccountSettingsPage() {
                             Security Controls
                         </CardTitle>
                         <CardDescription className="type-caption">
-                            Recover credentials and control active sessions.
+                            Recover access and control signed-in sessions.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
@@ -239,7 +239,7 @@ export default function AccountSettingsPage() {
                         <div className="rounded-2xl border border-border/40 bg-muted/10 p-4">
                             <p className="text-sm font-medium text-foreground/90">Session Safety</p>
                             <p className="type-caption mt-1 mb-3">
-                                End access on this device or revoke active sessions everywhere.
+                                End access on this device or revoke sessions everywhere.
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 <Button
@@ -268,7 +268,7 @@ export default function AccountSettingsPage() {
                                 <Badge variant="outline" className="text-[0.68rem] uppercase tracking-[0.08em]">Roadmap</Badge>
                             </div>
                             <p className="type-caption">
-                                Passkey enrollment and device-level key management will be added in a future release.
+                                Passkey enrollment and device-level key management are planned for a future release.
                             </p>
                         </div>
                     </CardContent>

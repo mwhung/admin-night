@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getCommunityReactionMetrics, syncCommunityMilestones } from '@/lib/community/aggregation'
+import type { CommunityStatsResponse } from '@/lib/contracts/community-stats'
 
 function parseTopCategories(value: unknown): string[] {
     if (!Array.isArray(value)) return []
@@ -22,23 +23,23 @@ function roundToSingleDecimal(value: number): number {
 
 function buildMonthlyFact(totalSteps: number, reactionTotal: number, activeUsers: number): string {
     if (totalSteps <= 0) {
-        return 'This month is quiet so far. No released tasks have been recorded yet.'
+        return 'No completed tasks recorded this month yet.'
     }
 
     if (reactionTotal > 0) {
-        return `This month, the community released ${totalSteps.toLocaleString()} tasks and shared ${reactionTotal.toLocaleString()} supportive reactions.`
+        return `This month, the community closed ${totalSteps.toLocaleString()} tasks and logged ${reactionTotal.toLocaleString()} reactions.`
     }
 
-    return `This month, the community released ${totalSteps.toLocaleString()} tasks across ${activeUsers.toLocaleString()} active participants.`
+    return `This month, the community closed ${totalSteps.toLocaleString()} tasks across ${activeUsers.toLocaleString()} active people.`
 }
 
-function buildVictoryMessage(index: number): string {
+function buildCompletionMessage(index: number): string {
     const templates = [
-        'Pending loop: closed.',
-        'Form filed.',
-        'Small task closed. Weight reduced (somewhat).',
-        'Another life-admin item has been settled.',
-        'A practical step was completed and filed.',
+        'Pending loop filed.',
+        'Paperwork moved to done.',
+        'One less loose end.',
+        'Another admin item closed.',
+        'Task marked resolved.',
     ]
 
     return templates[index % templates.length]
@@ -89,12 +90,12 @@ export async function GET() {
         const recentVictories = recentResolvedTasks
             .filter((task): task is { resolvedAt: Date } => task.resolvedAt instanceof Date)
             .map((task, index) => ({
-                id: `victory-${task.resolvedAt.getTime()}-${index}`,
-                message: buildVictoryMessage(index),
+                id: `completion-${task.resolvedAt.getTime()}-${index}`,
+                message: buildCompletionMessage(index),
                 resolvedAt: task.resolvedAt.toISOString(),
             }))
 
-        return NextResponse.json({
+        const response: CommunityStatsResponse = {
             community: {
                 totalTasksCompleted: totalCompleted,
                 daily: {
@@ -120,7 +121,9 @@ export async function GET() {
                 avgBloomTimeHours,
                 recentVictories,
             },
-        })
+        }
+
+        return NextResponse.json(response)
 
     } catch (error) {
         console.error('Failed to fetch community stats:', error)

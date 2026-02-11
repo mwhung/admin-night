@@ -29,8 +29,8 @@ export function GuestPlaceholder({ pageName, description }: GuestPlaceholderProp
                         {/* Secondary Context Description */}
                         {description && (
                             <div className="mt-6 pt-6 border-t border-[#3d362f]/5 text-center">
-                                <p className="text-xs text-[#3d362f]/40 font-light leading-relaxed italic">
-                                    &ldquo;{description}&rdquo;
+                                <p className="text-xs text-[#3d362f]/45 font-light leading-relaxed">
+                                    {description}
                                 </p>
                             </div>
                         )}

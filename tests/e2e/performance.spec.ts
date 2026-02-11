@@ -35,7 +35,7 @@ test.describe('Performance Benchmarks', () => {
 
         // 4. Wait for the session view to be fully rendered
         // We look for the hourglass timer or the tasks list
-        await expect(page.getByText(/Today's Tasks/i)).toBeVisible();
+        await expect(page.getByText(/Session Tasks/i)).toBeVisible();
         await page.evaluate(() => performance.mark('join-end'));
 
         // 5. Calculate duration
@@ -53,7 +53,7 @@ test.describe('Performance Benchmarks', () => {
     test('Focus Setup Hydration Latency', async ({ page }) => {
         const start = Date.now();
         await page.goto('/focus');
-        await expect(page.getByText(/1\. Declutter Your Mind/i)).toBeVisible();
+        await expect(page.getByText(/1\. Pick Session Tasks/i)).toBeVisible();
         const end = Date.now();
 
         const latency = end - start;

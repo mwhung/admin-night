@@ -353,7 +353,7 @@ export default function SettingsPage() {
         return (
             <GuestPlaceholder
                 pageName="Settings"
-                description="Settings is available for registered members. Sign in to start tracing your footprints."
+                description="Settings is for registered members. Sign in to manage defaults and privacy."
             />
         )
     }
@@ -387,10 +387,10 @@ export default function SettingsPage() {
             {/* Header */}
             <div className="flex flex-col gap-2 pt-8 mb-10">
                 <h2 className="type-page-title">
-                    {user ? `Greetings, ${user.user_metadata?.name || 'Friend'}` : 'App Preferences'}
+                    {user ? `Hi, ${user.user_metadata?.name || 'there'}` : 'App Preferences'}
                 </h2>
                 <p className="type-page-subtitle max-w-2xl">
-                    Session defaults, sound, and privacy. Quiet is the default.
+                    Session defaults, sound, and privacy. Calm by default.
                 </p>
                 {settingsError ? (
                     <div
@@ -405,12 +405,12 @@ export default function SettingsPage() {
 
             <div className="grid gap-16 pb-20">
 
-                {/* 1. Ritual & Session */}
+                {/* 1. Session Defaults */}
                 <section>
                     <SectionHeader
                         icon={Clock}
-                        title="Ritual & Session"
-                        subtitle="Define the rhythm of your admin sessions."
+                        title="Session Defaults"
+                        subtitle="Choose your baseline session setup."
                     />
                     <div className="grid gap-6">
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 overflow-hidden">
@@ -422,7 +422,7 @@ export default function SettingsPage() {
                                             Default Session Duration
                                             <LoadingIndicator id="session_duration" />
                                         </div>
-                                        <div className={settingMetaClass}>The standard time block for your focus sessions.</div>
+                                        <div className={settingMetaClass}>Default length when starting a new session.</div>
                                     </div>
                                     <div
                                         role="radiogroup"
@@ -461,12 +461,12 @@ export default function SettingsPage() {
                     </div>
                 </section>
 
-                {/* 2. Therapeutic Environment */}
+                {/* 2. Interface & Sound */}
                 <section>
                     <SectionHeader
                         icon={Palette}
-                        title="Therapeutic Environment"
-                        subtitle="Theme and sound. Keep it quiet."
+                        title="Interface & Sound"
+                        subtitle="Visual mode and sound cues. Keep it calm."
                     />
                     <div className="grid gap-6">
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 overflow-hidden">
@@ -552,7 +552,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p id="ambient-sound-description" className="type-caption italic">Background textures to mask distraction.</p>
+                                        <p id="ambient-sound-description" className="type-caption italic">Low-volume ambience for noise masking.</p>
                                     </div>
 
                                     <div className={cn(
@@ -595,7 +595,7 @@ export default function SettingsPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                        <p id="completion-cues-description" className="type-caption italic">A small sound when a task is marked done. No confetti.</p>
+                                        <p id="completion-cues-description" className="type-caption italic">Optional completion sound. No fanfare.</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -608,7 +608,7 @@ export default function SettingsPage() {
                     <SectionHeader
                         icon={Eye}
                         title="Privacy & Presence"
-                        subtitle="Control how you exist within the shared ritual."
+                        subtitle="Control how visible you are in shared sessions."
                     />
                     <div className="grid gap-6">
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 overflow-hidden">
@@ -620,7 +620,7 @@ export default function SettingsPage() {
                                             Presence Visibility
                                             <LoadingIndicator id="presence_visibility" />
                                         </div>
-                                        <div className={settingMetaClass}>How others perceive you during active sessions.</div>
+                                        <div className={settingMetaClass}>How you appear during active sessions.</div>
                                     </div>
                                     <div
                                         role="radiogroup"
@@ -663,7 +663,7 @@ export default function SettingsPage() {
                                             History Data Detail
                                             <LoadingIndicator id="insight_level" />
                                         </div>
-                                        <div className={settingMetaClass}>Depth of data preserved in your focus history.</div>
+                                        <div className={settingMetaClass}>How much detail is stored in history.</div>
                                     </div>
                                     <div
                                         role="radiogroup"
@@ -699,12 +699,12 @@ export default function SettingsPage() {
 
                                 <Separator className="opacity-40" />
 
-                                {/* Data Sovereignty */}
+                                {/* Data Control */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <Database className="size-4 text-primary/60" />
-                                            <span className={settingLabelClass}>Data Sovereignty</span>
+                                            <span className={settingLabelClass}>Data Control</span>
                                         </div>
                                         <div className="flex flex-col gap-2">
                                             <Button
@@ -715,7 +715,7 @@ export default function SettingsPage() {
                                                 disabled={savingSetting !== null}
                                             >
                                                 {savingSetting === 'export' ? <Loader2 className="size-3 animate-spin mr-2" /> : null}
-                                                Export Your Footprint (JSON)
+                                                Export Footprint (JSON)
                                             </Button>
                                             <Button
                                                 variant="ghost"
@@ -728,14 +728,14 @@ export default function SettingsPage() {
                                                 Purge All History
                                             </Button>
                                             <p className="type-caption">
-                                                Export includes preferences, tasks, and full session participation history.
+                                                Export includes preferences, tasks, and session participation history.
                                             </p>
                                         </div>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
                                         <Info className="size-5 text-primary/60 mt-0.5" />
                                         <p className="type-caption leading-relaxed">
-                                            Admin Night is built on transparency. We do not sell focus data. Export your complete footprint or permanently clear your history at any time.
+                                            Admin Night stores only what the product needs. You can export or clear your records at any time.
                                         </p>
                                     </div>
                                 </div>
@@ -749,7 +749,7 @@ export default function SettingsPage() {
                     <SectionHeader
                         icon={BrainCircuit}
                         title="AI & Assistant"
-                        subtitle="Future enhancements for task clarification."
+                        subtitle="Task-clarification tools in progress."
                     />
                     <div className="p-10 border border-dashed border-border/60 rounded-[2.5rem] bg-muted/[0.05] relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
@@ -760,7 +760,7 @@ export default function SettingsPage() {
                                 <div className="space-y-2">
                                     <h4 className="text-[1.05rem] font-medium tracking-[-0.012em] text-foreground/90">Focus Intelligence</h4>
                                     <p className="type-body-soft max-w-sm">
-                                        We are developing AI integrations to help you break down vague, overwhelming admin tasks into concrete first steps.
+                                        Future AI tools will turn vague admin tasks into concrete first steps.
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -799,14 +799,14 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <CardTitle className="text-[1.35rem] font-medium tracking-[-0.012em]">{user.user_metadata?.name || 'Friend of Focus'}</CardTitle>
+                                        <CardTitle className="text-[1.35rem] font-medium tracking-[-0.012em]">{user.user_metadata?.name || 'Admin Night Member'}</CardTitle>
                                         <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full type-section-label">Pro Member</div>
                                     </div>
                                     <CardDescription className="type-caption opacity-75">{user.email}</CardDescription>
                                 </div>
                                 <Button asChild variant="outline" className="rounded-full border-border/40 px-6">
                                     <Link href={ROUTES.SETTINGS_ACCOUNT}>
-                                        Manage Profile
+                                        Manage Account
                                     </Link>
                                 </Button>
                             </CardHeader>

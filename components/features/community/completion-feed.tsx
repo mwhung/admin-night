@@ -5,15 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Zap, Globe, Clock, ArrowRight } from 'lucide-react'
 
-interface Victory {
+interface CompletionItem {
     id: string
     message: string
     resolvedAt: string | null
 }
 
-interface VictoryFeedProps {
+interface CompletionFeedProps {
     showHeading?: boolean
-    victories?: Victory[]
+    victories?: CompletionItem[]
 }
 
 const ICONS = [
@@ -40,14 +40,14 @@ function getRelativeTimeLabel(isoDate: string): string {
     return `${diffDays}d`
 }
 
-export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedProps) {
+export function CompletionFeed({ showHeading = true, victories = [] }: CompletionFeedProps) {
     const [index, setIndex] = useState(0)
     const feedItems = victories.length > 0
         ? victories
         : [
             {
                 id: 'empty-state',
-                message: 'No completions recorded yet.',
+                message: 'No completions logged yet.',
                 resolvedAt: null,
             },
         ]
@@ -69,7 +69,7 @@ export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedP
         <div className="h-full w-full flex flex-col justify-center p-4 sm:p-5 space-y-5">
             <div className="space-y-2">
                 {showHeading && (
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Completions</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent Closures</p>
                 )}
                 <div className={showHeading ? "h-12 flex items-center" : "min-h-12 flex items-center"}>
                     <AnimatePresence mode="wait">
@@ -92,17 +92,17 @@ export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedP
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 border-t border-border/55 pt-3">
-                {feedItems.slice(0, 3).map((victory) => (
+                {feedItems.slice(0, 3).map((item) => (
                     <div
-                        key={victory.id}
+                        key={item.id}
                         className="group flex items-center justify-between rounded-lg px-1.5 py-1 opacity-70 transition-[opacity,background-color] hover:bg-muted/30 hover:opacity-100"
                     >
                         <div className="flex items-center gap-3">
                             <div className="size-1.5 rounded-full bg-primary/24 transition-colors group-hover:bg-primary/70" />
-                            <span className="max-w-[200px] truncate text-sm text-foreground/88">{victory.message}</span>
+                            <span className="max-w-[200px] truncate text-sm text-foreground/88">{item.message}</span>
                         </div>
                         <span className="text-xs font-medium tabular-nums text-muted-foreground/88">
-                            {victory.resolvedAt ? `${getRelativeTimeLabel(victory.resolvedAt)} ago` : 'No data yet'}
+                            {item.resolvedAt ? `${getRelativeTimeLabel(item.resolvedAt)} ago` : 'No timestamp'}
                         </span>
                     </div>
                 ))}
@@ -110,7 +110,7 @@ export function VictoryFeed({ showHeading = true, victories = [] }: VictoryFeedP
 
             <div className="pt-1">
                 <button className="group flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary/52 transition-colors hover:text-primary/72">
-                    View Collective Pulse <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
+                    Open Community Dashboard <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
         </div>

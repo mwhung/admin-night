@@ -84,7 +84,7 @@ export function AchievementToast({
                                     <div className="flex items-center gap-2">
                                         <Sparkles className="w-3 h-3 text-amber-500" />
                                         <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                                            Logged
+                                            Marker Recorded
                                         </span>
                                     </div>
                                     <h4 className="text-sm font-semibold text-foreground truncate">

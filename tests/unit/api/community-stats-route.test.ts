@@ -76,11 +76,11 @@ describe('/api/community/stats route', () => {
         expect(payload.community.totalTasksCompleted).toBe(42)
         expect(payload.community.avgBloomTimeHours).toBe(12.3)
         expect(payload.community.monthly.fact).toBe(
-            'This month, the community released 240 tasks and shared 88 supportive reactions.',
+            'This month, the community closed 240 tasks and logged 88 reactions.',
         )
         expect(payload.community.recentVictories).toHaveLength(2)
         expect(payload.community.recentVictories[0]).toMatchObject({
-            message: 'A pending admin loop was released.',
+            message: 'Pending loop filed.',
             resolvedAt: '2026-02-08T10:00:00.000Z',
         })
     })
@@ -121,7 +121,7 @@ describe('/api/community/stats route', () => {
         expect(payload.community.avgBloomTimeHours).toBeNull()
         expect(payload.community.recentVictories).toEqual([])
         expect(payload.community.monthly.fact).toBe(
-            'This month is quiet so far. No released tasks have been recorded yet.',
+            'No completed tasks recorded this month yet.',
         )
     })
 })

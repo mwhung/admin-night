@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { HISTORY_BLOCK_TITLE_STYLE } from './history-view-model'
 
-interface HistorySectionProps {
+interface WorkbenchSectionProps {
     ariaLabel: string
     title: string
     subtitle: string
@@ -11,9 +10,12 @@ interface HistorySectionProps {
     delay?: number
     axis?: 'x' | 'y'
     className?: string
+    titleClassName?: string
+    subtitleClassName?: string
+    headerExtra?: ReactNode
 }
 
-export function HistorySection({
+export function WorkbenchSection({
     ariaLabel,
     title,
     subtitle,
@@ -21,7 +23,10 @@ export function HistorySection({
     delay = 0,
     axis = 'y',
     className,
-}: HistorySectionProps) {
+    titleClassName = 'type-block-title',
+    subtitleClassName = 'type-caption',
+    headerExtra,
+}: WorkbenchSectionProps) {
     const prefersReducedMotion = useReducedMotion()
     const transition = prefersReducedMotion ? { duration: 0 } : { duration: 0.14, delay }
 
@@ -40,8 +45,9 @@ export function HistorySection({
             aria-label={ariaLabel}
         >
             <header className="space-y-1 px-1">
-                <p className={HISTORY_BLOCK_TITLE_STYLE}>{title}</p>
-                <p className="type-caption">{subtitle}</p>
+                <p className={titleClassName}>{title}</p>
+                <p className={subtitleClassName}>{subtitle}</p>
+                {headerExtra}
             </header>
             {children}
         </motion.section>

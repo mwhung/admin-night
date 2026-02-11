@@ -3,9 +3,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { HistoryGroup, HistoryPagination } from '@/lib/contracts/user-history'
 import { cn } from '@/lib/utils'
-import { HistorySection } from '@/components/features/history/history-section'
+import { WorkbenchSection } from '@/components/ui/workbench-section'
 
-interface SessionFootprintsSectionProps {
+interface SessionLogSectionProps {
     historyGroups: HistoryGroup[]
     historyPagination: HistoryPagination | null
     loadingMoreHistory: boolean
@@ -13,25 +13,25 @@ interface SessionFootprintsSectionProps {
     delay?: number
 }
 
-export function SessionFootprintsSection({
+export function SessionLogSection({
     historyGroups,
     historyPagination,
     loadingMoreHistory,
     onLoadMoreHistory,
     delay = 0,
-}: SessionFootprintsSectionProps) {
+}: SessionLogSectionProps) {
     return (
-        <HistorySection
-            ariaLabel="Session footprints"
-            title="Session Footprints"
-            subtitle="Chronological records from focused sessions."
+        <WorkbenchSection
+            ariaLabel="Session log"
+            title="Session Log"
+            subtitle="Chronological record. No highlight reel."
             delay={delay}
         >
             <div className="space-y-2.5">
                 {historyGroups.length === 0 ? (
                     <div className="space-y-2 py-8 text-center">
                         <Wind className="mx-auto size-6 text-muted-foreground/70" />
-                        <p className="text-sm text-muted-foreground">Your journey is waiting for its first footprint.</p>
+                        <p className="text-sm text-muted-foreground">No sessions logged yet.</p>
                     </div>
                 ) : (
                     historyGroups.map((group) => {
@@ -66,7 +66,7 @@ export function SessionFootprintsSection({
 
                                 <div className="mt-2.5 space-y-1.5">
                                     {group.tasks.length === 0 && (
-                                        <p className="text-xs italic text-muted-foreground">Observation session only.</p>
+                                        <p className="text-xs italic text-muted-foreground">No tasks recorded for this session.</p>
                                     )}
 
                                     {group.tasks.map((task) => (
@@ -92,7 +92,7 @@ export function SessionFootprintsSection({
                                                 </span>
                                             </div>
                                             {task.state === 'RESOLVED' && (
-                                                <span className="type-caption italic text-primary/80">Released</span>
+                                                <span className="type-caption italic text-primary/80">Filed</span>
                                             )}
                                         </div>
                                     ))}
@@ -113,10 +113,10 @@ export function SessionFootprintsSection({
                         disabled={loadingMoreHistory}
                         className="h-8 w-full border-border/65 bg-surface-elevated/40 type-section-label hover:bg-muted/55"
                     >
-                        {loadingMoreHistory ? 'Loading...' : 'Load Earlier Footprints'}
+                        {loadingMoreHistory ? 'Loading...' : 'Load Older Records'}
                     </Button>
                 )}
             </div>
-        </HistorySection>
+        </WorkbenchSection>
     )
 }

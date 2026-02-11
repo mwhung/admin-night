@@ -67,7 +67,7 @@ describe('AccountSettingsPage', () => {
 
         render(<AccountSettingsPage />)
 
-        expect(screen.getByText(/Account and security controls are available for registered members/i)).toBeTruthy()
+        expect(screen.getByText(/Account and security controls are for registered members/i)).toBeTruthy()
     })
 
     it('updates display name through Supabase auth.updateUser', async () => {

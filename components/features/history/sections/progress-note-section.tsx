@@ -1,4 +1,4 @@
-import { HistorySection } from '@/components/features/history/history-section'
+import { WorkbenchSection } from '@/components/ui/workbench-section'
 import { HISTORY_LABEL_STYLE } from '@/components/features/history/history-view-model'
 import { cn } from '@/lib/utils'
 
@@ -16,10 +16,10 @@ export function ProgressNoteSection({
     delay = 0,
 }: ProgressNoteSectionProps) {
     return (
-        <HistorySection
+        <WorkbenchSection
             ariaLabel="Progress note"
             title="Progress Note"
-            subtitle="A compact status of your long-running momentum."
+            subtitle="Session totals. That&apos;s it."
             axis="x"
             delay={delay}
         >
@@ -41,8 +41,8 @@ export function ProgressNoteSection({
                 )}
             </div>
             <p className="type-body-soft mt-3 italic text-foreground/85">
-                &ldquo;The longest journey is simply a series of small, released burdens.&rdquo;
+                &ldquo;Repeated small steps still count.&rdquo;
             </p>
-        </HistorySection>
+        </WorkbenchSection>
     )
 }

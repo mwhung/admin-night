@@ -1,23 +1,23 @@
 import { cardLayout } from '@/components/ui/card-layouts'
-import { HistorySection } from '@/components/features/history/history-section'
+import { WorkbenchSection } from '@/components/ui/workbench-section'
 import { cn } from '@/lib/utils'
 
-interface RitualCalendarSectionProps {
+interface FourWeekActivitySectionProps {
     calendarDays: Date[]
     dailyActivity: Record<string, number>
     delay?: number
 }
 
-export function RitualCalendarSection({
+export function FourWeekActivitySection({
     calendarDays,
     dailyActivity,
     delay = 0,
-}: RitualCalendarSectionProps) {
+}: FourWeekActivitySectionProps) {
     return (
-        <HistorySection
-            ariaLabel="Ritual calendar"
-            title="Ritual Calendar"
-            subtitle="Presence in the shared ritual over the last 4 weeks."
+        <WorkbenchSection
+            ariaLabel="4-week activity"
+            title="4-Week Activity"
+            subtitle="Last 4 weeks. No spin."
             delay={delay}
         >
             <div className={cn(cardLayout.workbenchSecondary, 'workbench-pad-card')}>
@@ -46,6 +46,6 @@ export function RitualCalendarSection({
                     <span>Today</span>
                 </div>
             </div>
-        </HistorySection>
+        </WorkbenchSection>
     )
 }
