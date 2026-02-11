@@ -1,5 +1,11 @@
 import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/db"
+import type {
+    HistoryGroup,
+    HistoryPagination,
+    HistoryResponse,
+    TaskRecord,
+} from "@/lib/contracts/user-history"
 import { NextRequest, NextResponse } from "next/server"
 
 const DEFAULT_HISTORY_PAGE_SIZE = 10
@@ -25,6 +31,24 @@ function extractTaskIds(tasksWorkedOn: unknown): string[] {
     }
 
     return tasksWorkedOn.filter((taskId): taskId is string => typeof taskId === "string")
+}
+
+interface TaskRow {
+    id: string
+    title: string
+    state: string
+    createdAt: Date
+    resolvedAt: Date | null
+}
+
+function toTaskRecord(task: TaskRow): TaskRecord {
+    return {
+        id: task.id,
+        title: task.title,
+        state: task.state,
+        createdAt: task.createdAt.toISOString(),
+        resolvedAt: task.resolvedAt ? task.resolvedAt.toISOString() : null,
+    }
 }
 
 export async function GET(request: NextRequest) {
@@ -76,7 +100,7 @@ export async function GET(request: NextRequest) {
             })
             : []
 
-        const pageTasks = pageTaskIds.length
+        const pageTaskRows = pageTaskIds.length
             ? await prisma.task.findMany({
                 where: {
                     userId: user.id,
@@ -92,12 +116,14 @@ export async function GET(request: NextRequest) {
             })
             : []
 
+        const pageTasks = pageTaskRows.map(toTaskRecord)
+
         const participantCountBySession = new Map(
             participantCounts.map((entry) => [entry.sessionId, entry._count._all])
         )
         const pageTasksById = new Map(pageTasks.map((task) => [task.id, task]))
 
-        const historyGroups = participations.map((p) => {
+        const historyGroups: HistoryGroup[] = participations.map((p) => {
             const taskIds = extractTaskIds(p.tasksWorkedOn)
             const seenTaskIds = new Set<string>()
             const sessionTasks: typeof pageTasks = []
@@ -117,14 +143,14 @@ export async function GET(request: NextRequest) {
             return {
                 id: p.id,
                 sessionId: p.sessionId,
-                date: p.joinedAt,
+                date: p.joinedAt.toISOString(),
                 duration: p.leftAt ? Math.round((p.leftAt.getTime() - p.joinedAt.getTime()) / (1000 * 60)) : 0,
                 tasks: sessionTasks,
                 participantCount: participantCountBySession.get(p.sessionId) ?? 1,
             }
         })
 
-        const pagination = {
+        const pagination: HistoryPagination = {
             page,
             limit,
             hasMore: skip + participations.length < totalSessions,
@@ -132,10 +158,11 @@ export async function GET(request: NextRequest) {
         }
 
         if (!includeOverview) {
-            return NextResponse.json({
+            const response: HistoryResponse = {
                 historyGroups,
                 pagination,
-            })
+            }
+            return NextResponse.json(response)
         }
 
         const activityWindowStart = new Date()
@@ -145,7 +172,7 @@ export async function GET(request: NextRequest) {
         const [
             totalResolved,
             totalPending,
-            pendingTasks,
+            pendingTaskRows,
             focusAggregate,
             activityRows,
         ] = await Promise.all([
@@ -186,6 +213,8 @@ export async function GET(request: NextRequest) {
             }),
         ])
 
+        const pendingTasks = pendingTaskRows.map(toTaskRecord)
+
         let totalFocusSeconds = focusAggregate._sum.focusDurationSeconds ?? 0
         const nonNullFocusCount = focusAggregate._count.focusDurationSeconds ?? 0
 
@@ -217,7 +246,7 @@ export async function GET(request: NextRequest) {
             dailyActivity[dateStr] = (dailyActivity[dateStr] || 0) + 1
         })
 
-        return NextResponse.json({
+        const response: HistoryResponse = {
             stats: {
                 totalResolved,
                 totalPending,
@@ -228,7 +257,9 @@ export async function GET(request: NextRequest) {
             historyGroups,
             pendingTasks,
             pagination,
-        })
+        }
+
+        return NextResponse.json(response)
     } catch (error) {
         console.error("[USER_HISTORY_GET]", error)
         return new NextResponse("Internal Error", { status: 500 })
