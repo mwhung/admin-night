@@ -1,20 +1,35 @@
 // Supabase Realtime Client
 // Used for live session presence and participant tracking
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+let _supabase: SupabaseClient | null = null
 
-if (!supabaseUrl || !supabasePublishableKey) {
-    console.warn('Supabase credentials not configured. Realtime features will be disabled.')
+function getSupabaseClient(): SupabaseClient | null {
+    if (_supabase) return _supabase
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+    if (!url || !key) {
+        console.warn('Supabase credentials not configured. Realtime features will be disabled.')
+        return null
+    }
+
+    _supabase = createClient(url, key, {
+        realtime: { params: { eventsPerSecond: 10 } },
+    })
+    return _supabase
 }
 
-export const supabase = createClient(supabaseUrl || '', supabasePublishableKey || '', {
-    realtime: {
-        params: {
-            eventsPerSecond: 10,
-        },
+export { getSupabaseClient }
+
+/** @deprecated Use getSupabaseClient() — returns null when credentials are missing */
+export const supabase = new Proxy({} as SupabaseClient, {
+    get(_, prop) {
+        const client = getSupabaseClient()
+        if (!client) throw new Error('Supabase client not initialized: missing credentials')
+        return Reflect.get(client, prop)
     },
 })
 
@@ -24,7 +39,11 @@ export type RealtimeSessionPayload = {
 }
 
 export function createSessionChannel(sessionId: string) {
-    return supabase.channel(`session:${sessionId}`, {
+    const client = getSupabaseClient()
+    if (!client) {
+        throw new Error('Cannot create session channel: Supabase not configured')
+    }
+    return client.channel(`session:${sessionId}`, {
         config: {
             presence: {
                 key: sessionId,
