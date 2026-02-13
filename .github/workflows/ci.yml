@@ -9,6 +9,26 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: admin_night_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d admin_night_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/admin_night_ci
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+      INTERNAL_API_KEY: ci-internal-api-key
     
     steps:
       - uses: actions/checkout@v4
@@ -21,21 +41,24 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply Prisma migrations
+        run: npx prisma migrate deploy
       
       - name: Lint
         run: npm run lint
         
       - name: Type check
         run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
       
       - name: Run Unit Tests
         run: npm run test -- --run
-      
-      # We skip E2E tests in CI for now because they require a database and Supabase setup
-      # In a real scenario, we would use a mock DB or a dedicated test environment
-      # - name: Run E2E Tests
-      #   run: npm run test:e2e
-      #   env:
-      #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      #     NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      #     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Smoke Test
+        run: npm run test:e2e -- tests/e2e/mock_auth_flow.spec.ts --project=chromium

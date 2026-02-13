@@ -47,7 +47,7 @@ test.describe('Mock Auth Flow', () => {
         await expect(page).toHaveURL(/\/sessions\//, { timeout: 15000 });
 
         // Verify session view
-        await expect(page.getByText(/session tasks/i)).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: 'Session Tasks', exact: true })).toBeVisible({ timeout: 15000 });
         await expect(page.getByRole('button', { name: /end session/i })).toBeVisible();
         await expect(page.getByText('Mocked Auth Task').first()).toBeVisible();
 

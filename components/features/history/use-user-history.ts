@@ -6,6 +6,7 @@ import type {
     HistoryStats,
     TaskRecord,
 } from '@/lib/contracts/user-history'
+import { LAST_SESSION_TASKS_LIMIT, selectLastSessionPendingTasks } from '@/lib/session/last-session-tasks'
 import { HISTORY_PAGE_SIZE } from './history-view-model'
 
 export interface UserAchievementRecord {
@@ -23,6 +24,10 @@ interface UseUserHistoryParams {
 
 interface AchievementsResponse {
     achievements?: UserAchievementRecord[]
+}
+
+interface LastSessionTaskResponse extends TaskRecord {
+    isFromLastSession?: boolean
 }
 
 export interface UseUserHistoryResult {
@@ -66,13 +71,16 @@ export function useUserHistory({
             setInitialLoading(true)
 
             try {
-                const [historyRes, achievementsRes] = await Promise.all([
+                const [historyRes, achievementsRes, lastSessionTasksRes] = await Promise.all([
                     fetch(`/api/user/history?page=1&limit=${HISTORY_PAGE_SIZE}`, {
                         signal: controller.signal,
                     }),
                     historyMarkersEnabled
                         ? fetch('/api/achievements', { signal: controller.signal })
                         : Promise.resolve(null),
+                    fetch(`/api/tasks?limit=${LAST_SESSION_TASKS_LIMIT}&includeLastSession=true`, {
+                        signal: controller.signal,
+                    }),
                 ])
 
                 if (!isCancelled && historyRes.ok) {
@@ -80,7 +88,25 @@ export function useUserHistory({
                     setHistoryGroups(historyData.historyGroups)
                     setHistoryPagination(historyData.pagination)
                     setStats(historyData.stats ?? null)
-                    setPendingTasks(historyData.pendingTasks ?? [])
+                }
+
+                if (!isCancelled && lastSessionTasksRes.ok) {
+                    const tasksData = await lastSessionTasksRes.json()
+                    const rawTasks = Array.isArray(tasksData)
+                        ? (tasksData as LastSessionTaskResponse[])
+                        : []
+
+                    const lastSessionPendingTasks = selectLastSessionPendingTasks(rawTasks).map((task) => ({
+                        id: task.id,
+                        title: task.title,
+                        state: task.state,
+                        createdAt: task.createdAt,
+                        resolvedAt: task.resolvedAt,
+                    }))
+
+                    setPendingTasks(lastSessionPendingTasks)
+                } else if (!isCancelled) {
+                    setPendingTasks([])
                 }
 
                 if (!isCancelled && achievementsRes?.ok) {

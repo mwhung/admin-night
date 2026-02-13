@@ -4,12 +4,16 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Zap } from 'lucide-react'
 import { GuestPlaceholder } from '@/components/features/auth/guest-placeholder'
 import {
+    AdminPeakWindowSection,
+    CollaborationEnergySection,
     FocusLedgerSection,
     FourWeekActivitySection,
     OpenLoopsSection,
     ProgressNoteSection,
     QuietMarkersSection,
+    RapidTripleReleaseSection,
     SessionLogSection,
+    TaskTypeAccumulationSection,
     buildHistoryCalendarDays,
     computeResolvedRatio,
     getHistoryStatsData,
@@ -98,6 +102,11 @@ export default function HistoryPage() {
                         <div className="workbench-gap-section">
                             <FocusLedgerSection statsData={statsData} resolvedRatio={resolvedRatio} />
 
+                            <AdminPeakWindowSection
+                                peakSessionWindow={statsData.peakSessionWindow}
+                                delay={0.02}
+                            />
+
                             {historyMarkersEnabled && (
                                 <QuietMarkersSection achievements={achievements} delay={0.04} />
                             )}
@@ -108,23 +117,38 @@ export default function HistoryPage() {
                                 delay={0.08}
                             />
 
+                            <TaskTypeAccumulationSection
+                                resolvedTaskTypeBreakdown={statsData.resolvedTaskTypeBreakdown}
+                                delay={0.1}
+                            />
+
                             <SessionLogSection
                                 historyGroups={historyGroups}
                                 historyPagination={historyPagination}
                                 loadingMoreHistory={loadingMoreHistory}
                                 onLoadMoreHistory={loadMoreHistory}
-                                delay={0.12}
+                                delay={0.14}
                             />
                         </div>
 
                         <div className="workbench-gap-section" aria-label="History context rail">
                             <OpenLoopsSection pendingTasks={pendingTasks} />
 
+                            <CollaborationEnergySection
+                                collaborationEnergy={statsData.collaborationEnergy}
+                                delay={0.02}
+                            />
+
+                            <RapidTripleReleaseSection
+                                fastestTripleReleaseSession={statsData.fastestTripleReleaseSession}
+                                delay={0.04}
+                            />
+
                             <ProgressNoteSection
                                 totalSessions={statsData.totalSessions}
                                 achievementsCount={achievements.length}
                                 historyMarkersEnabled={historyMarkersEnabled}
-                                delay={0.04}
+                                delay={0.06}
                             />
                         </div>
                     </div>

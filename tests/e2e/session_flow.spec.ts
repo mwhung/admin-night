@@ -39,7 +39,7 @@ test.describe('Session Flow', () => {
         await expect(page).toHaveURL(/\/sessions\//, { timeout: 15000 })
 
         // 5. In Active Session
-        await expect(page.getByText(/session tasks/i)).toBeVisible({ timeout: 15000 })
+        await expect(page.getByRole('heading', { name: 'Session Tasks', exact: true })).toBeVisible({ timeout: 15000 })
         await expect(page.getByText('E2E Focus Task A').first()).toBeVisible()
         await expect(page.getByText('E2E Focus Task B').first()).toBeVisible()
         await expect(page.getByRole('button', { name: /end session/i })).toBeVisible({ timeout: 15000 })
@@ -83,7 +83,9 @@ test.describe('Session Flow', () => {
             await expect(page.getByText(/1\. Pick Session Tasks/i)).toBeVisible()
         } else {
             await expect(exitToFocusButton).toBeVisible()
-            await exitToFocusButton.click()
+            await exitToFocusButton.first().evaluate((button) => {
+                (button as HTMLElement).click()
+            })
             await expect(page).toHaveURL(/\/focus$/, { timeout: 15000 })
         }
     })

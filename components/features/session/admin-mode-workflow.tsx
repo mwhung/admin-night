@@ -50,12 +50,14 @@ import { SESSION_DURATION_MAX, SESSION_DURATION_MIN } from '@/lib/constants/sess
 import { useSessionRuntime } from '@/components/features/session'
 import { QUICK_TASK_SUGGESTION_SEEDS } from '@/lib/session/task-suggestion-seeds'
 import { buildSetupTaskSuggestionPools } from '@/lib/session/build-task-suggestions'
+import { LAST_SESSION_TASKS_LIMIT, selectLastSessionPendingTasks } from '@/lib/session/last-session-tasks'
 
 const DURATION_OPTIONS = [
     { value: 25, label: '25 min', description: 'Quick Session' },
     { value: 45, label: '45 min', description: 'Extended Session' },
     { value: 'custom', label: 'Custom', description: 'Set your own' },
 ]
+const SESSION_CONNECTING_STATUS_DELAY_MS = 600
 
 const normalizeTaskTitle = (title: string): string => title.trim().toLowerCase()
 const isEphemeralTaskId = (taskId: string): boolean => (
@@ -275,6 +277,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const [sessionEndError, setSessionEndError] = useState<string | null>(null)
     const [isStartingSession, setIsStartingSession] = useState(false)
     const [sessionStartError, setSessionStartError] = useState<string | null>(null)
+    const [shouldShowSessionConnectingStatus, setShouldShowSessionConnectingStatus] = useState(false)
 
     // Get the actual duration value to use
     const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
@@ -382,6 +385,21 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         window.addEventListener('keydown', handleEscape)
         return () => window.removeEventListener('keydown', handleEscape)
     }, [isExitConfirmOpen])
+
+    useEffect(() => {
+        if (hasPersistedSession || sessionStartError) {
+            setShouldShowSessionConnectingStatus(false)
+            return
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setShouldShowSessionConnectingStatus(true)
+        }, SESSION_CONNECTING_STATUS_DELAY_MS)
+
+        return () => {
+            window.clearTimeout(timeoutId)
+        }
+    }, [hasPersistedSession, sessionStartError])
 
     useEffect(() => {
         if (view !== 'summary') return
@@ -533,14 +551,13 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             setLoadingHistory(true)
             try {
                 // Request info about the last session tasks
-                const res = await fetch('/api/tasks?limit=20&includeLastSession=true')
+                const res = await fetch(`/api/tasks?limit=${LAST_SESSION_TASKS_LIMIT}&includeLastSession=true`)
                 if (res.ok) {
                     const data = await res.json()
                     const rawTasks = Array.isArray(data) ? data as TaskFromApi[] : []
 
                     // Drawer only shows unfinished tasks from the immediate last session.
-                    const lastSessionPendingTasks: TaskItem[] = rawTasks
-                        .filter((task) => task.isFromLastSession && task.state !== 'RESOLVED')
+                    const lastSessionPendingTasks: TaskItem[] = selectLastSessionPendingTasks(rawTasks)
                         .map((task) => ({
                             id: task.id,
                             title: task.title,
@@ -887,9 +904,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const isTimerPaused = isTaskDrawerOpen || runtimeSession.pausedByNavigation
     const runtimeTimerTotal = runtimeSession.isActive ? runtimeSession.totalSeconds : actualDuration * 60
     const runtimeTimerRemaining = runtimeSession.isActive ? runtimeSession.remainingSeconds : actualDuration * 60
-    const sessionStageStatusMessage = hasPersistedSession
-        ? null
-        : (sessionStartError || 'Connecting to shared session...')
+    const sessionStageStatusMessage = sessionStartError
+        ? sessionStartError
+        : hasPersistedSession
+            ? null
+            : (shouldShowSessionConnectingStatus ? 'Connecting to shared session...' : null)
     const endSessionDialogTitle = hasPersistedSession
         ? 'End session now?'
         : 'Leave before sync completes?'
@@ -1467,18 +1486,28 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                         <span className="text-xs text-muted-foreground">{option.description}</span>
                                     </button>
 
-                                    {option.value === 'custom' && selectedDuration === 'custom' && (
-                                        <div className="flex items-center gap-2 rounded-xl border border-[var(--task-selected-border)] bg-[var(--task-selected-bg-soft)] px-3 py-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    {option.value === 'custom' && (
+                                        <div className={cn(
+                                            "flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors duration-150",
+                                            selectedDuration === 'custom'
+                                                ? "border-[var(--task-selected-border)] bg-[var(--task-selected-bg-soft)]"
+                                                : "border-border/65 bg-surface-elevated/42"
+                                        )}>
                                             <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                                             <Input
                                                 type="number"
                                                 min={SESSION_DURATION_MIN}
                                                 max={SESSION_DURATION_MAX}
                                                 value={customDuration}
-                                                onChange={(e) => setCustomDuration(Math.max(
-                                                    SESSION_DURATION_MIN,
-                                                    Math.min(SESSION_DURATION_MAX, parseInt(e.target.value) || SESSION_DURATION_MIN)
-                                                ))}
+                                                onFocus={() => setSelectedDuration('custom')}
+                                                onClick={() => setSelectedDuration('custom')}
+                                                onChange={(e) => {
+                                                    setSelectedDuration('custom')
+                                                    setCustomDuration(Math.max(
+                                                        SESSION_DURATION_MIN,
+                                                        Math.min(SESSION_DURATION_MAX, parseInt(e.target.value) || SESSION_DURATION_MIN)
+                                                    ))
+                                                }}
                                                 className="h-9 w-20 text-center text-base font-bold"
                                             />
                                             <span className="text-sm text-muted-foreground">min</span>

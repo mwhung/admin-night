@@ -63,7 +63,7 @@ describe('/api/user/history route', () => {
                     sessionId: 'session-1',
                     joinedAt: new Date('2026-02-09T12:00:00.000Z'),
                     leftAt: new Date('2026-02-09T12:25:00.000Z'),
-                    tasksWorkedOn: ['task-1', 'task-1'],
+                    tasksWorkedOn: ['task-1', 'task-3', 'task-4'],
                 },
             ])
             .mockResolvedValueOnce([
@@ -71,19 +71,38 @@ describe('/api/user/history route', () => {
                     joinedAt: new Date('2026-02-09T12:00:00.000Z'),
                 },
             ])
+            .mockResolvedValueOnce([
+                {
+                    sessionId: 'session-1',
+                    joinedAt: new Date('2026-02-09T12:00:00.000Z'),
+                    leftAt: new Date('2026-02-09T12:25:00.000Z'),
+                    tasksWorkedOn: ['task-1', 'task-3', 'task-4'],
+                },
+                {
+                    sessionId: 'session-3',
+                    joinedAt: new Date('2026-02-10T12:00:00.000Z'),
+                    leftAt: new Date('2026-02-10T12:40:00.000Z'),
+                    tasksWorkedOn: ['task-2'],
+                },
+            ])
 
         prismaMock.workSessionParticipant.groupBy.mockResolvedValue([
             { sessionId: 'session-1', _count: { _all: 3 } },
+        ]).mockResolvedValueOnce([
+            { sessionId: 'session-1', _count: { _all: 3 } },
+        ]).mockResolvedValueOnce([
+            { sessionId: 'session-1', _count: { _all: 3 } },
+            { sessionId: 'session-3', _count: { _all: 2 } },
         ])
 
         prismaMock.task.findMany
             .mockResolvedValueOnce([
                 {
                     id: 'task-1',
-                    title: 'Carry over unfinished task',
-                    state: 'IN_PROGRESS',
+                    title: 'Pay utility bill',
+                    state: 'RESOLVED',
                     createdAt: new Date('2026-02-01T00:00:00.000Z'),
-                    resolvedAt: null,
+                    resolvedAt: new Date('2026-02-09T12:08:00.000Z'),
                 },
             ])
             .mockResolvedValueOnce([
@@ -102,9 +121,32 @@ describe('/api/user/history route', () => {
                     resolvedAt: null,
                 },
             ])
+            .mockResolvedValueOnce([
+                {
+                    id: 'task-1',
+                    title: 'Pay utility bill',
+                    state: 'RESOLVED',
+                    createdAt: new Date('2026-02-01T00:00:00.000Z'),
+                    resolvedAt: new Date('2026-02-09T12:08:00.000Z'),
+                },
+                {
+                    id: 'task-3',
+                    title: 'Reply overdue email',
+                    state: 'RESOLVED',
+                    createdAt: new Date('2026-02-04T00:00:00.000Z'),
+                    resolvedAt: new Date('2026-02-09T12:15:00.000Z'),
+                },
+                {
+                    id: 'task-4',
+                    title: 'Submit tax form',
+                    state: 'RESOLVED',
+                    createdAt: new Date('2026-02-05T00:00:00.000Z'),
+                    resolvedAt: new Date('2026-02-09T12:20:00.000Z'),
+                },
+            ])
 
         prismaMock.task.count
-            .mockResolvedValueOnce(1)
+            .mockResolvedValueOnce(3)
             .mockResolvedValueOnce(2)
 
         prismaMock.workSessionParticipant.aggregate.mockResolvedValue({
@@ -123,7 +165,7 @@ describe('/api/user/history route', () => {
             totalSessions: 2,
         })
         expect(payload.stats).toMatchObject({
-            totalResolved: 1,
+            totalResolved: 3,
             totalPending: 2,
             totalFocusMinutes: 25,
             totalSessions: 2,
@@ -134,6 +176,25 @@ describe('/api/user/history route', () => {
         expect(payload.historyGroups).toHaveLength(1)
         expect(payload.historyGroups[0].tasks.map((task: { id: string }) => task.id)).toEqual(['task-1'])
         expect(payload.pendingTasks).toHaveLength(2)
+        expect(payload.stats.peakSessionWindow).toMatchObject({
+            sessionCount: 1,
+        })
+        expect(typeof payload.stats.peakSessionWindow.dayLabel).toBe('string')
+        expect(typeof payload.stats.peakSessionWindow.startHour).toBe('number')
+        expect(payload.stats.peakSessionWindow.endHour).toBe((payload.stats.peakSessionWindow.startHour + 1) % 24)
+        expect(payload.stats.collaborationEnergy).toMatchObject({
+            cumulativeOthersPresent: 3,
+            maxParticipantsInSession: 3,
+        })
+        expect(payload.stats.fastestTripleReleaseSession).toMatchObject({
+            sessionId: 'session-1',
+            durationMinutes: 25,
+            resolvedTaskCount: 3,
+        })
+        expect(payload.stats.resolvedTaskTypeBreakdown).toEqual(expect.arrayContaining([
+            { type: 'Finance & Bills', count: 2 },
+            { type: 'Email & Follow-ups', count: 1 },
+        ]))
     })
 
     it('returns only history groups when includeOverview=false', async () => {

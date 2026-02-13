@@ -34,13 +34,29 @@
 
 ## Running Migrations
 
+### Local development
+
 ```bash
 # Generate Prisma client
 npx prisma generate
 
-# Run migrations
+# Run local migrations
 npx prisma migrate dev --name init
+```
 
+### Production / deployment
+
+```bash
+# Apply committed migrations in production
+npx prisma migrate deploy
+
+# Ensure Prisma Client is generated in the deploy environment
+npx prisma generate
+```
+
+### Legacy baseline recovery (one-time only)
+
+```bash
 # If your database already has tables but no Prisma migration history yet,
 # apply incremental SQL migrations directly:
 npx prisma db execute --file prisma/migrations/20260207234000_reaction_event_and_session_aggregates/migration.sql --schema prisma/schema.prisma
@@ -51,17 +67,20 @@ npx prisma studio
 
 ## Authentication Setup
 
-### Using NextAuth.js
+### Using Supabase Auth
 
-1. Generate a secret:
-   ```bash
-   openssl rand -base64 32
-   ```
-2. Add to `.env`:
-   ```
-   NEXTAUTH_SECRET="your-generated-secret"
-   NEXTAUTH_URL="http://localhost:3000"
-   ```
+1. In Supabase Dashboard, enable the auth providers you want to use:
+   - Email + Password
+   - Google OAuth (optional)
+2. Configure redirect URLs in Supabase Authentication settings:
+   - Local callback: `http://localhost:3000/auth/callback`
+   - Production callback: `https://<your-domain>/auth/callback`
+3. Ensure these app environment variables are set:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `NEXT_PUBLIC_SITE_URL`
+4. For production releases, keep mock auth disabled:
+   - `NEXT_PUBLIC_MOCK_AUTH="false"`
 
 ## Internal Session Detail Access (Backend Only)
 
@@ -116,7 +135,7 @@ npm run dev
 
 1. ✅ Database schema is defined
 2. ⏳ Run migrations (see above)
-3. ⏳ Implement authentication
+3. ⏳ Verify Supabase authentication flows
 4. ⏳ Build core features
 5. ⏳ Deploy to Vercel
 

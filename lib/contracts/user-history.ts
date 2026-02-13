@@ -21,6 +21,34 @@ export interface HistoryStats {
     totalFocusMinutes: number
     dailyActivity: Record<string, number>
     totalSessions: number
+    peakSessionWindow: PeakSessionWindow | null
+    resolvedTaskTypeBreakdown: TaskTypeBreakdownItem[]
+    collaborationEnergy: CollaborationEnergy
+    fastestTripleReleaseSession: FastestTripleReleaseSession | null
+}
+
+export interface PeakSessionWindow {
+    dayLabel: string
+    startHour: number
+    endHour: number
+    sessionCount: number
+}
+
+export interface TaskTypeBreakdownItem {
+    type: string
+    count: number
+}
+
+export interface CollaborationEnergy {
+    cumulativeOthersPresent: number
+    maxParticipantsInSession: number
+}
+
+export interface FastestTripleReleaseSession {
+    sessionId: string
+    date: string
+    durationMinutes: number
+    resolvedTaskCount: number
 }
 
 export interface HistoryPagination {
