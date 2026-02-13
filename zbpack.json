@@ -1,3 +1,5 @@
 {
-  "build_command": "npx prisma generate && npm run build"
+  "dockerfile": {
+    "path": "Dockerfile"
+  }
 }
