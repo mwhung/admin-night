@@ -85,6 +85,10 @@ interface SessionSummaryResponse {
     }
 }
 
+interface SyncSessionStartOptions {
+    redirectOnSuccess?: boolean
+}
+
 interface AdminModeWorkflowProps {
     view: AdminModeWorkflowView
     sessionId?: string
@@ -261,6 +265,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const hasHydratedRuntime = useRef(false)
     const endingSessionRef = useRef(false)
     const startingSessionRef = useRef(false)
+    const syncSessionStartPromiseRef = useRef<Promise<string | null> | null>(null)
     const [step, setStep] = useState<Step>(() => stepFromView(view))
     const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false)
     const [selectedDuration, setSelectedDuration] = useState<number | 'custom'>(25)
@@ -686,48 +691,66 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         return selectedTasks
     }
 
-    const syncSessionStartWithServer = async (tasksSnapshot: TaskItem[]) => {
-        if (startingSessionRef.current) return
-        startingSessionRef.current = true
-
-        const preferredPersistedSessionId = activeSessionId && !activeSessionId.startsWith('local-')
-            ? activeSessionId
-            : runtimeSession.sessionId && !runtimeSession.sessionId.startsWith('local-')
-                ? runtimeSession.sessionId
-                : undefined
-
-        setIsStartingSession(true)
-        setSessionStartError(null)
-
-        try {
-            const payload = await startSessionMutation.mutateAsync({
-                durationMinutes: actualDuration,
-                preferredSessionId: preferredPersistedSessionId,
-                selectedTasks: tasksSnapshot.map((task) => ({
-                    id: task.id,
-                    title: task.title,
-                    completed: task.completed,
-                })),
-            })
-
-            const mappedTasks = applyTaskMappings(selectedTasksRef.current, payload.taskMappings)
-
-            setSelectedTasks(mappedTasks)
-            setActiveSessionId(payload.session.id)
-            syncRuntimeSession({
-                sessionId: payload.session.id,
-                durationMinutes: actualDuration,
-                selectedTasks: mappedTasks,
-            })
-
-            router.replace(`/sessions/${payload.session.id}`)
-        } catch (err) {
-            console.error('Failed to sync session start with server', err)
-            setSessionStartError('Unable to connect this session right now. Retry in a moment.')
-        } finally {
-            startingSessionRef.current = false
-            setIsStartingSession(false)
+    const syncSessionStartWithServer = async (
+        tasksSnapshot: TaskItem[],
+        { redirectOnSuccess = true }: SyncSessionStartOptions = {}
+    ): Promise<string | null> => {
+        if (syncSessionStartPromiseRef.current) {
+            return syncSessionStartPromiseRef.current
         }
+
+        const syncPromise = (async () => {
+            startingSessionRef.current = true
+
+            const preferredPersistedSessionId = activeSessionId && !activeSessionId.startsWith('local-')
+                ? activeSessionId
+                : runtimeSession.sessionId && !runtimeSession.sessionId.startsWith('local-')
+                    ? runtimeSession.sessionId
+                    : undefined
+
+            setIsStartingSession(true)
+            setSessionStartError(null)
+
+            try {
+                const payload = await startSessionMutation.mutateAsync({
+                    durationMinutes: actualDuration,
+                    preferredSessionId: preferredPersistedSessionId,
+                    selectedTasks: tasksSnapshot.map((task) => ({
+                        id: task.id,
+                        title: task.title,
+                        completed: task.completed,
+                    })),
+                })
+
+                const mappedTasks = applyTaskMappings(selectedTasksRef.current, payload.taskMappings)
+
+                setSelectedTasks(mappedTasks)
+                setActiveSessionId(payload.session.id)
+                syncRuntimeSession({
+                    sessionId: payload.session.id,
+                    durationMinutes: actualDuration,
+                    selectedTasks: mappedTasks,
+                })
+
+                if (redirectOnSuccess) {
+                    router.replace(`/sessions/${payload.session.id}`)
+                }
+
+                return payload.session.id
+            } catch (err) {
+                console.error('Failed to sync session start with server', err)
+                setSessionStartError('Unable to connect this session right now. Retry in a moment.')
+                return null
+            } finally {
+                startingSessionRef.current = false
+                setIsStartingSession(false)
+            }
+        })()
+
+        syncSessionStartPromiseRef.current = syncPromise
+        const persistedSessionId = await syncPromise
+        syncSessionStartPromiseRef.current = null
+        return persistedSessionId
     }
 
     const handleStartSession = () => {
@@ -799,7 +822,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         setSessionEndError(null)
 
         const seconds = timerRef.current?.getElapsedTime() || 0
-        const summarySessionId = activeSessionId ?? runtimeSession.sessionId ?? sessionId
+        let summarySessionId = activeSessionId ?? runtimeSession.sessionId ?? sessionId
 
         if (!summarySessionId) {
             clearRuntimeSession()
@@ -810,11 +833,17 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         }
 
         if (summarySessionId.startsWith('local-')) {
-            clearRuntimeSession()
-            router.push('/focus')
-            endingSessionRef.current = false
-            setIsEndingSession(false)
-            return
+            const tasksSnapshot = selectedTasksRef.current.map((task) => ({ ...task }))
+            const persistedSessionId = await syncSessionStartWithServer(tasksSnapshot, {
+                redirectOnSuccess: false,
+            })
+            if (!persistedSessionId) {
+                setSessionEndError('Unable to sync this session right now. Please try again.')
+                endingSessionRef.current = false
+                setIsEndingSession(false)
+                return
+            }
+            summarySessionId = persistedSessionId
         }
 
         let shouldNavigateToSummary = false
@@ -911,13 +940,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             : (shouldShowSessionConnectingStatus ? 'Connecting to shared session...' : null)
     const endSessionDialogTitle = hasPersistedSession
         ? 'End session now?'
-        : 'Leave before sync completes?'
+        : 'End session and sync first?'
     const endSessionDialogDescription = hasPersistedSession
         ? 'You will end now and open the session summary.'
-        : 'This local session is not synced yet. Leaving returns you to Focus.'
-    const endSessionDialogAction = hasPersistedSession
-        ? 'End and View Summary'
-        : 'Return to Focus'
+        : 'This session is still local. We will sync it first, then open the summary.'
+    const endSessionDialogAction = 'End and View Summary'
     // ==================== SESSION VIEW ====================
     if (step === 'session') {
         return (

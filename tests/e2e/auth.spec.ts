@@ -3,24 +3,26 @@ import { test, expect } from '@playwright/test'
 test.describe('Authentication', () => {
     test('should show login page', async ({ page }) => {
         await page.goto('/login')
-        await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /back to admin night/i })).toBeVisible()
+        await expect(page.getByRole('button', { name: /^sign in$/i })).toBeVisible()
     })
 
-    test('should show error for invalid credentials', async ({ page }) => {
+    test('should enforce required email and password fields', async ({ page }) => {
         await page.goto('/login')
-        await page.getByLabel('Email').fill('wrong@example.com')
-        await page.getByLabel('Password').fill('wrongpassword')
-        await page.getByRole('button', { name: /enter your quiet space/i }).click()
-        // Should stay on login page or show error
-        await expect(page).toHaveURL(/login/)
+        await page.getByRole('button', { name: /^sign in$/i }).click()
+
+        // Native form validation should keep the user on the login page.
+        await expect(page).toHaveURL(/\/login/)
+        await expect(page.getByLabel('Email')).toBeFocused()
     })
 
     test('should enter app via mock auth button', async ({ page }) => {
         await page.goto('/login')
-        await page.getByRole('button', { name: /continue with mock auth \(dev\)/i }).click()
+        const mockAuthButton = page.getByRole('button', { name: /use mock auth \(dev\)/i })
+        await expect(mockAuthButton).toBeVisible()
+        await mockAuthButton.click()
 
-        // Should redirect to app home
-        await expect(page).toHaveURL(/focus/)
-        await expect(page.getByText(/1\. declutter your mind/i)).toBeVisible()
+        await expect(page).toHaveURL(/\/focus/)
+        await expect(page.getByRole('heading', { name: /1\. pick session tasks/i })).toBeVisible()
     })
 })

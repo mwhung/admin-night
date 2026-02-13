@@ -1,22 +1,9 @@
 import { expect, test } from '@playwright/test'
-
-const MOCK_USER = {
-    id: 'e2e-mock-user-id',
-    email: 'tester@example.com',
-    name: 'E2E Tester',
-}
+import { buildMockUser, setMockAuthCookie } from './mocks/mock-user'
 
 test.describe('Settings Account', () => {
-    test.beforeEach(async ({ context }) => {
-        await context.addCookies([{
-            name: 'e2e-mock-user',
-            value: JSON.stringify(MOCK_USER),
-            domain: 'localhost',
-            path: '/',
-            httpOnly: true,
-            secure: false,
-            sameSite: 'Lax',
-        }])
+    test.beforeEach(async ({ context }, testInfo) => {
+        await setMockAuthCookie(context, buildMockUser('settings-account', testInfo))
     })
 
     test('opens account settings and sends password reset request', async ({ page }) => {
