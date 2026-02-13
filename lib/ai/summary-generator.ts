@@ -1,9 +1,5 @@
 
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAIClient } from './openai';
 
 const SUMMARY_FALLBACK = 'The night is over. Your tasks are done.'
 const SUMMARY_TIMEOUT_MS = 2000
@@ -38,7 +34,7 @@ export async function generateSessionSummary(context: {
             return SUMMARY_FALLBACK
         }
 
-        const llmSummaryPromise = openai.chat.completions.create({
+        const llmSummaryPromise = getOpenAIClient().chat.completions.create({
             messages: [{ role: 'system', content: prompt }],
             model: 'gpt-4o-mini',
             max_tokens: 50,

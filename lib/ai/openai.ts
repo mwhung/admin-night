@@ -3,12 +3,24 @@ import OpenAI from 'openai'
 // Re-export parseSteps from parser module
 export { parseSteps } from './parser'
 
+let _openai: OpenAI | null = null
+
 /**
- * OpenAI client instance for AI features
- * Used for task clarification and other LLM-powered features
+ * Lazy-initialized OpenAI client to avoid build-time errors
+ * when OPENAI_API_KEY is only available at runtime.
  */
-export const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+export function getOpenAIClient(): OpenAI {
+    if (!_openai) {
+        _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    }
+    return _openai
+}
+
+/** @deprecated Use getOpenAIClient() instead */
+export const openai = new Proxy({} as OpenAI, {
+    get(_, prop) {
+        return Reflect.get(getOpenAIClient(), prop)
+    },
 })
 
 /**
