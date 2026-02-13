@@ -12,7 +12,6 @@ const { getCurrentUserMock, prismaMock } = vi.hoisted(() => ({
             count: vi.fn(),
             findMany: vi.fn(),
             groupBy: vi.fn(),
-            aggregate: vi.fn(),
         },
     },
 }))
@@ -40,7 +39,6 @@ describe('/api/user/history route', () => {
         prismaMock.workSessionParticipant.count.mockReset()
         prismaMock.workSessionParticipant.findMany.mockReset()
         prismaMock.workSessionParticipant.groupBy.mockReset()
-        prismaMock.workSessionParticipant.aggregate.mockReset()
     })
 
     it('returns 401 when user is not authenticated', async () => {
@@ -76,12 +74,14 @@ describe('/api/user/history route', () => {
                     sessionId: 'session-1',
                     joinedAt: new Date('2026-02-09T12:00:00.000Z'),
                     leftAt: new Date('2026-02-09T12:25:00.000Z'),
+                    focusDurationSeconds: 0,
                     tasksWorkedOn: ['task-1', 'task-3', 'task-4'],
                 },
                 {
                     sessionId: 'session-3',
                     joinedAt: new Date('2026-02-10T12:00:00.000Z'),
-                    leftAt: new Date('2026-02-10T12:40:00.000Z'),
+                    leftAt: null,
+                    focusDurationSeconds: 0,
                     tasksWorkedOn: ['task-2'],
                 },
             ])
@@ -149,11 +149,6 @@ describe('/api/user/history route', () => {
             .mockResolvedValueOnce(3)
             .mockResolvedValueOnce(2)
 
-        prismaMock.workSessionParticipant.aggregate.mockResolvedValue({
-            _sum: { focusDurationSeconds: 1500 },
-            _count: { focusDurationSeconds: 2 },
-        })
-
         const response = await GET(buildRequest('?page=1&limit=1'))
         const payload = await response.json()
 
@@ -176,6 +171,7 @@ describe('/api/user/history route', () => {
         expect(payload.historyGroups).toHaveLength(1)
         expect(payload.historyGroups[0].tasks.map((task: { id: string }) => task.id)).toEqual(['task-1'])
         expect(payload.pendingTasks).toHaveLength(2)
+        expect(prismaMock.workSessionParticipant.findMany).toHaveBeenCalledTimes(3)
         expect(payload.stats.peakSessionWindow).toMatchObject({
             sessionCount: 1,
         })
@@ -238,7 +234,6 @@ describe('/api/user/history route', () => {
         expect(payload.stats).toBeUndefined()
         expect(payload.pendingTasks).toBeUndefined()
         expect(prismaMock.task.count).not.toHaveBeenCalled()
-        expect(prismaMock.workSessionParticipant.aggregate).not.toHaveBeenCalled()
         expect(prismaMock.workSessionParticipant.findMany).toHaveBeenCalledTimes(1)
     })
 })

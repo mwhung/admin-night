@@ -90,6 +90,7 @@ interface SessionInsightRow {
     sessionId: string
     joinedAt: Date
     leftAt: Date | null
+    focusDurationSeconds: number | null
     tasksWorkedOn: unknown
 }
 
@@ -261,6 +262,37 @@ function buildFastestTripleReleaseSession(
     return fastestSession
 }
 
+function buildTotalFocusSeconds(participations: SessionInsightRow[]): number {
+    return participations.reduce((total, participation) => {
+        if (!participation.leftAt) {
+            return total
+        }
+
+        const elapsedSeconds = Math.max(
+            0,
+            Math.round((participation.leftAt.getTime() - participation.joinedAt.getTime()) / 1000)
+        )
+
+        const storedFocusSeconds = (
+            typeof participation.focusDurationSeconds === "number"
+            && Number.isFinite(participation.focusDurationSeconds)
+            && participation.focusDurationSeconds >= 0
+        )
+            ? Math.floor(participation.focusDurationSeconds)
+            : null
+
+        if (storedFocusSeconds === null) {
+            return total + elapsedSeconds
+        }
+
+        if (storedFocusSeconds === 0 && elapsedSeconds > 0) {
+            return total + elapsedSeconds
+        }
+
+        return total + storedFocusSeconds
+    }, 0)
+}
+
 export async function GET(request: NextRequest) {
     const user = await getCurrentUser()
 
@@ -383,7 +415,6 @@ export async function GET(request: NextRequest) {
             totalResolved,
             totalPending,
             pendingTaskRows,
-            focusAggregate,
             activityRows,
             allInsightParticipations,
             resolvedTaskRows,
@@ -405,15 +436,6 @@ export async function GET(request: NextRequest) {
                     resolvedAt: true,
                 },
             }),
-            prisma.workSessionParticipant.aggregate({
-                where: { userId: user.id },
-                _sum: {
-                    focusDurationSeconds: true,
-                },
-                _count: {
-                    focusDurationSeconds: true,
-                },
-            }),
             prisma.workSessionParticipant.findMany({
                 where: {
                     userId: user.id,
@@ -429,6 +451,7 @@ export async function GET(request: NextRequest) {
                     sessionId: true,
                     joinedAt: true,
                     leftAt: true,
+                    focusDurationSeconds: true,
                     tasksWorkedOn: true,
                 },
             }),
@@ -446,30 +469,7 @@ export async function GET(request: NextRequest) {
 
         const pendingTasks = pendingTaskRows.map(toTaskRecord)
 
-        let totalFocusSeconds = focusAggregate._sum.focusDurationSeconds ?? 0
-        const nonNullFocusCount = focusAggregate._count.focusDurationSeconds ?? 0
-
-        if (nonNullFocusCount < totalSessions) {
-            const rowsWithoutStoredFocus = await prisma.workSessionParticipant.findMany({
-                where: {
-                    userId: user.id,
-                    focusDurationSeconds: null,
-                    leftAt: { not: null },
-                },
-                select: {
-                    joinedAt: true,
-                    leftAt: true,
-                },
-            })
-
-            totalFocusSeconds += rowsWithoutStoredFocus.reduce((acc, row) => {
-                if (!row.leftAt) {
-                    return acc
-                }
-
-                return acc + Math.max(0, Math.round((row.leftAt.getTime() - row.joinedAt.getTime()) / 1000))
-            }, 0)
-        }
+        const totalFocusSeconds = buildTotalFocusSeconds(allInsightParticipations)
 
         const dailyActivity: Record<string, number> = {}
         activityRows.forEach((row) => {
