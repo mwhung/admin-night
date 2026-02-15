@@ -84,6 +84,7 @@ const DURATION_OPTIONS = [
 const SESSION_CONNECTING_STATUS_DELAY_MS = 600
 const SOUNDSCAPE_PREFERENCES_STORAGE_KEY = 'admin-night:soundscape-preferences'
 const SOUNDSCAPE_PREFERENCES_SAVE_DELAY_MS = 300
+const soundscapeFeatureEnabled = process.env.NEXT_PUBLIC_ENABLE_SOUNDSCAPE === 'true'
 
 const normalizeTaskTitle = (title: string): string => title.trim().toLowerCase()
 const isEphemeralTaskId = (taskId: string): boolean => (
@@ -1060,6 +1061,9 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
         const tasksSnapshot = selectedTasksRef.current.map((task) => ({ ...task }))
         const localSessionId = `local-${Date.now()}`
+        const soundscapeIdForSession = soundscapeFeatureEnabled
+            ? selectedSoundscapeId
+            : SILENCE_SOUNDSCAPE_ID
 
         setSessionStartError(null)
         setActiveSessionId(localSessionId)
@@ -1069,9 +1073,9 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             durationMinutes: actualDuration,
             selectedTasks: tasksSnapshot,
             soundscape: {
-                soundscapeId: selectedSoundscapeId,
+                soundscapeId: soundscapeIdForSession,
                 trackIndex: 0,
-                isPlaying: selectedSoundscapeId !== SILENCE_SOUNDSCAPE_ID,
+                isPlaying: soundscapeIdForSession !== SILENCE_SOUNDSCAPE_ID,
                 volume: soundscapeVolume,
                 shuffle: soundscapeShuffle,
                 loopMode: soundscapeLoopMode,
@@ -1424,10 +1428,11 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                 )}
 
                 {/* Main Content */}
-                <div className="mx-auto h-[var(--layout-session-main-height)] w-full max-w-5xl overflow-hidden px-4 pb-[max(0.75rem,var(--layout-safe-bottom))] pt-[var(--layout-banner-content-gap)] sm:px-5 md:px-6">
-                    <div className="grid h-full min-h-0 w-full grid-rows-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-3 lg:h-[min(66dvh,500px)] lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:grid-rows-1 lg:gap-4">
-                        {/* Left: Timer Stage */}
-                        <Card className="flex h-full min-h-0 flex-col overflow-hidden border-border/80 bg-card/92 shadow-[0_16px_34px_rgba(31,42,55,0.14)]">
+                <div className="container mx-auto mb-20 max-w-6xl p-4 pt-[var(--layout-banner-content-gap)] sm:p-5 md:p-6">
+                    <div className="grid workbench-gap-grid">
+                        <div className="grid workbench-gap-grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
+                            {/* Left: Timer Stage */}
+                            <Card className="flex min-h-[22rem] flex-col overflow-hidden border-border/80 bg-card/92 shadow-[0_16px_34px_rgba(31,42,55,0.14)] lg:h-[min(60dvh,460px)] lg:min-h-0">
                             <SessionStageHeader
                                 durationMinutes={actualDuration}
                                 statusMessage={sessionStageStatusMessage}
@@ -1466,8 +1471,8 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                             </CardContent>
                         </Card>
 
-                        {/* Right: Tasks and Actions */}
-                        <Card className="flex h-full min-h-0 flex-col overflow-hidden border-border/80 bg-card/92 shadow-[0_16px_34px_rgba(31,42,55,0.14)]">
+                            {/* Right: Tasks and Actions */}
+                            <Card className="flex min-h-[22rem] flex-col overflow-hidden border-border/80 bg-card/92 shadow-[0_16px_34px_rgba(31,42,55,0.14)] lg:h-[min(60dvh,460px)] lg:min-h-0">
                             <CardHeader className="space-y-2 pb-2 sm:pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                                     <CheckCircle2 className="h-4 w-4 text-primary/75" />
@@ -1494,10 +1499,6 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                         className="max-w-none"
                                     />
                                 </div>
-                                <SessionSoundscapePlayer
-                                    playback={runtimeSession.soundscape}
-                                    onPlaybackChange={handleSessionSoundscapeChange}
-                                />
                                 <div className="flex flex-col gap-2 pt-1">
                                     <Button
                                         variant="secondary"
@@ -1551,6 +1552,16 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                 </div>
                             </CardContent>
                         </Card>
+                        </div>
+
+                        {soundscapeFeatureEnabled && (
+                            <div>
+                                <SessionSoundscapePlayer
+                                    playback={runtimeSession.soundscape}
+                                    onPlaybackChange={handleSessionSoundscapeChange}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -1873,24 +1884,25 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                     </CardContent>
                 </Card>
 
-                {/* Step 3: Soundscape Selection */}
-                <Card className="mb-6">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-[1.02rem] font-medium tracking-[-0.01em]">
-                            <Sparkles className="h-5 w-5" />
-                            3. Pick Soundscape
-                        </CardTitle>
-                        <CardDescription>
-                            Choose one backdrop for this session. You can still change tracks while focusing.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <SoundscapeSelector
-                            selectedSoundscapeId={selectedSoundscapeId}
-                            onSelect={handleSelectSoundscape}
-                        />
-                    </CardContent>
-                </Card>
+                {soundscapeFeatureEnabled && (
+                    <Card className="mb-6">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-[1.02rem] font-medium tracking-[-0.01em]">
+                                <Sparkles className="h-5 w-5" />
+                                3. Pick Soundscape
+                            </CardTitle>
+                            <CardDescription>
+                                Choose one backdrop for this session. You can still change tracks while focusing.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <SoundscapeSelector
+                                selectedSoundscapeId={selectedSoundscapeId}
+                                onSelect={handleSelectSoundscape}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Start Button */}
                 <Button
