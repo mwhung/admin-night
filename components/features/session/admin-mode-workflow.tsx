@@ -69,6 +69,9 @@ const DURATION_OPTIONS = [
     { value: 'custom', label: 'Custom', description: 'Set your own' },
 ]
 const SESSION_CONNECTING_STATUS_DELAY_MS = 600
+const SESSION_START_CONNECT_ERROR_MESSAGE = 'Unable to connect this session right now. Retry in a moment.'
+const SESSION_START_AUTH_ERROR_MESSAGE = 'Your sign-in session expired. Log in again, then retry.'
+const SESSION_START_INVALID_INPUT_ERROR_MESSAGE = 'Session setup data is invalid. Refresh and try again.'
 
 const normalizeTaskTitle = (title: string): string => title.trim().toLowerCase()
 const isEphemeralTaskId = (taskId: string): boolean => (
@@ -81,6 +84,45 @@ const resolvePreferredSessionId = (...sessionIds: Array<string | null | undefine
     const validSessionIds = sessionIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
     const persistedSessionId = validSessionIds.find((id) => !isLocalSessionId(id))
     return persistedSessionId ?? validSessionIds[0] ?? null
+}
+
+const getErrorStatusCode = (error: unknown): number | null => {
+    if (!error || typeof error !== 'object') return null
+    const status = (error as { status?: unknown }).status
+    return typeof status === 'number' ? status : null
+}
+
+const resolveSessionStartSyncError = (error: unknown): { message: string; requiresReauth: boolean } => {
+    const statusCode = getErrorStatusCode(error)
+    const normalizedMessage = error instanceof Error
+        ? error.message.trim().toLowerCase()
+        : ''
+
+    if (statusCode === 401 || normalizedMessage === 'unauthorized') {
+        return {
+            message: SESSION_START_AUTH_ERROR_MESSAGE,
+            requiresReauth: true,
+        }
+    }
+
+    if (statusCode === 400 || normalizedMessage === 'invalid input') {
+        return {
+            message: SESSION_START_INVALID_INPUT_ERROR_MESSAGE,
+            requiresReauth: false,
+        }
+    }
+
+    if (normalizedMessage.includes('failed to fetch') || normalizedMessage.includes('networkerror')) {
+        return {
+            message: SESSION_START_CONNECT_ERROR_MESSAGE,
+            requiresReauth: false,
+        }
+    }
+
+    return {
+        message: SESSION_START_CONNECT_ERROR_MESSAGE,
+        requiresReauth: false,
+    }
 }
 
 type AdminModeWorkflowView = 'setup' | 'session' | 'summary'
@@ -341,6 +383,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const [sessionEndError, setSessionEndError] = useState<string | null>(null)
     const [isStartingSession, setIsStartingSession] = useState(false)
     const [sessionStartError, setSessionStartError] = useState<string | null>(null)
+    const [sessionStartRequiresReauth, setSessionStartRequiresReauth] = useState(false)
     const [shouldShowSessionConnectingStatus, setShouldShowSessionConnectingStatus] = useState(false)
 
     // Get the actual duration value to use
@@ -769,6 +812,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
             setIsStartingSession(true)
             setSessionStartError(null)
+            setSessionStartRequiresReauth(false)
 
             try {
                 const payload = await startSessionMutation.mutateAsync({
@@ -798,7 +842,9 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                 return payload.session.id
             } catch (err) {
                 console.error('Failed to sync session start with server', err)
-                setSessionStartError('Unable to connect this session right now. Retry in a moment.')
+                const resolvedError = resolveSessionStartSyncError(err)
+                setSessionStartError(resolvedError.message)
+                setSessionStartRequiresReauth(resolvedError.requiresReauth)
                 return null
             } finally {
                 startingSessionRef.current = false
@@ -819,6 +865,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         const localSessionId = `local-${Date.now()}`
 
         setSessionStartError(null)
+        setSessionStartRequiresReauth(false)
         setActiveSessionId(localSessionId)
 
         startRuntimeSession({
@@ -833,6 +880,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
 
     const handleRetrySessionStart = () => {
         if (isStartingSession || startingSessionRef.current) return
+        if (sessionStartRequiresReauth) {
+            router.push('/login')
+            return
+        }
 
         const currentSessionId = activeSessionId ?? runtimeSession.sessionId
         if (!currentSessionId || !currentSessionId.startsWith('local-')) return
@@ -978,6 +1029,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         setActiveSessionId(null)
         setSelectedTasks([])
         setSessionStartError(null)
+        setSessionStartRequiresReauth(false)
         router.push('/focus')
     }
 
@@ -1277,7 +1329,7 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                                     onClick={handleRetrySessionStart}
                                                     disabled={isStartingSession}
                                                 >
-                                                    Retry Sync
+                                                    {sessionStartRequiresReauth ? 'Go to Login' : 'Retry Sync'}
                                                 </Button>
                                             )}
                                         </div>

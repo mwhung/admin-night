@@ -76,7 +76,7 @@ export function CollectiveExhale({ count, showHeading = true }: CollectiveExhale
 
                 <div className="space-y-2 max-w-[280px] mx-auto">
                     <p className="text-lg font-light text-muted-foreground leading-relaxed">
-                        Tasks closed by the group today.
+                        Tasks closed by the group in the past 24h.
                     </p>
                     <div className="h-px w-8 bg-primary/20 mx-auto mt-4" />
                 </div>

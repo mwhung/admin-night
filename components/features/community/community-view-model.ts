@@ -21,7 +21,8 @@ export interface CommunityOverview {
 }
 
 export function getCommunityOverview(stats: CommunityStatsResponse | null): CommunityOverview {
-    const totalReleased = stats?.community.totalTasksCompleted ?? 0
+    const totalReleased = stats?.community.daily.totalSteps ?? 0
+    const totalResolvedAllTime = stats?.community.totalTasksCompleted ?? 0
     const activeParticipants = stats?.community.daily.activeUsers ?? 0
     const dailyReactions = stats?.community.reactions?.daily.total ?? 0
     const avgBloomTimeHours = stats?.community.avgBloomTimeHours
@@ -34,14 +35,14 @@ export function getCommunityOverview(stats: CommunityStatsResponse | null): Comm
     const pulseSnapshotMetrics: PulseSnapshotMetric[] = [
         {
             label: 'Steps Closed',
-            value: totalReleased.toLocaleString(),
-            meta: 'Total tasks marked resolved by the community.',
+            value: totalResolvedAllTime.toLocaleString(),
+            meta: 'All-time tasks marked resolved by the community.',
             icon: Wind,
         },
         {
             label: 'Active People Today',
             value: activeParticipants.toString(),
-            meta: 'People who logged activity today.',
+            meta: 'People who started a session in the past 24 hours.',
             icon: Users,
         },
         {

@@ -47,7 +47,18 @@ function buildCompletionMessage(index: number): string {
 
 export async function GET() {
     try {
-        const [milestones, reactionMetrics, totalCompleted, recentResolvedTasks] = await Promise.all([
+        const now = new Date()
+        const last24HoursStart = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+        const [
+            milestones,
+            reactionMetrics,
+            totalCompleted,
+            recentResolvedTasks,
+            last24HoursCompleted,
+            last24HoursActiveUsersRows,
+            last24HoursTopCategoriesRows,
+        ] = await Promise.all([
             syncCommunityMilestones(),
             getCommunityReactionMetrics(),
             prisma.task.count({
@@ -63,6 +74,45 @@ export async function GET() {
                     resolvedAt: true,
                 },
                 take: 6,
+            }),
+            prisma.task.count({
+                where: {
+                    state: 'RESOLVED',
+                    resolvedAt: {
+                        gte: last24HoursStart,
+                        lt: now,
+                    },
+                },
+            }),
+            prisma.workSessionParticipant.findMany({
+                where: {
+                    joinedAt: {
+                        gte: last24HoursStart,
+                        lt: now,
+                    },
+                },
+                distinct: ['userId'],
+                select: {
+                    userId: true,
+                },
+            }),
+            prisma.communityIntent.groupBy({
+                by: ['category'],
+                where: {
+                    createdAt: {
+                        gte: last24HoursStart,
+                        lt: now,
+                    },
+                },
+                _count: {
+                    category: true,
+                },
+                orderBy: {
+                    _count: {
+                        category: 'desc',
+                    },
+                },
+                take: 5,
             }),
         ])
 
@@ -99,9 +149,9 @@ export async function GET() {
             community: {
                 totalTasksCompleted: totalCompleted,
                 daily: {
-                    totalSteps: milestones.daily.totalSteps,
-                    activeUsers: milestones.daily.activeUsers,
-                    topCategories: parseTopCategories(milestones.daily.topCategories),
+                    totalSteps: last24HoursCompleted,
+                    activeUsers: last24HoursActiveUsersRows.length,
+                    topCategories: parseTopCategories(last24HoursTopCategoriesRows.map((row) => row.category)),
                 },
                 weekly: {
                     totalSteps: milestones.weekly.totalSteps,

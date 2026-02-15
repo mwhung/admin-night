@@ -213,7 +213,11 @@ export function useStartSession() {
 
             if (!res.ok) {
                 const error = await res.json().catch(() => null) as { error?: string } | null
-                throw new Error(error?.error || 'Failed to start session')
+                const mutationError = new Error(error?.error || 'Failed to start session') as Error & {
+                    status?: number
+                }
+                mutationError.status = res.status
+                throw mutationError
             }
 
             return res.json() as Promise<StartSessionResponse>
