@@ -119,9 +119,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PATCH /api/sessions/[id]
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
     try {
-        const user = await getCurrentUser()
-        if (!user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const isInternalRequest = isInternalApiRequest(request)
+        if (!isInternalRequest) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         const { id } = await params
@@ -191,9 +191,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/sessions/[id]
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
-        const user = await getCurrentUser()
-        if (!user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const isInternalRequest = isInternalApiRequest(request)
+        if (!isInternalRequest) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         const { id } = await params

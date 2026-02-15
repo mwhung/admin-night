@@ -22,6 +22,17 @@ import {
     Loader2,
     Inbox as InboxIcon,
     GripVertical,
+    Mail,
+    CreditCard,
+    Wallet,
+    Calendar,
+    ListChecks,
+    RefreshCw,
+    HandCoins,
+    FolderOpen,
+    HeartPulse,
+    IdCard,
+    FileText,
 } from "lucide-react"
 import {
     DndContext,
@@ -116,6 +127,54 @@ interface SessionStageHeaderProps {
 interface SessionTimeAdjustControlsProps {
     onAddFiveMinutes: () => void;
     onAddTenMinutes: () => void;
+}
+
+interface TaskSuggestionLabelProps {
+    title: string;
+    titleClassName?: string;
+    iconTone?: 'default' | 'primary';
+}
+
+interface TaskSuggestionIconProps {
+    title: string;
+    className?: string;
+}
+
+function TaskSuggestionIcon({ title, className }: TaskSuggestionIconProps) {
+    if (/\b(inbox|email|mail)\b/i.test(title)) return <Mail className={className} />
+    if (/\b(bill|invoice|payment|pay)\b/i.test(title)) return <CreditCard className={className} />
+    if (/\b(financial|finance|receipt|expense)\b/i.test(title)) return <Wallet className={className} />
+    if (/\b(calendar|schedule)\b/i.test(title)) return <Calendar className={className} />
+    if (/\b(plan|planning|strategy)\b/i.test(title)) return <ListChecks className={className} />
+    if (/\b(id|passport|license)\b/i.test(title)) return <IdCard className={className} />
+    if (/\b(subscription|renew|membership)\b/i.test(title)) return <RefreshCw className={className} />
+    if (/\b(reimburse|reimbursement)\b/i.test(title)) return <HandCoins className={className} />
+    if (/\b(document|file|form|paperwork|organize)\b/i.test(title)) return <FolderOpen className={className} />
+    if (/\b(health|checkup|medical|doctor)\b/i.test(title)) return <HeartPulse className={className} />
+
+    return <FileText className={className} />
+}
+
+function TaskSuggestionLabel({
+    title,
+    titleClassName,
+    iconTone = 'default',
+}: TaskSuggestionLabelProps) {
+    return (
+        <div className="flex min-w-0 items-center gap-2.5">
+            <span
+                className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border",
+                    iconTone === 'primary'
+                        ? "border-primary/20 bg-primary/10 text-primary/80"
+                        : "border-border/50 bg-muted/35 text-muted-foreground"
+                )}
+            >
+                <TaskSuggestionIcon title={title} className="h-3.5 w-3.5" />
+            </span>
+            <span className={cn("truncate text-sm", titleClassName)}>{title}</span>
+        </div>
+    )
 }
 
 function SortableTaskItem({ task, onRemove, isSessionTheme = false }: SortableTaskItemProps) {
@@ -1075,7 +1134,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                             onClick={() => handleAddSuggestedTask(task)}
                                             className="flex items-center justify-between p-2 rounded-lg border border-dashed hover:bg-primary/5 text-left transition-colors"
                                         >
-                                            <span className="text-xs">{task.title}</span>
+                                            <TaskSuggestionLabel
+                                                title={task.title}
+                                                titleClassName="text-xs text-foreground/80"
+                                            />
                                             <Plus className="h-3 w-3 text-muted-foreground" />
                                         </button>
                                     ))}
@@ -1449,14 +1511,15 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                                         : "bg-muted/30 border-dashed hover:border-primary/50"
                                                 )}
                                             >
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className={cn(
-                                                        "text-sm",
-                                                        (task.isFromLastSession && task.state !== 'RESOLVED') ? "text-foreground font-medium" : "text-muted-foreground"
-                                                    )}>
-                                                        {task.title}
-                                                    </span>
-                                                </div>
+                                                <TaskSuggestionLabel
+                                                    title={task.title}
+                                                    iconTone={(task.isFromLastSession && task.state !== 'RESOLVED') ? 'primary' : 'default'}
+                                                    titleClassName={cn(
+                                                        (task.isFromLastSession && task.state !== 'RESOLVED')
+                                                            ? "text-foreground font-medium"
+                                                            : "text-muted-foreground"
+                                                    )}
+                                                />
                                                 <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                             </button>
                                         ))}
@@ -1474,7 +1537,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                                 onClick={() => handleAddSuggestedTask(task)}
                                                 className="flex items-center justify-between p-3 rounded-xl border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
                                             >
-                                                <span className="text-sm text-foreground/80 group-hover:text-foreground">{task.title}</span>
+                                                <TaskSuggestionLabel
+                                                    title={task.title}
+                                                    titleClassName="text-foreground/80 group-hover:text-foreground"
+                                                />
                                                 <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                             </button>
                                         ))}

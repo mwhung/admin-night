@@ -6,6 +6,8 @@ const { getCurrentUserMock, prismaMock } = vi.hoisted(() => ({
     prismaMock: {
         workSession: {
             findUnique: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
         },
     },
 }))
@@ -18,7 +20,7 @@ vi.mock('@/lib/db', () => ({
     prisma: prismaMock,
 }))
 
-import { GET } from '@/app/api/sessions/[id]/route'
+import { DELETE, GET, PATCH } from '@/app/api/sessions/[id]/route'
 
 const ORIGINAL_INTERNAL_API_KEY = process.env.INTERNAL_API_KEY
 
@@ -27,6 +29,8 @@ describe('/api/sessions/[id] privacy behavior', () => {
         vi.clearAllMocks()
         getCurrentUserMock.mockReset()
         prismaMock.workSession.findUnique.mockReset()
+        prismaMock.workSession.update.mockReset()
+        prismaMock.workSession.delete.mockReset()
         process.env.INTERNAL_API_KEY = 'test-internal-key'
     })
 
@@ -122,5 +126,37 @@ describe('/api/sessions/[id] privacy behavior', () => {
                 joinedAt: '2026-02-08T10:00:00.000Z',
             },
         ])
+    })
+
+    it('rejects PATCH without internal api key', async () => {
+        const request = new NextRequest('http://localhost/api/sessions/session-1', {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'ACTIVE' }),
+        })
+
+        const response = await PATCH(request, {
+            params: Promise.resolve({ id: 'session-1' }),
+        })
+
+        expect(response.status).toBe(403)
+        expect(prismaMock.workSession.findUnique).not.toHaveBeenCalled()
+        expect(prismaMock.workSession.update).not.toHaveBeenCalled()
+    })
+
+    it('rejects DELETE without internal api key', async () => {
+        const request = new NextRequest('http://localhost/api/sessions/session-1', {
+            method: 'DELETE',
+        })
+
+        const response = await DELETE(request, {
+            params: Promise.resolve({ id: 'session-1' }),
+        })
+
+        expect(response.status).toBe(403)
+        expect(prismaMock.workSession.findUnique).not.toHaveBeenCalled()
+        expect(prismaMock.workSession.delete).not.toHaveBeenCalled()
     })
 })

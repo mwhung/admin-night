@@ -8,9 +8,12 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 const connectionString = process.env.DATABASE_URL
+const isLocalDatabase =
+  typeof connectionString === 'string'
+  && /(?:localhost|127\.0\.0\.1)/i.test(connectionString)
 const pool = new Pool({
   connectionString,
-  ssl: { rejectUnauthorized: false }
+  ssl: isLocalDatabase ? false : { rejectUnauthorized: true }
 })
 const adapter = new PrismaPg(pool)
 

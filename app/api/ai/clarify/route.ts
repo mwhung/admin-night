@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         })
 
         const responseTime = Date.now() - startTime
-        console.log(`[AI Clarify] Response time: ${responseTime}ms for task: "${taskTitle.substring(0, 50)}"`)
+        console.log(`[AI Clarify] Response time: ${responseTime}ms`)
 
         // Parse the response
         const rawContent = completion.choices[0]?.message?.content
