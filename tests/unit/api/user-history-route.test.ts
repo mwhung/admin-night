@@ -85,6 +85,38 @@ describe('/api/user/history route', () => {
                     tasksWorkedOn: ['task-2'],
                 },
             ])
+            .mockResolvedValueOnce([
+                {
+                    sessionId: 'session-1',
+                    userId: 'user-1',
+                    joinedAt: new Date('2026-02-09T12:00:00.000Z'),
+                    leftAt: new Date('2026-02-09T12:25:00.000Z'),
+                },
+                {
+                    sessionId: 'session-1',
+                    userId: 'user-2',
+                    joinedAt: new Date('2026-02-09T11:50:00.000Z'),
+                    leftAt: new Date('2026-02-09T12:05:00.000Z'),
+                },
+                {
+                    sessionId: 'session-1',
+                    userId: 'user-3',
+                    joinedAt: new Date('2026-02-09T12:10:00.000Z'),
+                    leftAt: new Date('2026-02-09T12:30:00.000Z'),
+                },
+                {
+                    sessionId: 'session-3',
+                    userId: 'user-1',
+                    joinedAt: new Date('2026-02-10T12:00:00.000Z'),
+                    leftAt: null,
+                },
+                {
+                    sessionId: 'session-3',
+                    userId: 'user-4',
+                    joinedAt: new Date('2026-02-10T12:05:00.000Z'),
+                    leftAt: new Date('2026-02-10T12:15:00.000Z'),
+                },
+            ])
 
         prismaMock.workSessionParticipant.groupBy.mockResolvedValue([
             { sessionId: 'session-1', _count: { _all: 3 } },
@@ -171,7 +203,7 @@ describe('/api/user/history route', () => {
         expect(payload.historyGroups).toHaveLength(1)
         expect(payload.historyGroups[0].tasks.map((task: { id: string }) => task.id)).toEqual(['task-1'])
         expect(payload.pendingTasks).toHaveLength(2)
-        expect(prismaMock.workSessionParticipant.findMany).toHaveBeenCalledTimes(3)
+        expect(prismaMock.workSessionParticipant.findMany).toHaveBeenCalledTimes(4)
         expect(payload.stats.peakSessionWindow).toMatchObject({
             sessionCount: 1,
         })
@@ -180,7 +212,7 @@ describe('/api/user/history route', () => {
         expect(payload.stats.peakSessionWindow.endHour).toBe((payload.stats.peakSessionWindow.startHour + 1) % 24)
         expect(payload.stats.collaborationEnergy).toMatchObject({
             cumulativeOthersPresent: 3,
-            maxParticipantsInSession: 3,
+            maxParticipantsInSession: 2,
         })
         expect(payload.stats.fastestTripleReleaseSession).toMatchObject({
             sessionId: 'session-1',

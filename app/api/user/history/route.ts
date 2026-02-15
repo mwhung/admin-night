@@ -94,6 +94,13 @@ interface SessionInsightRow {
     tasksWorkedOn: unknown
 }
 
+interface SessionPresenceRow {
+    sessionId: string
+    userId: string
+    joinedAt: Date
+    leftAt: Date | null
+}
+
 function toTaskRecord(task: TaskRow): TaskRecord {
     return {
         id: task.id,
@@ -176,9 +183,14 @@ function buildResolvedTaskTypeBreakdown(resolvedTaskRows: TaskRow[]): TaskTypeBr
         })
 }
 
+function intervalsOverlap(startA: Date, endA: Date, startB: Date, endB: Date): boolean {
+    return startA < endB && startB < endA
+}
+
 function buildCollaborationEnergy(
+    currentUserId: string,
     participations: SessionInsightRow[],
-    participantCountBySession: Map<string, number>,
+    sessionPresenceBySessionId: Map<string, SessionPresenceRow[]>,
 ): CollaborationEnergy {
     if (participations.length === 0) {
         return {
@@ -187,13 +199,59 @@ function buildCollaborationEnergy(
         }
     }
 
+    const now = new Date()
     let cumulativeOthersPresent = 0
-    let maxParticipantsInSession = 1
+    let maxParticipantsInSession = 0
 
     for (const participation of participations) {
-        const participantCount = participantCountBySession.get(participation.sessionId) ?? 1
-        cumulativeOthersPresent += Math.max(participantCount - 1, 0)
-        maxParticipantsInSession = Math.max(maxParticipantsInSession, participantCount)
+        const userWindowStart = participation.joinedAt
+        const userWindowEnd = participation.leftAt ?? now
+        if (userWindowEnd <= userWindowStart) {
+            continue
+        }
+
+        const sessionPresence = sessionPresenceBySessionId.get(participation.sessionId) ?? []
+        const overlappingOtherUserIds = new Set<string>()
+
+        const events: Array<{ time: number; delta: number }> = []
+        for (const presence of sessionPresence) {
+            const presenceStart = presence.joinedAt
+            const presenceEnd = presence.leftAt ?? now
+            if (!intervalsOverlap(userWindowStart, userWindowEnd, presenceStart, presenceEnd)) {
+                continue
+            }
+
+            if (presence.userId !== currentUserId) {
+                overlappingOtherUserIds.add(presence.userId)
+            }
+
+            const overlapStart = Math.max(presenceStart.getTime(), userWindowStart.getTime())
+            const overlapEnd = Math.min(presenceEnd.getTime(), userWindowEnd.getTime())
+            events.push({ time: overlapStart, delta: 1 })
+            events.push({ time: overlapEnd, delta: -1 })
+        }
+
+        cumulativeOthersPresent += overlappingOtherUserIds.size
+
+        events.sort((a, b) => {
+            if (a.time !== b.time) {
+                return a.time - b.time
+            }
+            // Use [start, end) interval semantics: process leave before join at same timestamp.
+            return a.delta - b.delta
+        })
+
+        let concurrentCount = 0
+        let sessionPeak = 0
+        for (const event of events) {
+            concurrentCount += event.delta
+            sessionPeak = Math.max(sessionPeak, concurrentCount)
+        }
+
+        if (sessionPeak === 0) {
+            sessionPeak = 1
+        }
+        maxParticipantsInSession = Math.max(maxParticipantsInSession, sessionPeak)
     }
 
     return {
@@ -478,16 +536,27 @@ export async function GET(request: NextRequest) {
         })
 
         const allSessionIds = [...new Set(allInsightParticipations.map((row) => row.sessionId))]
-        const allParticipantCounts = allSessionIds.length
-            ? await prisma.workSessionParticipant.groupBy({
-                by: ["sessionId"],
+        const sessionPresenceRows = allSessionIds.length
+            ? await prisma.workSessionParticipant.findMany({
                 where: { sessionId: { in: allSessionIds } },
-                _count: { _all: true },
+                select: {
+                    sessionId: true,
+                    userId: true,
+                    joinedAt: true,
+                    leftAt: true,
+                },
             })
             : []
-        const participantCountBySessionAll = new Map(
-            allParticipantCounts.map((entry) => [entry.sessionId, entry._count._all])
-        )
+
+        const sessionPresenceBySessionId = new Map<string, SessionPresenceRow[]>()
+        for (const presence of sessionPresenceRows) {
+            const current = sessionPresenceBySessionId.get(presence.sessionId)
+            if (current) {
+                current.push(presence)
+            } else {
+                sessionPresenceBySessionId.set(presence.sessionId, [presence])
+            }
+        }
 
         const resolvedTaskById = new Map<string, Date>()
         for (const task of resolvedTaskRows) {
@@ -505,7 +574,11 @@ export async function GET(request: NextRequest) {
                 totalSessions,
                 peakSessionWindow: buildPeakSessionWindow(allInsightParticipations),
                 resolvedTaskTypeBreakdown: buildResolvedTaskTypeBreakdown(resolvedTaskRows),
-                collaborationEnergy: buildCollaborationEnergy(allInsightParticipations, participantCountBySessionAll),
+                collaborationEnergy: buildCollaborationEnergy(
+                    user.id,
+                    allInsightParticipations,
+                    sessionPresenceBySessionId
+                ),
                 fastestTripleReleaseSession: buildFastestTripleReleaseSession(
                     allInsightParticipations,
                     resolvedTaskById
