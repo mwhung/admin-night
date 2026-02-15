@@ -107,4 +107,52 @@ describe('/api/user/preferences route', () => {
             completion_cues: true,
         })
     })
+
+    it('accepts and merges soundscape preference fields', async () => {
+        getCurrentUserMock.mockResolvedValue({ id: 'user-1' })
+
+        prismaMock.user.findUnique.mockResolvedValue({
+            preferences: {
+                soundscape_id: 'ledger-rain',
+                soundscape_volume: 0.45,
+                soundscape_shuffle: false,
+                soundscape_loop_mode: 'all',
+            },
+        })
+        prismaMock.user.update.mockResolvedValue({
+            preferences: {
+                soundscape_id: 'receipt-lab',
+                soundscape_volume: 0.32,
+                soundscape_shuffle: true,
+                soundscape_loop_mode: 'single',
+            },
+        })
+
+        const response = await PATCH(buildPatchRequest({
+            soundscape_id: 'receipt-lab',
+            soundscape_volume: 0.32,
+            soundscape_shuffle: true,
+            soundscape_loop_mode: 'single',
+        }))
+        const payload = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(prismaMock.user.update).toHaveBeenCalledWith({
+            where: { id: 'user-1' },
+            data: {
+                preferences: {
+                    soundscape_id: 'receipt-lab',
+                    soundscape_volume: 0.32,
+                    soundscape_shuffle: true,
+                    soundscape_loop_mode: 'single',
+                },
+            },
+        })
+        expect(payload).toMatchObject({
+            soundscape_id: 'receipt-lab',
+            soundscape_volume: 0.32,
+            soundscape_shuffle: true,
+            soundscape_loop_mode: 'single',
+        })
+    })
 })

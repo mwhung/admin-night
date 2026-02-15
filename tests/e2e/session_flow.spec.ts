@@ -47,6 +47,10 @@ test.describe('Session Flow', () => {
         await page.getByRole('button', { name: secondaryTaskPattern }).click()
         await expect(page.getByText(secondaryTaskPattern)).toBeVisible()
 
+        // Choose a specific soundscape in setup
+        await expect(page.getByRole('heading', { name: /3\. pick soundscape/i })).toBeVisible()
+        await page.getByRole('button', { name: /receipt lab/i }).click()
+
         // Start the session
         await page.getByRole('button', { name: /start session/i }).click()
         await expect(page).toHaveURL(/\/sessions\//, { timeout: 15000 })
@@ -56,6 +60,9 @@ test.describe('Session Flow', () => {
         await expect(page.getByRole('button', { name: /e2e focus task a/i }).first()).toBeVisible()
         await expect(page.getByRole('button', { name: secondaryTaskPattern }).first()).toBeVisible()
         await expect(page.getByRole('button', { name: /end session/i })).toBeVisible({ timeout: 15000 })
+        await expect(page.getByRole('button', { name: /next track/i })).toBeVisible()
+        await expect(page.getByRole('button', { name: /previous track/i })).toBeVisible()
+        await expect(page.getByText(/receipt lab/i)).toBeVisible()
 
         // Toggle one task completion (1 of 2 => 50%)
         await page.getByRole('button', { name: /e2e focus task a/i }).first().click()

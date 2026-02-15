@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -58,10 +58,23 @@ import { useStartSession } from '@/lib/hooks/useSessions'
 import { useAchievementTracker } from '@/lib/hooks/use-achievement-tracker'
 import { AchievementToast, SessionSummary } from '@/components/features/achievements'
 import { SESSION_DURATION_MAX, SESSION_DURATION_MIN } from '@/lib/constants/session'
-import { useSessionRuntime } from '@/components/features/session'
+import { SessionSoundscapePlayer, SoundscapeSelector, useSessionRuntime } from '@/components/features/session'
 import { QUICK_TASK_SUGGESTION_SEEDS } from '@/lib/session/task-suggestion-seeds'
 import { buildSetupTaskSuggestionPools } from '@/lib/session/build-task-suggestions'
 import { LAST_SESSION_TASKS_LIMIT, selectLastSessionPendingTasks } from '@/lib/session/last-session-tasks'
+import {
+    DEFAULT_SOUNDSCAPE_ID,
+    DEFAULT_SOUNDSCAPE_LOOP_MODE,
+    DEFAULT_SOUNDSCAPE_VOLUME,
+    SILENCE_SOUNDSCAPE_ID,
+    clampSoundscapeVolume,
+    isSoundscapeId,
+    isSoundscapeLoopMode,
+    type SoundscapeId,
+    type SoundscapeLoopMode,
+    type SoundscapePreferencePayload,
+    type SoundscapePlaybackState,
+} from '@/lib/session/soundscapes'
 
 const DURATION_OPTIONS = [
     { value: 25, label: '25 min', description: 'Quick Session' },
@@ -69,6 +82,8 @@ const DURATION_OPTIONS = [
     { value: 'custom', label: 'Custom', description: 'Set your own' },
 ]
 const SESSION_CONNECTING_STATUS_DELAY_MS = 600
+const SOUNDSCAPE_PREFERENCES_STORAGE_KEY = 'admin-night:soundscape-preferences'
+const SOUNDSCAPE_PREFERENCES_SAVE_DELAY_MS = 300
 
 const normalizeTaskTitle = (title: string): string => title.trim().toLowerCase()
 const isEphemeralTaskId = (taskId: string): boolean => (
@@ -81,6 +96,52 @@ const resolvePreferredSessionId = (...sessionIds: Array<string | null | undefine
     const validSessionIds = sessionIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
     const persistedSessionId = validSessionIds.find((id) => !isLocalSessionId(id))
     return persistedSessionId ?? validSessionIds[0] ?? null
+}
+
+const normalizeSoundscapePreferences = (
+    payload: Partial<SoundscapePreferencesResponse> | null | undefined
+): Partial<SoundscapePreferencePayload> => {
+    if (!payload) return {}
+
+    const normalized: Partial<SoundscapePreferencePayload> = {}
+
+    if (isSoundscapeId(payload.soundscape_id)) {
+        normalized.soundscape_id = payload.soundscape_id
+    }
+
+    if (typeof payload.soundscape_volume === 'number') {
+        normalized.soundscape_volume = clampSoundscapeVolume(payload.soundscape_volume)
+    }
+
+    if (typeof payload.soundscape_shuffle === 'boolean') {
+        normalized.soundscape_shuffle = payload.soundscape_shuffle
+    }
+
+    if (isSoundscapeLoopMode(payload.soundscape_loop_mode)) {
+        normalized.soundscape_loop_mode = payload.soundscape_loop_mode
+    }
+
+    return normalized
+}
+
+const readSoundscapePreferencesFromStorage = (): Partial<SoundscapePreferencePayload> => {
+    if (typeof window === 'undefined') return {}
+
+    try {
+        const raw = window.localStorage.getItem(SOUNDSCAPE_PREFERENCES_STORAGE_KEY)
+        if (!raw) return {}
+
+        const parsed = JSON.parse(raw) as Partial<SoundscapePreferencesResponse>
+        return normalizeSoundscapePreferences(parsed)
+    } catch {
+        return {}
+    }
+}
+
+const writeSoundscapePreferencesToStorage = (payload: SoundscapePreferencePayload) => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.setItem(SOUNDSCAPE_PREFERENCES_STORAGE_KEY, JSON.stringify(payload))
 }
 
 type AdminModeWorkflowView = 'setup' | 'session' | 'summary'
@@ -110,6 +171,13 @@ interface TaskFromApi {
     title: string;
     state: string;
     isFromLastSession?: boolean;
+}
+
+interface SoundscapePreferencesResponse {
+    soundscape_id?: string
+    soundscape_volume?: number
+    soundscape_shuffle?: boolean
+    soundscape_loop_mode?: string
 }
 
 interface SortableTaskItemProps {
@@ -329,6 +397,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false)
     const [selectedDuration, setSelectedDuration] = useState<number | 'custom'>(25)
     const [customDuration, setCustomDuration] = useState(30)
+    const [selectedSoundscapeId, setSelectedSoundscapeId] = useState<SoundscapeId>(DEFAULT_SOUNDSCAPE_ID)
+    const [soundscapeVolume, setSoundscapeVolume] = useState(DEFAULT_SOUNDSCAPE_VOLUME)
+    const [soundscapeShuffle, setSoundscapeShuffle] = useState(false)
+    const [soundscapeLoopMode, setSoundscapeLoopMode] = useState<SoundscapeLoopMode>(DEFAULT_SOUNDSCAPE_LOOP_MODE)
     const [historyTasks, setHistoryTasks] = useState<TaskItem[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
@@ -342,6 +414,8 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     const [isStartingSession, setIsStartingSession] = useState(false)
     const [sessionStartError, setSessionStartError] = useState<string | null>(null)
     const [shouldShowSessionConnectingStatus, setShouldShowSessionConnectingStatus] = useState(false)
+    const soundscapePreferencesLoadedRef = useRef(false)
+    const soundscapePreferencesSaveTimeoutRef = useRef<number | null>(null)
 
     // Get the actual duration value to use
     const actualDuration = selectedDuration === 'custom' ? customDuration : selectedDuration
@@ -364,6 +438,111 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
     )
     const hasPersistedSession = Boolean(preferredSessionId && !isLocalSessionId(preferredSessionId))
 
+    const applySoundscapePreferences = useCallback((payload: Partial<SoundscapePreferencePayload>) => {
+        if (payload.soundscape_id) {
+            setSelectedSoundscapeId(payload.soundscape_id)
+        }
+        if (typeof payload.soundscape_volume === 'number') {
+            setSoundscapeVolume(clampSoundscapeVolume(payload.soundscape_volume))
+        }
+        if (typeof payload.soundscape_shuffle === 'boolean') {
+            setSoundscapeShuffle(payload.soundscape_shuffle)
+        }
+        if (payload.soundscape_loop_mode) {
+            setSoundscapeLoopMode(payload.soundscape_loop_mode)
+        }
+    }, [])
+
+    const buildSoundscapePreferencePayload = useCallback((
+        overrides: Partial<SoundscapePreferencePayload> = {}
+    ): SoundscapePreferencePayload => ({
+        soundscape_id: overrides.soundscape_id ?? selectedSoundscapeId,
+        soundscape_volume: overrides.soundscape_volume ?? soundscapeVolume,
+        soundscape_shuffle: overrides.soundscape_shuffle ?? soundscapeShuffle,
+        soundscape_loop_mode: overrides.soundscape_loop_mode ?? soundscapeLoopMode,
+    }), [selectedSoundscapeId, soundscapeVolume, soundscapeShuffle, soundscapeLoopMode])
+
+    const queueSoundscapePreferenceSave = useCallback((
+        overrides: Partial<SoundscapePreferencePayload> = {}
+    ) => {
+        const nextPreferences = buildSoundscapePreferencePayload(overrides)
+        writeSoundscapePreferencesToStorage(nextPreferences)
+
+        if (typeof window === 'undefined') return
+
+        if (soundscapePreferencesSaveTimeoutRef.current !== null) {
+            window.clearTimeout(soundscapePreferencesSaveTimeoutRef.current)
+        }
+
+        soundscapePreferencesSaveTimeoutRef.current = window.setTimeout(() => {
+            void fetch('/api/user/preferences', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(nextPreferences),
+            }).catch(() => undefined)
+        }, SOUNDSCAPE_PREFERENCES_SAVE_DELAY_MS)
+    }, [buildSoundscapePreferencePayload])
+
+    const handleSelectSoundscape = useCallback((soundscapeId: SoundscapeId) => {
+        setSelectedSoundscapeId(soundscapeId)
+        queueSoundscapePreferenceSave({ soundscape_id: soundscapeId })
+    }, [queueSoundscapePreferenceSave])
+
+    const handleSessionSoundscapeChange = useCallback((patch: Partial<SoundscapePlaybackState>) => {
+        if (!runtimeSession.isActive) return
+
+        const nextSoundscapeId = isSoundscapeId(patch.soundscapeId)
+            ? patch.soundscapeId
+            : runtimeSession.soundscape.soundscapeId
+
+        const nextVolume = typeof patch.volume === 'number'
+            ? clampSoundscapeVolume(patch.volume)
+            : runtimeSession.soundscape.volume
+
+        const nextShuffle = typeof patch.shuffle === 'boolean'
+            ? patch.shuffle
+            : runtimeSession.soundscape.shuffle
+
+        const nextLoopMode = isSoundscapeLoopMode(patch.loopMode)
+            ? patch.loopMode
+            : runtimeSession.soundscape.loopMode
+
+        const nextTrackIndex = typeof patch.trackIndex === 'number'
+            ? patch.trackIndex
+            : runtimeSession.soundscape.trackIndex
+
+        const requestedPlayingState = typeof patch.isPlaying === 'boolean'
+            ? patch.isPlaying
+            : runtimeSession.soundscape.isPlaying
+
+        const nextIsPlaying = nextSoundscapeId === SILENCE_SOUNDSCAPE_ID
+            ? false
+            : requestedPlayingState
+
+        syncRuntimeSession({
+            soundscape: {
+                soundscapeId: nextSoundscapeId,
+                trackIndex: nextTrackIndex,
+                isPlaying: nextIsPlaying,
+                volume: nextVolume,
+                shuffle: nextShuffle,
+                loopMode: nextLoopMode,
+            },
+        })
+
+        setSelectedSoundscapeId(nextSoundscapeId)
+        setSoundscapeVolume(nextVolume)
+        setSoundscapeShuffle(nextShuffle)
+        setSoundscapeLoopMode(nextLoopMode)
+
+        queueSoundscapePreferenceSave({
+            soundscape_id: nextSoundscapeId,
+            soundscape_volume: nextVolume,
+            soundscape_shuffle: nextShuffle,
+            soundscape_loop_mode: nextLoopMode,
+        })
+    }, [runtimeSession.isActive, runtimeSession.soundscape, syncRuntimeSession, queueSoundscapePreferenceSave])
+
     useEffect(() => {
         setStep(stepFromView(view))
     }, [view])
@@ -376,6 +555,50 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         if (view !== 'setup') return
         router.prefetch('/sessions/pending')
     }, [view, router])
+
+    useEffect(() => {
+        return () => {
+            if (typeof window === 'undefined') return
+            if (soundscapePreferencesSaveTimeoutRef.current === null) return
+            window.clearTimeout(soundscapePreferencesSaveTimeoutRef.current)
+            soundscapePreferencesSaveTimeoutRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        if (view !== 'setup') return
+        if (soundscapePreferencesLoadedRef.current) return
+        soundscapePreferencesLoadedRef.current = true
+
+        const localPreferences = readSoundscapePreferencesFromStorage()
+        applySoundscapePreferences(localPreferences)
+
+        let isCancelled = false
+
+        const fetchPreferences = async () => {
+            try {
+                const response = await fetch('/api/user/preferences', { cache: 'no-store' })
+                if (!response.ok) return
+
+                const payload = await response.json() as SoundscapePreferencesResponse
+                if (isCancelled) return
+
+                const normalized = normalizeSoundscapePreferences(payload)
+                applySoundscapePreferences(normalized)
+
+                const mergedPreferences = buildSoundscapePreferencePayload(normalized)
+                writeSoundscapePreferencesToStorage(mergedPreferences)
+            } catch {
+                // Ignore preference hydration failures and keep local defaults.
+            }
+        }
+
+        void fetchPreferences()
+
+        return () => {
+            isCancelled = true
+        }
+    }, [view, applySoundscapePreferences, buildSoundscapePreferencePayload])
 
     useEffect(() => {
         if (hasHydratedRuntime.current) return
@@ -404,7 +627,27 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             setSelectedDuration('custom')
             setCustomDuration(restoredDuration)
         }
+
+        setSelectedSoundscapeId(runtimeSession.soundscape.soundscapeId)
+        setSoundscapeVolume(runtimeSession.soundscape.volume)
+        setSoundscapeShuffle(runtimeSession.soundscape.shuffle)
+        setSoundscapeLoopMode(runtimeSession.soundscape.loopMode)
     }, [runtimeSession, router, view])
+
+    useEffect(() => {
+        if (!runtimeSession.isActive) return
+
+        setSelectedSoundscapeId(runtimeSession.soundscape.soundscapeId)
+        setSoundscapeVolume(runtimeSession.soundscape.volume)
+        setSoundscapeShuffle(runtimeSession.soundscape.shuffle)
+        setSoundscapeLoopMode(runtimeSession.soundscape.loopMode)
+    }, [
+        runtimeSession.isActive,
+        runtimeSession.soundscape.soundscapeId,
+        runtimeSession.soundscape.volume,
+        runtimeSession.soundscape.shuffle,
+        runtimeSession.soundscape.loopMode,
+    ])
 
     useEffect(() => {
         if (view !== 'session') return
@@ -825,6 +1068,14 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
             sessionId: localSessionId,
             durationMinutes: actualDuration,
             selectedTasks: tasksSnapshot,
+            soundscape: {
+                soundscapeId: selectedSoundscapeId,
+                trackIndex: 0,
+                isPlaying: selectedSoundscapeId !== SILENCE_SOUNDSCAPE_ID,
+                volume: soundscapeVolume,
+                shuffle: soundscapeShuffle,
+                loopMode: soundscapeLoopMode,
+            },
         })
 
         router.push(`/sessions/${localSessionId}`)
@@ -879,6 +1130,12 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
         endingSessionRef.current = true
         setIsEndingSession(true)
         setSessionEndError(null)
+
+        if (runtimeSession.isActive) {
+            syncRuntimeSession({
+                soundscape: { isPlaying: false },
+            })
+        }
 
         const seconds = timerRef.current?.getElapsedTime() || 0
         let summarySessionId = activeSessionId ?? runtimeSession.sessionId ?? sessionId
@@ -1237,6 +1494,10 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                         className="max-w-none"
                                     />
                                 </div>
+                                <SessionSoundscapePlayer
+                                    playback={runtimeSession.soundscape}
+                                    onPlaybackChange={handleSessionSoundscapeChange}
+                                />
                                 <div className="flex flex-col gap-2 pt-1">
                                     <Button
                                         variant="secondary"
@@ -1609,6 +1870,25 @@ export function AdminModeWorkflow({ view, sessionId }: AdminModeWorkflowProps) {
                                 </div>
                             ))}
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Step 3: Soundscape Selection */}
+                <Card className="mb-6">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-[1.02rem] font-medium tracking-[-0.01em]">
+                            <Sparkles className="h-5 w-5" />
+                            3. Pick Soundscape
+                        </CardTitle>
+                        <CardDescription>
+                            Choose one backdrop for this session. You can still change tracks while focusing.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <SoundscapeSelector
+                            selectedSoundscapeId={selectedSoundscapeId}
+                            onSelect={handleSelectSoundscape}
+                        />
                     </CardContent>
                 </Card>
 

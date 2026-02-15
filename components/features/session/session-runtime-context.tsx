@@ -2,6 +2,16 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import {
+    SILENCE_SOUNDSCAPE_ID,
+    buildDefaultSoundscapePlaybackState,
+    clampSoundscapeVolume,
+    getSoundscapeById,
+    isSoundscapeId,
+    isSoundscapeLoopMode,
+    normalizeTrackIndex,
+    type SoundscapePlaybackState,
+} from '@/lib/session/soundscapes'
 import type { TaskItem } from './task-checklist'
 
 const SESSION_STORAGE_KEY = 'admin-night:session-runtime'
@@ -17,12 +27,14 @@ export interface SessionRuntimeState {
     initialTaskCount: number
     pausedByNavigation: boolean
     startedAt: number
+    soundscape: SoundscapePlaybackState
 }
 
 interface StartSessionPayload {
     sessionId: string
     durationMinutes: number
     selectedTasks: TaskItem[]
+    soundscape?: Partial<SoundscapePlaybackState>
 }
 
 interface SyncSessionPayload {
@@ -31,6 +43,7 @@ interface SyncSessionPayload {
     totalSeconds?: number
     remainingSeconds?: number
     selectedTasks?: TaskItem[]
+    soundscape?: Partial<SoundscapePlaybackState>
 }
 
 interface SessionRuntimeContextValue {
@@ -52,6 +65,7 @@ const createEmptySession = (): SessionRuntimeState => ({
     initialTaskCount: 0,
     pausedByNavigation: false,
     startedAt: 0,
+    soundscape: buildDefaultSoundscapePlaybackState(),
 })
 
 const sanitizeTasks = (tasks: unknown): TaskItem[] => {
@@ -74,6 +88,38 @@ const sanitizeTasks = (tasks: unknown): TaskItem[] => {
             state: task.state,
             isFromLastSession: task.isFromLastSession,
         }))
+}
+
+function sanitizeSoundscapeState(input: unknown): SoundscapePlaybackState {
+    const defaultSoundscape = buildDefaultSoundscapePlaybackState()
+
+    if (typeof input !== 'object' || input === null) {
+        return defaultSoundscape
+    }
+
+    const parsed = input as Partial<SoundscapePlaybackState>
+    const soundscapeId = isSoundscapeId(parsed.soundscapeId)
+        ? parsed.soundscapeId
+        : defaultSoundscape.soundscapeId
+
+    const soundscape = getSoundscapeById(soundscapeId)
+    const trackIndex = normalizeTrackIndex(Number(parsed.trackIndex), soundscape.tracks.length)
+    const volume = clampSoundscapeVolume(Number(parsed.volume))
+    const shuffle = Boolean(parsed.shuffle)
+    const loopMode = isSoundscapeLoopMode(parsed.loopMode)
+        ? parsed.loopMode
+        : defaultSoundscape.loopMode
+
+    return {
+        soundscapeId,
+        trackIndex,
+        volume,
+        shuffle,
+        loopMode,
+        isPlaying: soundscapeId === SILENCE_SOUNDSCAPE_ID
+            ? false
+            : Boolean(parsed.isPlaying),
+    }
 }
 
 const persistSessionState = (session: SessionRuntimeState) => {
@@ -123,6 +169,7 @@ const hydrateSessionState = (): SessionRuntimeState => {
             initialTaskCount,
             pausedByNavigation: Boolean(parsed.pausedByNavigation),
             startedAt: Math.floor(Number(parsed.startedAt) || Date.now()),
+            soundscape: sanitizeSoundscapeState(parsed.soundscape),
         }
     } catch {
         return createEmptySession()
@@ -137,6 +184,7 @@ export function SessionRuntimeProvider({ children }: { children: React.ReactNode
         const durationMinutes = Math.max(1, Math.floor(payload.durationMinutes))
         const totalSeconds = durationMinutes * 60
         const selectedTasks = sanitizeTasks(payload.selectedTasks)
+        const soundscape = sanitizeSoundscapeState(payload.soundscape)
 
         const nextSession: SessionRuntimeState = {
             isActive: true,
@@ -148,6 +196,7 @@ export function SessionRuntimeProvider({ children }: { children: React.ReactNode
             initialTaskCount: selectedTasks.length,
             pausedByNavigation: false,
             startedAt: Date.now(),
+            soundscape,
         }
 
         persistSessionState(nextSession)
@@ -178,6 +227,13 @@ export function SessionRuntimeProvider({ children }: { children: React.ReactNode
                 ? prev.initialTaskCount
                 : nextSelectedTasks.length
 
+            const mergedSoundscape = payload.soundscape
+                ? sanitizeSoundscapeState({
+                    ...prev.soundscape,
+                    ...payload.soundscape,
+                })
+                : prev.soundscape
+
             const nextSession: SessionRuntimeState = {
                 ...prev,
                 sessionId: payload.sessionId ?? prev.sessionId,
@@ -186,6 +242,7 @@ export function SessionRuntimeProvider({ children }: { children: React.ReactNode
                 remainingSeconds: nextRemaining,
                 selectedTasks: nextSelectedTasks,
                 initialTaskCount: nextInitialTaskCount,
+                soundscape: mergedSoundscape,
             }
 
             persistSessionState(nextSession)

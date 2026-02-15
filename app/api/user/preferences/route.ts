@@ -12,6 +12,19 @@ const PreferencesSchema = z.object({
     insight_level: z.enum(["basic", "detailed", "deep"]).optional(),
     ambient_sound: z.boolean().optional(),
     completion_cues: z.boolean().optional(),
+    soundscape_id: z
+        .enum([
+            "ledger-rain",
+            "reimbursement-cafe",
+            "inbox-breeze",
+            "receipt-lab",
+            "deep-focus-desk",
+            "silence",
+        ])
+        .optional(),
+    soundscape_volume: z.number().min(0).max(1).optional(),
+    soundscape_shuffle: z.boolean().optional(),
+    soundscape_loop_mode: z.enum(["none", "all", "single"]).optional(),
 })
 
 function buildErrorResponse(

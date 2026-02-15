@@ -61,6 +61,8 @@ test.describe('Mock Auth Flow', () => {
         await expect(page.getByRole('heading', { name: 'Session Tasks', exact: true })).toBeVisible({ timeout: 15000 })
         await expect(page.getByRole('button', { name: /end session/i })).toBeVisible()
         await expect(page.getByRole('button', { name: /mocked auth task/i }).first()).toBeVisible()
+        await expect(page.getByRole('button', { name: /next track/i })).toBeVisible()
+        await expect(page.getByRole('button', { name: /previous track/i })).toBeVisible()
 
         // Complete task
         await page.getByRole('button', { name: /mocked auth task/i }).first().click()
